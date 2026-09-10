@@ -1,8 +1,8 @@
 site_name: Lộ trình ôn thi Kỹ sư phần mềm (SDE)
 site_description: Tổng hợp kiến thức phỏng vấn SDE bằng tiếng Việt
-site_url: https://aasthas2022.github.io/SDE-Interview-and-Prep-Roadmap/
-repo_url: https://github.com/aasthas2022/SDE-Interview-and-Prep-Roadmap
-repo_name: SDE-Interview-and-Prep-Roadmap
+site_url: https://tiendat-work.github.io/SDE-Interview-and-Prep-Roadmap-VI/
+repo_url: https://github.com/tiendat-work/SDE-Interview-and-Prep-Roadmap-VI
+repo_name: SDE-Interview-and-Prep-Roadmap-VI
 docs_dir: docs
 copyright: "Tổng hợp phục vụ học tập"
 
