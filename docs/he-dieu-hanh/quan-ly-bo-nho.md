@@ -36,6 +36,31 @@ Không gian địa chỉ ảo chia thành các **trang (page)** kích thước c
 
 Địa chỉ ảo = (số trang, offset). MMU (Memory Management Unit) tra bảng trang để dịch sang địa chỉ vật lý. Paging **loại bỏ phân mảnh ngoài (external fragmentation)** nhưng còn phân mảnh trong (internal fragmentation) ở trang cuối.
 
+Chi tiết quá trình dịch một địa chỉ ảo sang địa chỉ vật lý: tách địa chỉ thành số trang + offset, tra bảng trang lấy số khung, rồi ghép khung với offset:
+
+```mermaid
+graph LR
+    VA["Địa chỉ ảo<br/>(số trang p | offset d)"] --> P["Số trang p"]
+    VA --> D["Offset d"]
+    P --> PT["Bảng trang<br/>(page table)"]
+    PT -->|"mục thứ p → số khung f"| F["Số khung f"]
+    F --> PA["Địa chỉ vật lý<br/>(số khung f | offset d)"]
+    D --> PA
+```
+
+Trên thực tế MMU tra TLB trước; chỉ khi TLB miss mới đi qua bảng trang trong RAM, và nếu trang không có trong RAM thì sinh lỗi trang để nạp từ đĩa:
+
+```mermaid
+graph TB
+    START["CPU sinh địa chỉ ảo"] --> TLB{"TLB có ánh xạ?"}
+    TLB -->|"hit"| HIT["Lấy số khung ngay → truy cập RAM"]
+    TLB -->|"miss"| WALK["Tra bảng trang trong RAM (page walk)"]
+    WALK --> VALID{"Trang có trong RAM?<br/>(valid bit)"}
+    VALID -->|"có"| FILL["Nạp ánh xạ vào TLB → truy cập RAM"]
+    VALID -->|"không"| FAULT["Lỗi trang (page fault):<br/>nạp trang từ đĩa vào khung trống"]
+    FAULT --> WALK
+```
+
 ### TLB (Translation Lookaside Buffer)
 Bộ nhớ đệm tốc độ cao lưu các ánh xạ trang gần đây để tránh tra bảng trang trong RAM mỗi lần truy cập. **TLB hit** → dịch nhanh; **TLB miss** → phải đi qua bảng trang (page walk), chậm hơn.
 

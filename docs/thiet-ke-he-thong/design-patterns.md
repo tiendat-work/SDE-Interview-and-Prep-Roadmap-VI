@@ -185,6 +185,26 @@ classDiagram
 - **Khi nào dùng:** Đối tượng cấu hình nhiều tham số tuỳ chọn, câu truy vấn SQL, tài liệu HTML/PDF.
 - **Cạm bẫy:** Tăng số lớp; với ngôn ngữ hỗ trợ tham số tên (named args) đôi khi thừa thãi.
 
+```mermaid
+classDiagram
+    class Director {
+        +construct(builder)
+    }
+    class Builder {
+        <<interface>>
+        +addPart()
+        +getResult() Product
+    }
+    class ConcreteBuilder {
+        +addPart()
+        +getResult() Product
+    }
+    class Product
+    Director o-- Builder : "dung tung buoc"
+    Builder <|.. ConcreteBuilder
+    ConcreteBuilder ..> Product : "tao ra"
+```
+
 === "JavaScript"
     ```js
     class Burger {
@@ -424,6 +444,21 @@ classDiagram
 - **Khi nào dùng:** Đóng gói nhiều API phức tạp (khởi động rạp phim tại nhà, thư viện đa bước) thành một lời gọi dễ dùng.
 - **Cạm bẫy:** Facade dễ phình thành "god object" ôm quá nhiều trách nhiệm.
 
+```mermaid
+classDiagram
+    class Facade {
+        +start()
+    }
+    class CPU {
+        +boot()
+    }
+    class Disk {
+        +load()
+    }
+    Facade --> CPU : "goi"
+    Facade --> Disk : "goi"
+```
+
 === "JavaScript"
     ```js
     class CPU { boot() { return "CPU chạy"; } }
@@ -554,6 +589,27 @@ Nhóm này phân chia **trách nhiệm và cách giao tiếp** giữa các đố
 - **Ý tưởng / vấn đề:** Đóng gói một yêu cầu thành **đối tượng**, cho phép tham số hoá, xếp hàng đợi, ghi nhật ký và **hoàn tác (undo)**.
 - **Khi nào dùng:** Nút bấm giao diện, hàng đợi tác vụ, macro, undo/redo trong trình soạn thảo.
 - **Cạm bẫy:** Mỗi thao tác một lớp lệnh làm tăng số lớp.
+
+```mermaid
+classDiagram
+    class Command {
+        <<interface>>
+        +execute()
+        +undo()
+    }
+    class AddCommand {
+        -doc
+        -text
+        +execute()
+        +undo()
+    }
+    class Invoker {
+        -history
+        +run(command)
+    }
+    Command <|.. AddCommand
+    Invoker o-- Command : "goi & luu lich su"
+```
 
 === "JavaScript"
     ```js
@@ -744,6 +800,27 @@ classDiagram
 - **Ý tưởng / vấn đề:** Cho phép một đối tượng thay đổi hành vi khi **trạng thái nội bộ** đổi, như thể nó đổi lớp — thay chuỗi `if/switch` theo trạng thái bằng các lớp trạng thái.
 - **Khi nào dùng:** Máy trạng thái (state machine): đơn hàng, kết nối mạng (TCP), đèn giao thông.
 - **Cạm bẫy:** Nhiều trạng thái sinh nhiều lớp; chuyển tiếp trạng thái rải rác khó theo dõi.
+
+```mermaid
+classDiagram
+    class Light {
+        <<interface>>
+        +next() Light
+        +name()
+    }
+    class RedLight {
+        +next() Light
+        +name()
+    }
+    class GreenLight {
+        +next() Light
+        +name()
+    }
+    Light <|.. RedLight
+    Light <|.. GreenLight
+    RedLight ..> GreenLight : "chuyen sang"
+    GreenLight ..> RedLight : "chuyen sang"
+```
 
 === "JavaScript"
     ```js

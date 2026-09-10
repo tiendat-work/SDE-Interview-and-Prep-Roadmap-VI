@@ -200,5 +200,55 @@ stateDiagram-v2
 - **Đã hoàn tất → Đã commit:** thay đổi được ghi bền vững (durability).
 - **Thất bại → Đã huỷ:** mọi thay đổi bị hoàn tác (rollback), đảm bảo tính nguyên tử (atomicity).
 
+## Sơ đồ các hiện tượng đọc bất thường
+
+Ba hiện tượng đọc bất thường phổ biến khi hai giao dịch chạy đồng thời. Sơ đồ tuần tự cho thấy chính xác thời điểm dữ liệu "sai" bị đọc.
+
+### Dirty read (đọc bẩn)
+
+```mermaid
+sequenceDiagram
+    participant T1
+    participant DB as CSDL
+    participant T2
+    T1->>DB: UPDATE so_du = 0 (chưa commit)
+    T2->>DB: SELECT so_du
+    DB-->>T2: Trả về 0 (dữ liệu bẩn)
+    T1->>DB: ROLLBACK
+    Note over T2: T2 đã đọc số 0 chưa từng tồn tại thật
+```
+
+### Non-repeatable read (đọc không lặp lại)
+
+```mermaid
+sequenceDiagram
+    participant T1
+    participant DB as CSDL
+    participant T2
+    T1->>DB: SELECT so_du của A
+    DB-->>T1: Trả về 100
+    T2->>DB: UPDATE so_du = 200 WHERE id=A
+    T2->>DB: COMMIT
+    T1->>DB: SELECT so_du của A (đọc lại)
+    DB-->>T1: Trả về 200 (khác lần trước cùng một hàng)
+```
+
+### Phantom read (đọc bóng ma)
+
+```mermaid
+sequenceDiagram
+    participant T1
+    participant DB as CSDL
+    participant T2
+    T1->>DB: SELECT COUNT(*) WHERE so_du > 50
+    DB-->>T1: Trả về 3 hàng
+    T2->>DB: INSERT hàng mới E có so_du = 90
+    T2->>DB: COMMIT
+    T1->>DB: SELECT COUNT(*) WHERE so_du > 50 (chạy lại)
+    DB-->>T1: Trả về 4 hàng (xuất hiện hàng bóng ma)
+```
+
+Khác biệt cốt lõi: **dirty read** đọc dữ liệu chưa commit; **non-repeatable read** là *giá trị của một hàng đã có* thay đổi; **phantom read** là *số hàng khớp điều kiện* thay đổi do chèn/xoá.
+
 ## Tham khảo
 - Xem thêm: [Tính chất ACID](acid.md), [Chỉ mục](chi-muc.md), [SQL](sql.md)

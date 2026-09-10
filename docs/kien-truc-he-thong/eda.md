@@ -112,6 +112,23 @@ flowchart LR
     Q["Truy vấn (Query)"] --> RM
 ```
 
+Sơ đồ tuần tự dưới đây làm rõ vì sao CQRS dẫn tới **nhất quán cuối cùng**: sau khi ghi, mô hình đọc được cập nhật bất đồng bộ nên truy vấn ngay lập tức có thể thấy dữ liệu cũ:
+
+```mermaid
+sequenceDiagram
+    participant U as Người dùng
+    participant WM as Mô hình ghi
+    participant ES as Event Store
+    participant RM as Mô hình đọc
+    U->>WM: Lệnh cập nhật dữ liệu
+    WM->>ES: Lưu sự kiện
+    WM-->>U: Xác nhận ghi
+    ES-->>RM: Cập nhật bất đồng bộ
+    Note over RM: Có độ trễ nhỏ (nhất quán cuối cùng)
+    U->>RM: Truy vấn đọc
+    RM-->>U: Trả dữ liệu (đã cập nhật)
+```
+
 ## Triển khai với Kafka
 
 ```python

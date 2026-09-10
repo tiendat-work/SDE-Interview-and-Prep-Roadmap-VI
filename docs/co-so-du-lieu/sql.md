@@ -145,6 +145,61 @@ FULL OUTER → {1,2,3,4}        (hợp; hai đầu thiếu là NULL)
 | FULL OUTER | Hợp — giữ cả hai, thiếu thì NULL |
 | CROSS | Tích Descartes (m × n hàng) |
 
+#### Sơ đồ Venn các loại JOIN
+
+Mỗi loại JOIN tương ứng với một vùng của biểu đồ Venn giữa hai bảng A (trái) và B (phải); phần tô màu là dữ liệu được giữ lại trong kết quả.
+
+<svg viewBox="0 0 640 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sơ đồ Venn các loại JOIN" style="max-width:100%;height:auto;background:#1e1e1e;border-radius:8px">
+  <style>
+    .lbl { fill:#e0e0e0; font-family:sans-serif; font-size:15px; text-anchor:middle; }
+    .cap { fill:#bdbdbd; font-family:sans-serif; font-size:12px; text-anchor:middle; }
+    .ring { fill:none; stroke:#4db6ac; stroke-width:2; }
+    .fillA { fill:#4db6ac; fill-opacity:0.55; }
+    .fillB { fill:#7e57c2; fill-opacity:0.55; }
+  </style>
+  <!-- INNER -->
+  <g>
+    <text x="90" y="30" class="lbl">INNER JOIN</text>
+    <clipPath id="clipInnerA"><circle cx="72" cy="110" r="45"/></clipPath>
+    <circle cx="72" cy="110" r="45" class="ring"/>
+    <circle cx="110" cy="110" r="45" class="ring"/>
+    <circle cx="110" cy="110" r="45" class="fillA" clip-path="url(#clipInnerA)"/>
+    <text x="90" y="185" class="cap">Chỉ hàng khớp ở cả hai</text>
+  </g>
+  <!-- LEFT -->
+  <g>
+    <text x="250" y="30" class="lbl">LEFT JOIN</text>
+    <circle cx="232" cy="110" r="45" class="fillA"/>
+    <circle cx="232" cy="110" r="45" class="ring"/>
+    <circle cx="270" cy="110" r="45" class="ring"/>
+    <text x="250" y="185" class="cap">Toàn bộ A + phần khớp B</text>
+  </g>
+  <!-- RIGHT -->
+  <g>
+    <text x="410" y="30" class="lbl">RIGHT JOIN</text>
+    <circle cx="392" cy="110" r="45" class="ring"/>
+    <circle cx="430" cy="110" r="45" class="fillB"/>
+    <circle cx="392" cy="110" r="45" class="ring"/>
+    <text x="410" y="185" class="cap">Toàn bộ B + phần khớp A</text>
+  </g>
+  <!-- FULL OUTER -->
+  <g>
+    <text x="560" y="30" class="lbl">FULL OUTER JOIN</text>
+    <circle cx="542" cy="110" r="45" class="fillA"/>
+    <circle cx="580" cy="110" r="45" class="fillB"/>
+    <circle cx="542" cy="110" r="45" class="ring"/>
+    <circle cx="580" cy="110" r="45" class="ring"/>
+    <text x="560" y="185" class="cap">Hợp cả hai bảng</text>
+  </g>
+  <!-- chú thích A/B -->
+  <g>
+    <rect x="200" y="245" width="18" height="18" class="fillA"/>
+    <text x="228" y="259" class="cap" style="text-anchor:start">Bảng A (trái)</text>
+    <rect x="360" y="245" width="18" height="18" class="fillB"/>
+    <text x="388" y="259" class="cap" style="text-anchor:start">Bảng B (phải)</text>
+  </g>
+</svg>
+
 ### Aggregate + GROUP BY / HAVING
 ```sql
 SELECT phong_id, COUNT(*) AS so_nv, AVG(luong) AS luong_tb
@@ -154,6 +209,24 @@ HAVING AVG(luong) > 12000000  -- lọc SAU khi gộp nhóm
 ORDER BY luong_tb DESC;
 ```
 `WHERE` lọc từng hàng **trước** khi gộp; `HAVING` lọc nhóm **sau** khi gộp.
+
+#### Thứ tự thực thi logic của câu SELECT
+
+Câu SQL được viết bắt đầu bằng `SELECT`, nhưng công cụ CSDL lại **thực thi theo thứ tự khác**. Hiểu thứ tự này giải thích vì sao không dùng được bí danh cột (alias) của `SELECT` trong `WHERE`, hay vì sao `HAVING` lọc được kết quả gộp còn `WHERE` thì không.
+
+```mermaid
+graph LR
+    F["FROM / JOIN<br/>(chọn & nối bảng)"] --> W["WHERE<br/>(lọc từng hàng)"]
+    W --> G["GROUP BY<br/>(gộp nhóm)"]
+    G --> H["HAVING<br/>(lọc nhóm)"]
+    H --> S["SELECT<br/>(chọn cột, tính alias)"]
+    S --> O["ORDER BY<br/>(sắp xếp)"]
+    O --> L["LIMIT / OFFSET<br/>(cắt trang)"]
+```
+
+- `WHERE` chạy **trước** `SELECT` → chưa có alias, nên phải lặp lại biểu thức thay vì dùng tên bí danh.
+- `HAVING` chạy **sau** `GROUP BY` → mới lọc được trên kết quả gộp như `AVG(luong)`.
+- `ORDER BY` chạy gần cuối → được phép dùng alias khai báo trong `SELECT`.
 
 ### Subquery (truy vấn con)
 ```sql

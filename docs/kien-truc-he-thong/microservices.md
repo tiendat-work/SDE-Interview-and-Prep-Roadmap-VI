@@ -17,6 +17,32 @@ flowchart TB
     MQ -.-> S3
 ```
 
+So sánh trực quan giữa kiến trúc nguyên khối (monolith) và microservices: monolith gộp mọi module trong một tiến trình dùng chung một cơ sở dữ liệu, còn microservices tách thành các dịch vụ độc lập, mỗi dịch vụ có dữ liệu riêng:
+
+```mermaid
+flowchart TB
+    subgraph MONO["Kiến trúc nguyên khối (Monolith)"]
+        direction TB
+        M["Ứng dụng đơn khối"]
+        M --> MU["Module Người dùng"]
+        M --> MO["Module Đơn hàng"]
+        M --> MP["Module Thanh toán"]
+        MU --> MDB[("CSDL dùng chung")]
+        MO --> MDB
+        MP --> MDB
+    end
+    subgraph MICRO["Microservices"]
+        direction TB
+        GW2{"API Gateway"}
+        GW2 --> N1["Dịch vụ Người dùng"]
+        GW2 --> N2["Dịch vụ Đơn hàng"]
+        GW2 --> N3["Dịch vụ Thanh toán"]
+        N1 --> D1[("DB riêng")]
+        N2 --> D2[("DB riêng")]
+        N3 --> D3[("DB riêng")]
+    end
+```
+
 ### Mục lục
 
 1. [Các đặc điểm chính](#cac-ac-iem-chinh)
@@ -32,9 +58,37 @@ flowchart TB
 
 2. **Quản lý dữ liệu phi tập trung (Decentralized Data Management)**: Các microservice thường có cơ sở dữ liệu riêng để đảm bảo liên kết lỏng lẻo. Điều này cho phép mỗi dịch vụ độc lập và duy trì dữ liệu liên quan đến chức năng của nó.
 
+Sơ đồ dưới đây minh hoạ nguyên tắc "database-per-service" (mỗi dịch vụ một cơ sở dữ liệu): không dịch vụ nào truy cập trực tiếp DB của dịch vụ khác, mà phải gọi qua API của nó:
+
+```mermaid
+flowchart LR
+    S1["Dịch vụ Đơn hàng"] --> DB1[("DB Đơn hàng")]
+    S2["Dịch vụ Khách hàng"] --> DB2[("DB Khách hàng")]
+    S3["Dịch vụ Kho"] --> DB3[("DB Kho")]
+    S1 -->|"Gọi API (không truy cập DB trực tiếp)"| S2
+    S1 -->|"Gọi API"| S3
+```
+
 3. **Tính độc lập (Independence)**: Các microservice có thể được phát triển, triển khai và mở rộng độc lập. Các nhóm có thể làm việc trên các dịch vụ khác nhau đồng thời mà không ảnh hưởng đến toàn bộ hệ thống.
 
 4. **Giao tiếp giữa các dịch vụ (Inter-Service Communication)**: Các microservice giao tiếp với nhau bằng các giao thức nhẹ như HTTP/HTTPS, REST, gRPC, hoặc các message broker như RabbitMQ, Kafka, v.v. Giao tiếp có thể là đồng bộ (request/response) hoặc bất đồng bộ (hướng sự kiện - event-driven).
+
+Sơ đồ dưới đây so sánh hai kiểu giao tiếp: đồng bộ (dịch vụ gọi trực tiếp và chờ phản hồi) so với bất đồng bộ (dịch vụ phát sự kiện qua message broker, không chờ):
+
+```mermaid
+flowchart TB
+    subgraph SYNC["Đồng bộ (Synchronous)"]
+        direction LR
+        A1["Dịch vụ Đơn hàng"] -->|"Gọi REST/gRPC, chờ phản hồi"| A2["Dịch vụ Thanh toán"]
+        A2 -->|"Trả kết quả ngay"| A1
+    end
+    subgraph ASYNC["Bất đồng bộ (Asynchronous)"]
+        direction LR
+        B1["Dịch vụ Đơn hàng"] -->|"Phát sự kiện"| BR["Message Broker"]
+        BR -->|"Giao sự kiện sau"| B2["Dịch vụ Thanh toán"]
+        BR -->|"Giao sự kiện sau"| B3["Dịch vụ Kho"]
+    end
+```
 
 5. **Cô lập lỗi (Fault Isolation)**: Nếu một microservice gặp lỗi, nó không nhất thiết làm sập toàn bộ hệ thống. Các cơ chế chịu lỗi (fault tolerance) và circuit breaker phù hợp (như Hystrix của Netflix) có thể cô lập các lỗi và duy trì sự ổn định của hệ thống.
 

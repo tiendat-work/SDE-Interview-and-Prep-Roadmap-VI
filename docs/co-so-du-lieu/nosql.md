@@ -250,5 +250,40 @@ graph TD
     GRAPH --> GRAPH1["Neo4j, JanusGraph"]
 ```
 
+## Bốn loại NoSQL kèm ví dụ cấu trúc dữ liệu
+
+Mỗi loại NoSQL tổ chức dữ liệu theo một cách khác nhau. Sơ đồ dưới minh hoạ cấu trúc lưu trữ tiêu biểu của từng loại.
+
+```mermaid
+graph TB
+    subgraph KV["Key-Value (Khoá - Giá trị)"]
+        direction LR
+        K1["session:abc123"] --> V1["user_id=42"]
+        K2["luot_xem:trang_chu"] --> V2["1052"]
+    end
+    subgraph DOC["Document (Tài liệu)"]
+        D1["{ _id: nv001,<br/>ho_ten: Lan,<br/>ky_nang: [Python, SQL],<br/>dia_chi: { tinh: Hà Nội } }"]
+    end
+    subgraph COL["Column-Family (Họ cột)"]
+        direction LR
+        RK["user_id: u1"] --> C1["thoi_gian → 09:00"]
+        RK --> C2["hanh_dong → login"]
+        RK --> C3["thiet_bi → mobile"]
+    end
+    subgraph GRAPH["Graph (Đồ thị)"]
+        direction LR
+        N1["(Lan)"] -->|"BAN"| N2["(Bình)"]
+        N2 -->|"BAN"| N3["(Cường)"]
+        N1 -->|"THICH"| N4["(Bài viết)"]
+    end
+```
+
+| Loại | Đơn vị lưu trữ | Mạnh nhất khi |
+|------|----------------|---------------|
+| Key-Value | Cặp khoá → giá trị đơn | Tra cứu O(1) theo khoá |
+| Document | Tài liệu JSON tự mô tả, lồng nhau | Lược đồ linh hoạt, đọc cả bản ghi |
+| Column-Family | Hàng gồm nhiều cột động theo khoá phân vùng | Ghi khối lượng lớn, đọc theo cột |
+| Graph | Nút + cạnh có hướng, có thuộc tính | Truy vấn quan hệ nhiều tầng |
+
 ## Tham khảo
 - Xem thêm: [Tính chất ACID & BASE](acid.md), [SQL](sql.md), [Cẩm nang phỏng vấn CSDL](cam-nang-phong-van-csdl.md)

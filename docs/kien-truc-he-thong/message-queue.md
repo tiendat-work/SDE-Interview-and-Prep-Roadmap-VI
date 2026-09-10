@@ -47,6 +47,32 @@ flowchart LR
 | **Point-to-Point (hàng đợi)** | Mỗi thông điệp được đúng **một** consumer xử lý. Dùng để phân chia công việc. |
 | **Publish/Subscribe (pub/sub)** | Mỗi thông điệp được gửi tới **tất cả** subscriber đăng ký một chủ đề (topic). Dùng để phát tán sự kiện. |
 
+Trong mô hình point-to-point, nhiều consumer có thể cùng lấy từ một hàng đợi để chia tải — gọi là **competing consumers (consumer cạnh tranh)**. Broker phân phối mỗi thông điệp cho đúng **một** consumer rảnh, giúp xử lý song song và mở rộng ngang:
+
+```mermaid
+flowchart LR
+    P["Producer"] -->|"Gửi thông điệp"| Q["Hàng đợi don-hang"]
+    Q -->|"msg 1, 4"| C1["Consumer 1"]
+    Q -->|"msg 2, 5"| C2["Consumer 2"]
+    Q -->|"msg 3, 6"| C3["Consumer 3"]
+```
+
+Trong Kafka, cơ chế tương tự được gọi là **consumer group**: mỗi partition của topic được gán cho đúng một consumer trong group, nên các consumer trong cùng group chia nhau các partition để xử lý song song (không trùng lặp):
+
+```mermaid
+flowchart LR
+    T["Topic don-hang"] --> PA["Partition 0"]
+    T --> PB["Partition 1"]
+    T --> PC["Partition 2"]
+    subgraph G["Consumer Group: dich-vu-kho"]
+        CA["Consumer A"]
+        CB["Consumer B"]
+    end
+    PA --> CA
+    PB --> CA
+    PC --> CB
+```
+
 ### Các khái niệm quan trọng
 
 - **Ack / Nack**: Xác nhận xử lý thành công/thất bại.

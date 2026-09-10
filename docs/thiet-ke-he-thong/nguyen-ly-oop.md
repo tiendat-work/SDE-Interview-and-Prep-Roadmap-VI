@@ -50,6 +50,65 @@ classDiagram
     PaymentGateway <|.. StripePayment
 ```
 
+Sơ đồ lớp minh hoạ SRP (trước – sau): tách lớp `Invoice` ôm ba trách nhiệm thành ba lớp một-trách-nhiệm:
+
+```mermaid
+classDiagram
+    class Invoice {
+        +tinh_toan()
+        +in_an()
+        +luu_db()
+    }
+    class InvoiceCalculator {
+        +tinh_toan()
+    }
+    class InvoicePrinter {
+        +in_an()
+    }
+    class InvoiceRepository {
+        +luu_db()
+    }
+    Invoice ..> InvoiceCalculator : "tach ra (sau)"
+    Invoice ..> InvoicePrinter : "tach ra (sau)"
+    Invoice ..> InvoiceRepository : "tach ra (sau)"
+```
+
+Sơ đồ lớp minh hoạ OCP: thay chuỗi `if/else` bằng đa hình — thêm hình mới chỉ cần thêm lớp con, không sửa lớp cũ:
+
+```mermaid
+classDiagram
+    class Shape {
+        <<interface>>
+        +dien_tich() float
+    }
+    class Circle {
+        +dien_tich() float
+    }
+    class Square {
+        +dien_tich() float
+    }
+    Shape <|.. Circle
+    Shape <|.. Square
+```
+
+Sơ đồ lớp minh hoạ LSP (sai – đúng): không ép `Square` kế thừa `Rectangle`; tách trừu tượng chung `Shape` để lớp con luôn thay thế được lớp cha:
+
+```mermaid
+classDiagram
+    class Shape {
+        <<interface>>
+        +dien_tich() float
+    }
+    class RectangleOK {
+        +dien_tich() float
+    }
+    class SquareOK {
+        +dien_tich() float
+    }
+    Shape <|.. RectangleOK
+    Shape <|.. SquareOK
+```
+
 ## Ví dụ
 ```python
 # Vi phạm SRP: một lớp làm quá nhiều việc

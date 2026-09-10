@@ -204,5 +204,36 @@ graph TD
 - Chiều cao thấp (fan-out lớn) → số lần đọc đĩa ít, tìm kiếm O(log n).
 - Liên kết giữa các lá → truy vấn khoảng và quét tuần tự nhanh.
 
+## Sơ đồ Clustered vs Non-clustered Index
+
+**Clustered index** sắp xếp trực tiếp các hàng dữ liệu thật theo thứ tự khoá (lá của cây chính là dữ liệu). **Non-clustered index** là cây riêng, lá chỉ chứa con trỏ trỏ về hàng thật.
+
+```mermaid
+graph TD
+    subgraph CL["Clustered Index (theo id) — lá LÀ dữ liệu"]
+        CR["[3 | 6]"]
+        CR --> CD1["Hàng id=1,2<br/>(đầy đủ dữ liệu)"]
+        CR --> CD2["Hàng id=3,4,5<br/>(đầy đủ dữ liệu)"]
+        CR --> CD3["Hàng id=6,7<br/>(đầy đủ dữ liệu)"]
+    end
+    subgraph NC["Non-clustered Index (theo ho_ten) — lá TRỎ tới hàng"]
+        NR["[Bình | Lan]"]
+        NR --> NL1["An → con trỏ #3"]
+        NR --> NL2["Bình → con trỏ #1"]
+        NR --> NL3["Lan → con trỏ #5"]
+    end
+    NL1 -.->|"tra về bảng"| CD2
+    NL2 -.-> CD1
+    NL3 -.-> CD2
+```
+
+| Tiêu chí | Clustered | Non-clustered |
+|----------|-----------|---------------|
+| Số lượng / bảng | Tối đa **một** | **Nhiều** |
+| Nút lá chứa | Chính hàng dữ liệu | Khoá + con trỏ tới hàng |
+| Thứ tự vật lý | Quyết định cách xếp hàng trên đĩa | Không ảnh hưởng thứ tự hàng |
+| Đọc khoảng | Rất nhanh (dữ liệu liền kề) | Chậm hơn (phải tra về bảng) |
+| Chi phí phụ | Không | Thêm bước tra bảng (lookup) trừ khi là covering index |
+
 ## Tham khảo
 - Xem thêm: [SQL](sql.md), [Giao dịch](giao-dich.md), [Cẩm nang phỏng vấn CSDL](cam-nang-phong-van-csdl.md)

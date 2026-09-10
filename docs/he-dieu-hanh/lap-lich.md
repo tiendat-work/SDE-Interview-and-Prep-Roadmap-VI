@@ -56,6 +56,45 @@ Thuật toán thời gian thực: luôn chạy tác vụ có **hạn chót (dead
 
 ### So sánh
 
+So sánh trực quan ba thuật toán trên cùng bộ tiến trình P1=8, P2=4, P3=2 (đều đến t=0). FCFS chạy theo thứ tự đến; SJF chạy ngắn trước; RR (quantum=2) luân phiên:
+
+```mermaid
+gantt
+    title FCFS - thu tu den
+    dateFormat X
+    axisFormat %s
+    section CPU
+    P1 :0, 8
+    P2 :8, 12
+    P3 :12, 14
+```
+
+```mermaid
+gantt
+    title SJF - ngan nhat truoc
+    dateFormat X
+    axisFormat %s
+    section CPU
+    P3 :0, 2
+    P2 :2, 6
+    P1 :6, 14
+```
+
+```mermaid
+gantt
+    title Round Robin - quantum 2
+    dateFormat X
+    axisFormat %s
+    section CPU
+    P1 :0, 2
+    P2 :2, 4
+    P3 :4, 6
+    P1 :6, 8
+    P2 :8, 10
+    P1 :10, 12
+    P1 :12, 14
+```
+
 | Thuật toán | Preemptive | Ưu điểm | Nhược điểm |
 |------------|-----------|---------|------------|
 | FCFS | Không | Đơn giản, công bằng theo thứ tự đến | Convoy effect |

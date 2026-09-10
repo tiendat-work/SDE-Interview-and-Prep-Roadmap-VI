@@ -37,6 +37,24 @@ flowchart TB
     APP -->|"4. Ghi lại vào cache"| CACHE
 ```
 
+Sơ đồ tuần tự dưới đây tách riêng hai kịch bản **cache hit** (có trong cache, trả về ngay) và **cache miss** (không có, phải đọc DB rồi ghi lại cache):
+
+```mermaid
+sequenceDiagram
+    participant App as Ứng dụng
+    participant Cache as Cache
+    participant DB as Cơ sở dữ liệu
+    Note over App,DB: Trường hợp Cache Hit
+    App->>Cache: Tìm key
+    Cache-->>App: Trả dữ liệu (hit)
+    Note over App,DB: Trường hợp Cache Miss
+    App->>Cache: Tìm key
+    Cache-->>App: Không có (miss)
+    App->>DB: Đọc từ cơ sở dữ liệu
+    DB-->>App: Trả dữ liệu
+    App->>Cache: Ghi lại vào cache
+```
+
 - **Ưu:** Chỉ cache dữ liệu thực sự được dùng (lazy); cache lỗi/sập không làm sập hệ thống (vẫn đọc được DB); cài đặt đơn giản.
 - **Nhược:** Lần miss đầu chậm (3 bước); có thể xảy ra dữ liệu cũ (stale) nếu invalidate sai; logic cache nằm rải trong mã ứng dụng.
 - **Khi nào dùng:** Tải đọc nặng (read-heavy), chấp nhận dữ liệu hơi cũ, ví dụ hồ sơ người dùng, danh mục sản phẩm. Đây là mặc định của Redis/Memcached.

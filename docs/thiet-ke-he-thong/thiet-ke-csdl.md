@@ -65,6 +65,26 @@ Sharding (phân vùng ngang) chia bảng lớn thành nhiều mảnh trên nhi�
 - **Rebalancing**: khi thêm shard, dùng **consistent hashing** để chỉ dời một phần nhỏ dữ liệu (xem [Khả năng mở rộng](scalability.md)).
 - **Hotspot**: khoá lệch khiến một shard "nóng"; băm khoá hoặc thêm salt để rải đều.
 
+Sơ đồ so sánh hai chiến lược chia shard — theo khoảng (range) và theo băm (hash):
+
+```mermaid
+flowchart TD
+    subgraph RANGE["Sharding theo khoang (range)"]
+        R0["Router theo khoang khoa"]
+        R0 -->|"id 1-1000"| RS1["Shard 1"]
+        R0 -->|"id 1001-2000"| RS2["Shard 2"]
+        R0 -->|"id 2001-3000"| RS3["Shard 3"]
+    end
+    subgraph HASH["Sharding theo bam (hash)"]
+        H0["Router: hash(id) % 3"]
+        H0 -->|"du 0"| HS1["Shard 1"]
+        H0 -->|"du 1"| HS2["Shard 2"]
+        H0 -->|"du 2"| HS3["Shard 3"]
+    end
+```
+
+Range giữ được truy vấn khoảng (`BETWEEN`) trên một shard nhưng dễ tạo hotspot ở cuối dải (id mới luôn vào shard cuối); hash rải đều tránh hotspot nhưng truy vấn khoảng phải fan-out mọi shard.
+
 ```sql
 -- Ví dụ ý tưởng sharding theo băm user_id thành 4 shard
 -- (được thực thi ở tầng ứng dụng / middleware định tuyến, không phải 1 lệnh SQL)

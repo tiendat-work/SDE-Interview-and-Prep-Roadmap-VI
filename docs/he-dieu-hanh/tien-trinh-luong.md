@@ -56,6 +56,42 @@ Hiểu sự khác biệt tiến trình – luồng là nền tảng để thiế
 | Cách ly lỗi | Cao | Thấp (một luồng lỗi có thể sập cả tiến trình) |
 | Chuyển ngữ cảnh | Chậm (đổi bảng trang) | Nhanh hơn |
 
+Một tiến trình đơn luồng có đủ vùng nhớ riêng (Text/Data/Heap) và một ngăn xếp gắn với luồng duy nhất:
+
+```mermaid
+graph TB
+    subgraph P["Tiến trình (không gian địa chỉ riêng)"]
+        T["Text (mã lệnh)"]
+        D["Data (biến toàn cục)"]
+        H["Heap (cấp phát động)"]
+        S["Stack (ngăn xếp của luồng)"]
+    end
+    R["Thanh ghi + PC của luồng"] --> S
+```
+
+Khi tiến trình có nhiều luồng, chúng **chia sẻ** Text/Data/Heap nhưng mỗi luồng giữ ngăn xếp và tập thanh ghi riêng:
+
+```mermaid
+graph TB
+    subgraph P["Tiến trình đa luồng (chia sẻ bộ nhớ)"]
+        subgraph SHARED["Vùng chia sẻ giữa mọi luồng"]
+            T["Text (mã lệnh)"]
+            D["Data (biến toàn cục)"]
+            H["Heap (cấp phát động)"]
+        end
+        subgraph T1["Luồng 1"]
+            S1["Stack riêng"]
+            R1["Thanh ghi + PC riêng"]
+        end
+        subgraph T2["Luồng 2"]
+            S2["Stack riêng"]
+            R2["Thanh ghi + PC riêng"]
+        end
+    end
+    T1 -.->|"truy cập chung"| SHARED
+    T2 -.->|"truy cập chung"| SHARED
+```
+
 ### Trạng thái tiến trình (process states)
 Một tiến trình chuyển qua các trạng thái: **New → Ready → Running → Waiting (blocked) → Terminated**. Bộ lập lịch (scheduler) đưa tiến trình từ Ready lên Running; khi chờ I/O nó về Waiting; xong I/O quay lại Ready.
 

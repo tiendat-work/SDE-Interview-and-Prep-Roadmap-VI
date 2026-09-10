@@ -160,6 +160,26 @@ pipelines:
 
 Một số biến môi trường dựng sẵn hữu ích: `$BITBUCKET_BRANCH` (tên nhánh), `$BITBUCKET_COMMIT` (hash commit), `$BITBUCKET_TAG` (tên tag), `$BITBUCKET_BUILD_NUMBER` (số thứ tự build), `$BITBUCKET_PR_ID` (mã pull request).
 
+### Sơ đồ pipeline CI/CD (build → test → deploy)
+
+Một pipeline Bitbucket điển hình chạy tuần tự qua các giai đoạn: lấy mã, build, kiểm thử, rồi triển khai theo môi trường. Bước triển khai production thường đặt `trigger: manual` để cần bấm nút phê duyệt.
+
+```mermaid
+flowchart LR
+    P["Push / Pull request"] --> B["Build<br/>(npm ci, biên dịch)"]
+    B --> T["Test<br/>(lint, unit, tích hợp)"]
+    T --> Q{"Mọi kiểm thử đạt?"}
+    Q -->|"Không"| F["Báo đỏ<br/>(dừng, thông báo lỗi)"]
+    Q -->|"Có"| S["Deploy staging<br/>(tự động)"]
+    S --> M{"Phê duyệt thủ công?"}
+    M -->|"Chờ bấm nút"| PR["Deploy production<br/>(trigger: manual)"]
+    PR --> D["Hoàn tất triển khai"]
+```
+
+- **Build** và **Test** chạy trong container Docker mỗi `step`; artifact (ví dụ `dist/**`) được truyền sang bước sau.
+- Chỉ khi mọi kiểm thử đạt (**merge checks** xanh) pipeline mới đi tiếp tới triển khai.
+- **Staging** triển khai tự động; **production** thường gắn `trigger: manual` để kiểm soát rủi ro.
+
 ## Luồng làm việc cơ bản
 Luồng làm việc phổ biến với Bitbucket (feature branch workflow):
 

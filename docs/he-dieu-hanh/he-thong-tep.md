@@ -262,6 +262,37 @@ Cách hệ tệp lưu các khối của một tệp:
 - **Cấp phát liên kết (linked):** mỗi khối trỏ tới khối kế — linh hoạt nhưng truy cập ngẫu nhiên chậm (FAT là biến thể).
 - **Cấp phát chỉ mục (indexed):** một khối chỉ mục chứa con trỏ tới mọi khối dữ liệu — hỗ trợ truy cập ngẫu nhiên tốt; inode của Unix theo hướng này.
 
+**Cấp phát liền kề:** tệp chiếm dải khối liên tục, chỉ cần lưu khối bắt đầu + độ dài:
+
+```mermaid
+graph LR
+    META["Thư mục: tệp A → bắt đầu=2, dài=4"] --> B2["Khối 2"]
+    B2 --> B3["Khối 3"]
+    B3 --> B4["Khối 4"]
+    B4 --> B5["Khối 5"]
+```
+
+**Cấp phát liên kết:** mỗi khối lưu con trỏ tới khối kế; các khối rải rác khắp đĩa:
+
+```mermaid
+graph LR
+    META["Thư mục: tệp A → đầu=9, cuối=25"] --> B9["Khối 9"]
+    B9 -->|"next"| B16["Khối 16"]
+    B16 -->|"next"| B1["Khối 1"]
+    B1 -->|"next"| B25["Khối 25 (null)"]
+```
+
+**Cấp phát chỉ mục:** một khối chỉ mục gom toàn bộ con trỏ tới các khối dữ liệu:
+
+```mermaid
+graph TB
+    META["Thư mục: tệp A → khối chỉ mục = 19"] --> IDX["Khối chỉ mục 19<br/>(mảng con trỏ)"]
+    IDX --> D9["Khối dữ liệu 9"]
+    IDX --> D16["Khối dữ liệu 16"]
+    IDX --> D1["Khối dữ liệu 1"]
+    IDX --> D25["Khối dữ liệu 25"]
+```
+
 ### Bộ đệm và độ bền
 Hệ tệp dùng **page cache** trong RAM để tăng tốc đọc/ghi; lệnh `fsync()` buộc ghi dữ liệu xuống đĩa thật, đảm bảo độ bền (durability) trước khi báo thành công — quan trọng với cơ sở dữ liệu và giao dịch.
 

@@ -34,6 +34,18 @@ Vì phân vùng mạng là điều không thể tránh trong thực tế, lựa 
 
 Mở rộng của CAP là **định lý PACELC**: khi có Partition thì chọn A hay C; Else (bình thường) thì đánh đổi giữa Latency và Consistency.
 
+Sơ đồ tam giác CAP — mỗi hệ chỉ nằm trên một cạnh (chọn 2 trong 3 khi có phân vùng):
+
+```mermaid
+graph TD
+    C["Consistency - Nhat quan"] --- A["Availability - San sang"]
+    A --- P["Partition tolerance - Chiu phan vung"]
+    P --- C
+    C -. "CP: HBase, etcd, Spanner" .- P
+    A -. "AP: Cassandra, DynamoDB" .- P
+    C -. "CA: chi trong 1 node (khong phan tan that)" .- A
+```
+
 Sơ đồ ra quyết định theo CAP khi mạng bị phân vùng:
 
 ```mermaid
@@ -122,6 +134,19 @@ Cả hai giải cùng bài toán **đồng thuận**: nhiều node thống nhấ
 Điểm chung cốt lõi: **cần đa số (quorum = ⌊N/2⌋+1)** để tiến; cụm N node chịu được tối đa ⌊(N−1)/2⌋ node hỏng (5 node chịu 2 hỏng). Đây là lý do cụm đồng thuận thường có số node **lẻ**.
 
 ## Ví dụ
+
+Sơ đồ quorum đọc/ghi với N = 3, W = 2, R = 2 (vì W + R > N nên tập ghi và tập đọc luôn giao nhau ≥ 1 node mới nhất):
+
+```mermaid
+flowchart LR
+    Client["Client"] -->|"ghi x=5 (W=2)"| A["Node A: 5"]
+    Client -->|"ghi x=5 (W=2)"| B["Node B: 5"]
+    Client -.->|"loi mang"| C["Node C: cu"]
+    Reader["Reader"] -->|"doc (R=2)"| B
+    Reader -->|"doc (R=2)"| C
+    B -->|"tra ve gia tri moi nhat 5"| Reader
+```
+
 ```text
 Bỏ phiếu đa số (quorum) với N = 3 bản sao, W = 2, R = 2:
 

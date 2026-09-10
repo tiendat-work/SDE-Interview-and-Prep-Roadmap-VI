@@ -48,6 +48,18 @@ Tìm đường đi ngắn nhất từ một nguồn tới mọi đích với tr�
 Đường đi ngắn nhất A→D được truy vết qua "nút cha" (predecessor): D←C←B←A,
 tức **A→B→C→D** với tổng chi phí 4.
 
+Sơ đồ dưới tóm tắt từng bước chốt nút và relax các đỉnh của Dijkstra:
+
+```mermaid
+flowchart TB
+    S0["Khởi tạo: dist[A]=0 · B=C=D=∞"]
+    S1["Chốt A (0) → relax: dist[B]=1 · dist[C]=4"]
+    S2["Chốt B (1) → relax: dist[C]=3 (1+2) · dist[D]=6 (1+5)"]
+    S3["Chốt C (3) → relax: dist[D]=4 (3+1)"]
+    S4["Chốt D (4) → xong · Đường A→B→C→D, chi phí 4"]
+    S0 --> S1 --> S2 --> S3 --> S4
+```
+
 !!! warning "Vì sao Dijkstra sai với trọng số âm"
     Dijkstra "chốt" một nút ngay khi lấy ra khỏi hàng đợi, giả định rằng không
     có đường nào rẻ hơn xuất hiện sau. Với cạnh âm, một đường đi qua nút chốt

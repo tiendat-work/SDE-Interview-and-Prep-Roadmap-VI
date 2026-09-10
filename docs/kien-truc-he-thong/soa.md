@@ -65,6 +65,22 @@ ESB là "xương sống" của SOA truyền thống, đóng vai trò trung gian 
 
 **Rủi ro của ESB:** Vì mọi thứ đi qua ESB nên nó dễ trở thành **điểm nghẽn (bottleneck)** và **điểm lỗi tập trung (single point of failure)**. ESB cũng thường tích tụ quá nhiều logic nghiệp vụ ("ESB béo"), khiến việc thay đổi trở nên rủi ro và tập trung quyền lực vào đội quản trị ESB.
 
+Sơ đồ tuần tự dưới đây minh hoạ ESB điều phối (orchestration) một quy trình nghiệp vụ "đặt hàng" bằng cách gọi lần lượt nhiều dịch vụ và tổng hợp kết quả:
+
+```mermaid
+sequenceDiagram
+    participant App as Ứng dụng A
+    participant ESB as ESB
+    participant TT as Dịch vụ Thanh toán
+    participant KHO as Dịch vụ Kho hàng
+    App->>ESB: Yêu cầu đặt hàng DH001
+    ESB->>TT: Xử lý thanh toán
+    TT-->>ESB: Thanh toán thành công
+    ESB->>KHO: Trừ tồn kho
+    KHO-->>ESB: Đã cập nhật tồn kho
+    ESB-->>App: Đặt hàng hoàn tất
+```
+
 ### SOAP và WSDL chi tiết
 
 **SOAP (Simple Object Access Protocol)** là giao thức trao đổi thông điệp dựa trên XML. Một thông điệp SOAP gồm:

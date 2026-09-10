@@ -170,5 +170,29 @@ graph TD
     D --> D1["Đã commit là còn mãi"]
 ```
 
+## Sơ đồ tuần tự: chuyển khoản có rollback
+
+Sơ đồ minh hoạ một giao dịch chuyển khoản: khi bước cộng tiền cho B thất bại (ví dụ vi phạm ràng buộc), CSDL dùng undo log để hoàn tác (rollback) bước trừ tiền A đã thực hiện — đảm bảo tính nguyên tử.
+
+```mermaid
+sequenceDiagram
+    participant App as Ứng dụng
+    participant DB as CSDL
+    participant Log as Undo Log
+    App->>DB: BEGIN
+    App->>DB: UPDATE trừ 1 triệu ở A
+    DB->>Log: Ghi giá trị cũ của A
+    DB-->>App: OK (A đã trừ)
+    App->>DB: UPDATE cộng 1 triệu cho B
+    DB-->>App: LỖI vi phạm ràng buộc
+    App->>DB: ROLLBACK
+    DB->>Log: Đọc lại giá trị cũ của A
+    Log-->>DB: Khôi phục A về ban đầu
+    DB-->>App: Đã hoàn tác, không mất tiền
+```
+
+- Nhờ **atomicity**, không tồn tại trạng thái nửa vời "A đã trừ nhưng B chưa cộng".
+- **Undo log** lưu giá trị cũ để khôi phục khi rollback; nếu commit thành công thì log này được bỏ đi.
+
 ## Tham khảo
 - Xem thêm: [Giao dịch & mức cô lập](giao-dich.md), [NoSQL](nosql.md), [SQL](sql.md)

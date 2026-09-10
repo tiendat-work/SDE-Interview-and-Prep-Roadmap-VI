@@ -27,6 +27,20 @@ Không gian tên miền có dạng cây, đọc từ phải sang trái:
    www.example.com                          <- Subdomain
 ```
 
+Sơ đồ cây phân cấp DNS: từ Root xuống TLD rồi tới máy chủ có thẩm quyền:
+
+```mermaid
+graph TB
+    Root["Root (.)"] --> COM[".com"]
+    Root --> ORG[".org"]
+    Root --> VN[".vn"]
+    COM --> EX["example.com (Authoritative)"]
+    EX --> WWW["www.example.com"]
+    EX --> MAIL["mail.example.com"]
+    VN --> GOV["gov.vn"]
+    VN --> EDU["edu.vn"]
+```
+
 ### Các loại máy chủ DNS
 | Loại | Vai trò |
 |------|---------|

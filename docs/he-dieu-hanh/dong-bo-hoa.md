@@ -26,6 +26,36 @@ graph LR
 ### Mutex (khoá loại trừ lẫn nhau)
 Khoá nhị phân có chủ sở hữu: luồng nào **lock** thì phải chính luồng đó **unlock**. Dùng bảo vệ vùng găng ngắn.
 
+Hai luồng cùng muốn vào vùng găng, nhưng mutex chỉ cho một luồng vào tại một thời điểm; luồng kia bị chặn tới khi khoá được nhả:
+
+```mermaid
+sequenceDiagram
+    participant A as Luồng A
+    participant M as Mutex
+    participant CS as Vùng găng
+    participant B as Luồng B
+    A->>M: lock() thành công
+    A->>CS: vào vùng găng
+    B->>M: lock() bị chặn (đang bị A giữ)
+    A->>CS: đọc-sửa-ghi tài nguyên chung
+    A->>M: unlock()
+    M->>B: cấp khoá cho B
+    B->>CS: vào vùng găng
+    B->>M: unlock()
+```
+
+Cấu trúc chuẩn của một vùng găng gồm bốn phần: đoạn vào (entry), vùng găng, đoạn ra (exit) và đoạn còn lại (remainder):
+
+```mermaid
+graph TB
+    R1["Đoạn còn lại (remainder)"] --> E["Đoạn vào: acquire/lock"]
+    E --> CS["Vùng găng: truy cập tài nguyên chung"]
+    CS --> X["Đoạn ra: release/unlock"]
+    X --> R2["Đoạn còn lại (remainder)"]
+    E -.->|"nếu khoá bận"| W["Chờ (bị chặn)"]
+    W -.->|"khoá được nhả"| E
+```
+
 ### Semaphore
 Biến đếm với hai thao tác nguyên tử **wait (P)** giảm 1 và **signal (V)** tăng 1; nếu giá trị < 0 luồng bị chặn.
 - **Binary semaphore** (0/1): giống mutex nhưng không có khái niệm chủ sở hữu.

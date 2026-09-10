@@ -68,6 +68,21 @@ Với băm modulo `hash(key) % N`, khi N đổi (thêm/bớt node) **hầu hết
 Sơ đồ vòng băm với node ảo:
 
 ```mermaid
+graph LR
+    subgraph RING["Vong bam theo chieu kim dong ho (0 -> 2^32-1 -> 0)"]
+        P0["vi tri 0"] --> NA1["Node A"]
+        NA1 --> K1["key user42"]
+        K1 --> NB1["Node B"]
+        NB1 --> K2["key cart99"]
+        K2 --> NC1["Node C"]
+        NC1 --> NA2["Node A (vnode 2)"]
+        NA2 --> P0
+    end
+```
+
+Mỗi khoá đi theo chiều kim đồng hồ tới node đầu tiên gặp: `user42` thuộc Node B, `cart99` thuộc Node C. Khi thêm/bớt một node, chỉ các khoá trong cung liền kề bị dịch chuyển.
+
+```mermaid
 flowchart LR
     K1["key: user42"] -->|"CW →"| VB["vnode B#3"]
     K2["key: cart99"] -->|"CW →"| VA["vnode A#7"]

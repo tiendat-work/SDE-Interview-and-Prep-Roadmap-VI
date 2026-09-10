@@ -29,6 +29,29 @@ Content-Length: 128
 <html>...</html>                <- body
 ```
 
+Sơ đồ dưới tách rõ các phần cấu trúc của một HTTP request và response:
+
+```mermaid
+flowchart LR
+    subgraph REQ["HTTP Request"]
+        direction TB
+        R1["Dòng yêu cầu: Method + Path + Version"]
+        R2["Các header: Host, Accept, Cookie..."]
+        R3["Dòng trống"]
+        R4["Body (tuỳ chọn): dữ liệu gửi lên"]
+        R1 --> R2 --> R3 --> R4
+    end
+    subgraph RES["HTTP Response"]
+        direction TB
+        S1["Dòng trạng thái: Version + Code + Lý do"]
+        S2["Các header: Content-Type, Set-Cookie..."]
+        S3["Dòng trống"]
+        S4["Body (tuỳ chọn): nội dung trả về"]
+        S1 --> S2 --> S3 --> S4
+    end
+    REQ -->|"gửi/nhận"| RES
+```
+
 Sơ đồ tuần tự vòng đời một yêu cầu/phản hồi HTTP (qua HTTPS):
 
 ```mermaid
@@ -72,6 +95,23 @@ PATCH chỉ gửi phần thay đổi. DELETE idempotent vì xoá lần 2 vẫn c
 | 3xx | Chuyển hướng (Redirection) | 301 Moved Permanently, 302 Found, 304 Not Modified |
 | 4xx | Lỗi phía client | 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 429 Too Many Requests |
 | 5xx | Lỗi phía server | 500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable |
+
+Sơ đồ dưới nhóm các mã trạng thái theo 5 nhóm chính:
+
+```mermaid
+flowchart TB
+    ROOT["Mã trạng thái HTTP"]
+    ROOT --> G1["1xx — Thông tin"]
+    ROOT --> G2["2xx — Thành công"]
+    ROOT --> G3["3xx — Chuyển hướng"]
+    ROOT --> G4["4xx — Lỗi phía client"]
+    ROOT --> G5["5xx — Lỗi phía server"]
+    G1 --> E1["100 Continue"]
+    G2 --> E2["200 OK · 201 Created · 204 No Content"]
+    G3 --> E3["301 Moved · 302 Found · 304 Not Modified"]
+    G4 --> E4["400 · 401 · 403 · 404 · 429"]
+    G5 --> E5["500 · 502 · 503 · 504"]
+```
 
 Vài phân biệt hay hỏi:
 

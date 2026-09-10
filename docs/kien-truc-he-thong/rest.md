@@ -38,6 +38,16 @@ Một dịch vụ web (web service) tuân theo các nguyên tắc của REST có
 - **PUT**: Cập nhật tài nguyên hiện có trên server.
 - **DELETE**: Xóa tài nguyên khỏi server.
 
+Bảng dưới đây ánh xạ các phương thức HTTP sang các thao tác CRUD (Create-Read-Update-Delete) tương ứng:
+
+| Phương thức HTTP | Hành động CRUD | Ý nghĩa | Bất biến (idempotent) |
+|------------------|----------------|---------|-----------------------|
+| POST | Create (Tạo) | Tạo mới một tài nguyên | Không |
+| GET | Read (Đọc) | Lấy dữ liệu tài nguyên | Có |
+| PUT | Update (Cập nhật/thay thế) | Thay thế toàn bộ tài nguyên | Có |
+| PATCH | Update (Cập nhật một phần) | Sửa đổi một phần tài nguyên | Không |
+| DELETE | Delete (Xóa) | Xóa tài nguyên | Có |
+
 ## Các thành phần của kiến trúc REST
 
 1. **Tài nguyên (Resources)**: Khái niệm trừu tượng cốt lõi trong REST là tài nguyên, có thể là bất kỳ loại đối tượng, dữ liệu hay dịch vụ nào có thể truy cập trên server. Mỗi tài nguyên được định danh bằng một URI duy nhất.
@@ -83,6 +93,23 @@ flowchart LR
     API -->|"Truy vấn / cập nhật"| DB[("Cơ sở dữ liệu")]
     DB -->|"Dữ liệu"| API
     API -->|"Phản hồi + mã trạng thái HTTP"| C
+```
+
+Sơ đồ tuần tự dưới đây mô tả chi tiết vòng đời một yêu cầu đi qua các tầng (client → gateway → server → cơ sở dữ liệu) và đường phản hồi trở lại:
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant LB as Bộ cân bằng tải
+    participant API as Máy chủ REST API
+    participant DB as Cơ sở dữ liệu
+    C->>LB: GET /users/123
+    LB->>API: Chuyển tiếp yêu cầu
+    API->>API: Xác thực + kiểm tra hợp lệ
+    API->>DB: Truy vấn dữ liệu người dùng
+    DB-->>API: Trả bản ghi
+    API-->>LB: 200 OK + JSON
+    LB-->>C: Phản hồi cho client
 ```
 
 1. **Định danh tài nguyên**:

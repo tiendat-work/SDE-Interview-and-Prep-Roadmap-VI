@@ -104,6 +104,16 @@ Khi đi xuống các tầng, mỗi tầng thêm phần tiêu đề (header) riê
 ```
 Bên nhận sẽ gỡ bỏ (de-encapsulation) tiêu đề theo chiều ngược lại.
 
+Sơ đồ dưới minh hoạ dữ liệu bị đóng gói qua từng tầng, mỗi tầng thêm header:
+
+```mermaid
+flowchart TB
+    A["Ứng dụng — Data"] --> B["Giao vận — TCP Header + Data = Segment"]
+    B --> C["Mạng — IP Header + TCP Header + Data = Packet"]
+    C --> D["Liên kết dữ liệu — Frame Header + IP + TCP + Data + FCS = Frame"]
+    D --> E["Vật lý — chuỗi bit 0101..."]
+```
+
 ### So sánh TCP và UDP
 TCP (Transmission Control Protocol) và UDP (User Datagram Protocol) đều là
 giao thức tầng Giao vận nhưng khác nhau căn bản:
@@ -172,6 +182,22 @@ Client                                Server
   luỹ nhiều socket ở trạng thái TIME_WAIT.
 - **Half-close:** một bên có thể gửi FIN (hết gửi) nhưng vẫn nhận dữ liệu từ
   bên kia cho đến khi bên kia cũng FIN.
+
+Sơ đồ tuần tự của đóng kết nối 4 bước:
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    C->>S: FIN (hết dữ liệu gửi)
+    Note right of C: 1. Client chủ động đóng
+    S->>C: ACK
+    Note left of S: 2. Server xác nhận
+    S->>C: FIN (server cũng hết gửi)
+    Note left of S: 3. Server đóng chiều còn lại
+    C->>S: ACK
+    Note right of C: 4. Client xác nhận → TIME_WAIT
+```
 
 ### Cửa sổ trượt (Sliding Window) & kiểm soát luồng
 TCP không gửi từng byte rồi chờ ACK (quá chậm) mà cho phép gửi trước một

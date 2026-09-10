@@ -26,6 +26,17 @@ Deadlock **chỉ** xảy ra khi cả 4 điều kiện đồng thời đúng:
 3. **Không tước đoạt (no preemption):** tài nguyên chỉ được nhả tự nguyện, không thể cưỡng chế lấy lại.
 4. **Chờ vòng tròn (circular wait):** tồn tại chuỗi P1→P2→...→Pn→P1, mỗi tiến trình chờ tài nguyên do cái kế tiếp giữ.
 
+Bốn điều kiện phải đồng thời đúng thì deadlock mới xảy ra — phá vỡ **bất kỳ một** điều kiện là ngăn được deadlock:
+
+```mermaid
+graph TB
+    ME["1. Loại trừ lẫn nhau<br/>(mutual exclusion)"] --> DL{"BẾ TẮC<br/>(deadlock)"}
+    HW["2. Giữ và chờ<br/>(hold and wait)"] --> DL
+    NP["3. Không tước đoạt<br/>(no preemption)"] --> DL
+    CW["4. Chờ vòng tròn<br/>(circular wait)"] --> DL
+    DL -->|"phá 1 điều kiện bất kỳ"| SAFE["Ngăn được deadlock"]
+```
+
 Phá vỡ **bất kỳ một** điều kiện là ngăn được deadlock.
 
 ### Đồ thị cấp phát tài nguyên (resource-allocation graph)
