@@ -1,5 +1,7 @@
 # <span style="color:darkslategray;">SDE Interview and Prep Roadmap</span>
 
+> 📘 **Bản web tiếng Việt (MkDocs):** chạy `mkdocs serve` sau khi `pip install -r requirements.txt`, hoặc xem bản deploy tại GitHub Pages. Toàn bộ kiến thức đã được tổng hợp & dịch sang tiếng Việt trong thư mục `docs/` (xem tiến độ ở `CONTENT_MANIFEST.md`).
+
 ## <span style="color:darkolivegreen;">Overview</span>
 
 Welcome to the SDE Interview Preparation Roadmap! This repository is not just about my personal journey; it's a collaborative space for collective learning. As I prepare for Software Development Engineer (SDE) interviews, I've created a comprehensive checklist to guide my preparation. By sharing this roadmap, I aim to foster a community of learners where we can all grow together. It covers various domains including **Data Structures, Algorithms, System Design, Operating Systems, Networking, Databases, Programming Languages and Concepts, System Architecture, Problem-solving and Coding, as well as Behavioral and Soft Skills**.
