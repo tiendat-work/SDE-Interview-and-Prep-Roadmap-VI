@@ -20,6 +20,19 @@ Ta chia các thuật toán sắp xếp thành hai nhóm chính:
 
 Một khái niệm quan trọng là **tính ổn định (stability)**: thuật toán ổn định giữ nguyên thứ tự tương đối của các phần tử có cùng khóa.
 
+## Hoạt hình trực quan
+
+Chọn thuật toán ở ô bên dưới để xem quá trình sắp xếp chạy động. Mỗi cột là một giá trị; hoạt hình tự trộn lại và lặp liên tục.
+
+<div class="sv-legend">
+  <span><i style="background:var(--sv-bar)"></i> chưa xử lý</span>
+  <span><i style="background:var(--sv-compare)"></i> đang so sánh</span>
+  <span><i style="background:var(--sv-swap)"></i> đang đổi chỗ</span>
+  <span><i style="background:var(--sv-sorted)"></i> đã đúng vị trí</span>
+</div>
+
+<div class="sort-viz" data-algos="bubble,selection,insertion,merge,quick" data-size="32" data-speed="55"></div>
+
 ### Bubble Sort (sắp xếp nổi bọt)
 
 **Ý tưởng:** duyệt qua mảng nhiều lần, đổi chỗ hai phần tử kề nhau nếu sai thứ tự; phần tử lớn dần "nổi" về cuối. **Thời gian:** `O(n²)`; **bộ nhớ:** `O(1)`; **ổn định:** có.

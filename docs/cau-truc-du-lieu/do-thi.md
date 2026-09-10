@@ -4,6 +4,16 @@
 
 Đồ thị (graph) là một cấu trúc dữ liệu phi tuyến tính gồm một tập **đỉnh (vertices/nodes)** và một tập **cạnh (edges)** nối các đỉnh lại với nhau. Khác với cây, đồ thị có thể chứa chu trình (cycle) và mỗi đỉnh có thể nối tới nhiều đỉnh khác mà không cần quan hệ cha–con. Đồ thị mô hình hóa mọi quan hệ "nối kết": mạng xã hội, bản đồ đường đi, mạng máy tính, phụ thuộc tác vụ.
 
+Ví dụ một đồ thị vô hướng đơn giản gồm 4 đỉnh:
+
+```mermaid
+graph LR
+    A((A)) --- B((B))
+    A --- C((C))
+    B --- C
+    C --- D((D))
+```
+
 ## Khi nào dùng / Vì sao quan trọng
 
 - **Mạng xã hội:** đỉnh = người dùng, cạnh = quan hệ bạn bè.

@@ -40,7 +40,11 @@ theme:
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
@@ -61,8 +65,12 @@ plugins:
   - minify:
       minify_html: true
 
+extra_css:
+  - assets/css/sort-viz.css
+
 extra_javascript:
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+  - assets/js/sort-viz.js
 
 nav:
   - Trang chủ: index.md
