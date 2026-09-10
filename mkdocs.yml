@@ -1,0 +1,90 @@
+site_name: Lộ trình ôn thi Kỹ sư phần mềm (SDE)
+site_description: Tổng hợp kiến thức phỏng vấn SDE bằng tiếng Việt
+site_url: https://aasthas2022.github.io/SDE-Interview-and-Prep-Roadmap/
+repo_url: https://github.com/aasthas2022/SDE-Interview-and-Prep-Roadmap
+repo_name: SDE-Interview-and-Prep-Roadmap
+docs_dir: docs
+copyright: "Tổng hợp phục vụ học tập"
+
+theme:
+  name: material
+  language: vi
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Chuyển sang nền tối
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Chuyển sang nền sáng
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.arithmatex:
+      generic: true
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+
+plugins:
+  - search:
+      lang: vi
+  - minify:
+      minify_html: true
+
+extra_javascript:
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - Trang chủ: index.md
+  - Cấu trúc dữ liệu:
+      - cau-truc-du-lieu/index.md
+  - Giải thuật:
+      - giai-thuat/index.md
+  - Thiết kế hệ thống:
+      - thiet-ke-he-thong/index.md
+  - Hệ điều hành:
+      - he-dieu-hanh/index.md
+  - Mạng máy tính:
+      - mang-may-tinh/index.md
+  - Cơ sở dữ liệu:
+      - co-so-du-lieu/index.md
+  - Ngôn ngữ lập trình:
+      - ngon-ngu-lap-trinh/index.md
+  - Kiến trúc hệ thống:
+      - kien-truc-he-thong/index.md
+  - Giải quyết vấn đề:
+      - giai-quyet-van-de/index.md
+  - Quản lý phiên bản:
+      - quan-ly-phien-ban/index.md
+  - Tóm tắt sách:
+      - tom-tat-sach/index.md

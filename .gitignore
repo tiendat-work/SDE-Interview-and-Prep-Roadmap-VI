@@ -1,0 +1,7 @@
+.venv/
+site/
+.idea/
+__pycache__/
+*.pyc
+.DS_Store
+_pdf_extract/
