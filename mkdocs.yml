@@ -68,8 +68,12 @@ nav:
   - Trang chủ: index.md
   - Cấu trúc dữ liệu:
       - cau-truc-du-lieu/index.md
+      - Mảng: cau-truc-du-lieu/mang.md
+      - Danh sách liên kết: cau-truc-du-lieu/danh-sach-lien-ket.md
   - Giải thuật:
       - giai-thuat/index.md
+      - Hai con trỏ: giai-thuat/hai-con-tro.md
+      - Cửa sổ trượt: giai-thuat/cua-so-truot.md
   - Thiết kế hệ thống:
       - thiet-ke-he-thong/index.md
   - Hệ điều hành:
@@ -78,13 +82,19 @@ nav:
       - mang-may-tinh/index.md
   - Cơ sở dữ liệu:
       - co-so-du-lieu/index.md
+      - Cẩm nang phỏng vấn CSDL: co-so-du-lieu/cam-nang-phong-van-csdl.md
   - Ngôn ngữ lập trình:
       - ngon-ngu-lap-trinh/index.md
   - Kiến trúc hệ thống:
       - kien-truc-he-thong/index.md
+      - RESTful: kien-truc-he-thong/rest.md
+      - Microservices: kien-truc-he-thong/microservices.md
   - Giải quyết vấn đề:
       - giai-quyet-van-de/index.md
   - Quản lý phiên bản:
       - quan-ly-phien-ban/index.md
+      - Git: quan-ly-phien-ban/git.md
   - Tóm tắt sách:
       - tom-tat-sach/index.md
+      - System Design Interview (Alex Xu): tom-tat-sach/system-design-interview-alex-xu.md
+      - Designing Data-Intensive Applications (Kleppmann): tom-tat-sach/ddia-kleppmann.md

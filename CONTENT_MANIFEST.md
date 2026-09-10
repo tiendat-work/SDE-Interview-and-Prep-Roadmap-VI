@@ -3,8 +3,8 @@
 Trạng thái: `[ ]` chưa làm · `[~]` đang làm (ghi tên agent) · `[x]` xong & build pass
 
 ## 1. Cấu trúc dữ liệu
-- [ ] docs/cau-truc-du-lieu/mang.md  (di cư từ Data Structures/Arrays.md)
-- [ ] docs/cau-truc-du-lieu/danh-sach-lien-ket.md  (di cư từ LinkedList.md + .py)
+- [x] docs/cau-truc-du-lieu/mang.md  (di cư từ Data Structures/Arrays.md)
+- [x] docs/cau-truc-du-lieu/danh-sach-lien-ket.md  (di cư từ LinkedList.md + .py)
 - [ ] docs/cau-truc-du-lieu/ngan-xep.md
 - [ ] docs/cau-truc-du-lieu/hang-doi.md
 - [ ] docs/cau-truc-du-lieu/cay.md
@@ -12,8 +12,8 @@ Trạng thái: `[ ]` chưa làm · `[~]` đang làm (ghi tên agent) · `[x]` xo
 - [ ] docs/cau-truc-du-lieu/bang-bam.md
 
 ## 2. Giải thuật
-- [ ] docs/giai-thuat/hai-con-tro.md  (di cư Two-Pointer-Algo.md + .py)
-- [ ] docs/giai-thuat/cua-so-truot.md  (di cư Sliding-Window-Algo.md)
+- [x] docs/giai-thuat/hai-con-tro.md  (di cư Two-Pointer-Algo.md + .py)
+- [x] docs/giai-thuat/cua-so-truot.md  (di cư Sliding-Window-Algo.md)
 - [ ] docs/giai-thuat/sap-xep.md
 - [ ] docs/giai-thuat/tim-kiem.md
 - [ ] docs/giai-thuat/quy-hoach-dong.md
@@ -44,7 +44,7 @@ Trạng thái: `[ ]` chưa làm · `[~]` đang làm (ghi tên agent) · `[x]` xo
 - [ ] docs/mang-may-tinh/dinh-tuyen.md
 
 ## 6. Cơ sở dữ liệu
-- [ ] docs/co-so-du-lieu/cam-nang-phong-van-csdl.md  (di cư database-interview-prep-guide.md)
+- [x] docs/co-so-du-lieu/cam-nang-phong-van-csdl.md  (di cư database-interview-prep-guide.md)
 - [ ] docs/co-so-du-lieu/sql.md
 - [ ] docs/co-so-du-lieu/nosql.md
 - [ ] docs/co-so-du-lieu/acid.md
@@ -64,8 +64,8 @@ Trạng thái: `[ ]` chưa làm · `[~]` đang làm (ghi tên agent) · `[x]` xo
 - [ ] docs/ngon-ngu-lap-trinh/de-quy.md
 
 ## 8. Kiến trúc hệ thống
-- [ ] docs/kien-truc-he-thong/rest.md  (di cư RESTfulArchitecture.md)
-- [ ] docs/kien-truc-he-thong/microservices.md  (di cư Microservices.md)
+- [x] docs/kien-truc-he-thong/rest.md  (di cư RESTfulArchitecture.md)
+- [x] docs/kien-truc-he-thong/microservices.md  (di cư Microservices.md)
 - [ ] docs/kien-truc-he-thong/client-server.md
 - [ ] docs/kien-truc-he-thong/soa.md
 - [ ] docs/kien-truc-he-thong/message-queue.md
@@ -82,9 +82,9 @@ Trạng thái: `[ ]` chưa làm · `[~]` đang làm (ghi tên agent) · `[x]` xo
 - [ ] docs/giai-quyet-van-de/toi-uu.md
 
 ## 10. Quản lý phiên bản
-- [ ] docs/quan-ly-phien-ban/git.md  (di cư Git.md)
+- [x] docs/quan-ly-phien-ban/git.md  (di cư Git.md)
 - [ ] docs/quan-ly-phien-ban/bitbucket.md
 
 ## 11. Tóm tắt sách
-- [ ] docs/tom-tat-sach/system-design-interview-alex-xu.md
-- [ ] docs/tom-tat-sach/ddia-kleppmann.md
+- [x] docs/tom-tat-sach/system-design-interview-alex-xu.md
+- [x] docs/tom-tat-sach/ddia-kleppmann.md
