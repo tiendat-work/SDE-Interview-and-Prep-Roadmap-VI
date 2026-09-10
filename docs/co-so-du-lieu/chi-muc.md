@@ -20,6 +20,17 @@ Cây cân bằng (balanced tree) đa nhánh — loại chỉ mục mặc định
 ```
 Phù hợp cho: so sánh bằng (`=`), khoảng (`BETWEEN`, `<`, `>`), sắp xếp, prefix `LIKE 'abc%'`.
 
+**Vì sao B+ tree thắng B-tree cho chỉ mục CSDL:**
+
+| Tiêu chí | B-tree | B+ tree |
+|----------|--------|---------|
+| Vị trí dữ liệu | Ở mọi nút (cả trong lẫn lá) | Chỉ ở nút lá |
+| Fan-out (số nhánh/nút) | Thấp hơn (nút trong tốn chỗ cho data) | Cao hơn → cây thấp hơn |
+| Quét khoảng | Chậm (phải duyệt lên xuống) | Nhanh (nút lá nối thành danh sách) |
+| Số lần đọc đĩa | Nhiều hơn | Ít hơn (cây thấp) |
+
+Nút trong của B+ tree chỉ chứa khoá định hướng → nhồi được nhiều khoá hơn mỗi trang đĩa (fan-out lớn), cây thấp hơn, ít lần đọc đĩa hơn. Nút lá nối thành danh sách liên kết nên `WHERE luong BETWEEN 10 AND 20` chỉ cần tìm điểm đầu rồi đi ngang.
+
 ### Hash index
 Dùng bảng băm (hash table): áp hàm băm lên khoá để tìm vị trí trong O(1) trung bình.
 - **Ưu:** cực nhanh cho tra cứu bằng (`=`).
@@ -115,6 +126,51 @@ Chỉ mục dễ bị "vô hiệu hoá" một cách vô tình:
 3. Đánh đổi khi thêm nhiều chỉ mục là gì?
 4. Quy tắc tiền tố trái của chỉ mục ghép hoạt động ra sao?
 5. Cardinality ảnh hưởng thế nào tới hiệu quả chỉ mục? Vì sao bitmap hợp cột low-cardinality?
+
+## Playground: quét tuyến tính vs tìm nhị phân (chỉ mục)
+
+Demo so sánh **quét tuần tự** (không chỉ mục, O(n)) với **tìm nhị phân** trên mảng đã sắp xếp (mô phỏng chỉ mục B-tree, O(log n)), đếm số bước thực tế. Đổi `N` hoặc `canTim` để thấy chênh lệch càng lớn khi dữ liệu càng nhiều.
+
+<div class="js-demo" data-title="Quét tuyến tính vs tìm nhị phân — đếm bước">
+<textarea class="js-demo-src">
+const N = 1000;                 // số bản ghi
+const canTim = 987;             // giá trị cần tìm
+
+// Bảng đã sắp xếp theo khoá (như dữ liệu có chỉ mục B-tree)
+const data = Array.from({ length: N }, (_, i) => i + 1);
+
+// 1) Quét tuần tự — không chỉ mục: duyệt từng hàng
+function quetTuyenTinh(arr, target) {
+  let buoc = 0;
+  for (let i = 0; i < arr.length; i++) {
+    buoc++;
+    if (arr[i] === target) return { viTri: i, buoc };
+  }
+  return { viTri: -1, buoc };
+}
+
+// 2) Tìm nhị phân — dùng chỉ mục: chia đôi mỗi bước
+function timNhiPhan(arr, target) {
+  let lo = 0, hi = arr.length - 1, buoc = 0;
+  while (lo <= hi) {
+    buoc++;
+    const mid = (lo + hi) >> 1;
+    if (arr[mid] === target) return { viTri: mid, buoc };
+    if (arr[mid] < target) lo = mid + 1; else hi = mid - 1;
+  }
+  return { viTri: -1, buoc };
+}
+
+const a = quetTuyenTinh(data, canTim);
+const b = timNhiPhan(data, canTim);
+
+print(`Tìm giá trị ${canTim} trong ${N} bản ghi:`);
+print(`  Quét tuần tự (O(n))    : ${a.buoc} bước`);
+print(`  Tìm nhị phân (O(log n)): ${b.buoc} bước`);
+print(`  → Chỉ mục nhanh gấp ~${Math.round(a.buoc / b.buoc)} lần ở đây`);
+print(`\nLý thuyết: log2(${N}) ≈ ${Math.ceil(Math.log2(N))} bước là chặn trên của tìm nhị phân.`);
+</textarea>
+</div>
 
 ## Sơ đồ cấu trúc B+ Tree
 

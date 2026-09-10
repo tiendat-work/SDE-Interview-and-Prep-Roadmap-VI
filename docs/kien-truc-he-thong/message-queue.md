@@ -54,6 +54,31 @@ flowchart LR
 - **At-least-once / At-most-once / Exactly-once**: Các mức đảm bảo giao nhận.
 - **Idempotency (tính bất biến)**: Consumer nên xử lý an toàn khi cùng một thông điệp bị giao lại.
 
+### Publish/Subscribe (pub/sub) chi tiết
+
+Trong pub/sub, producer (publisher) không gửi tới một hàng đợi cụ thể mà **phát tới một chủ đề (topic)**; mọi consumer (subscriber) đăng ký topic đó đều nhận được một **bản sao riêng** của thông điệp. Điều này khác point-to-point (mỗi thông điệp chỉ một consumer nhận).
+
+```mermaid
+flowchart LR
+    PUB["Publisher"] -->|"Phát sự kiện"| T{"Topic: don-hang"}
+    T --> S1["Subscriber: Kho"]
+    T --> S2["Subscriber: Email"]
+    T --> S3["Subscriber: Phân tích"]
+```
+
+Trong RabbitMQ, pub/sub được cài đặt qua **exchange kiểu fanout** (gửi tới mọi hàng đợi ràng buộc) hoặc **topic** (định tuyến theo mẫu routing key như `don.*.vip`). Trong Kafka, mọi consumer thuộc các **consumer group khác nhau** đều nhận toàn bộ thông điệp của topic; consumer trong cùng một group thì chia nhau các partition (mô hình chia tải).
+
+### Dead Letter Queue (DLQ) chi tiết
+
+Khi một thông điệp không xử lý được, thay vì lặp lại vô hạn hoặc mất, nó được chuyển sang DLQ. Thông điệp rơi vào DLQ khi:
+
+- Bị từ chối (nack/reject) và không yêu cầu giao lại.
+- Vượt quá **số lần thử lại tối đa (max retries)**.
+- Hết hạn TTL trong hàng đợi.
+- Vượt quá giới hạn độ dài hàng đợi.
+
+**Quy trình xử lý DLQ điển hình:** giám sát DLQ → cảnh báo → phân tích nguyên nhân (dữ liệu hỏng, lỗi tạm thời, bug) → sửa và **phát lại (replay)** hoặc loại bỏ. Nên dùng cơ chế **retry với backoff lũy thừa** trước khi đưa vào DLQ, tránh dồn tải khi lỗi tạm thời.
+
 ## Ví dụ
 
 ```python
@@ -98,6 +123,35 @@ ch.start_consuming()
 
 **Tóm tắt lựa chọn:** Dùng **RabbitMQ** khi cần định tuyến linh hoạt và mô hình tác vụ truyền thống với độ trễ thấp. Dùng **Kafka** khi cần thông lượng cực cao, lưu và phát lại luồng sự kiện, hoặc xây dựng đường ống dữ liệu (data pipeline).
 
+### Kiến trúc RabbitMQ vs Kafka chi tiết
+
+**RabbitMQ** hoạt động theo mô hình **broker thông minh, consumer đơn giản**:
+
+- Trung tâm là **exchange** nhận thông điệp từ producer và định tuyến tới các **queue** theo **binding** và **routing key**.
+- Bốn kiểu exchange: `direct` (khớp routing key chính xác), `topic` (khớp mẫu), `fanout` (gửi tất cả), `headers` (khớp theo header).
+- Broker đẩy (push) thông điệp tới consumer, theo dõi ack, và **xóa thông điệp sau khi được ack**.
+- Phù hợp: hàng đợi tác vụ, RPC, định tuyến phức tạp, ưu tiên thông điệp, độ trễ thấp.
+
+**Kafka** hoạt động theo mô hình **log phân tán, consumer thông minh**:
+
+- Mỗi **topic** chia thành nhiều **partition**; thông điệp được ghi tuần tự (append-only log) và **giữ lại theo thời gian/kích thước** (retention), không xóa sau khi đọc.
+- Consumer tự quản lý **offset** (vị trí đọc), có thể tua lại để **phát lại (replay)** dữ liệu.
+- Thứ tự chỉ đảm bảo **trong từng partition**; khóa phân vùng (partition key) quyết định thông điệp vào partition nào.
+- Nhân bản partition (replication) qua nhiều broker để chịu lỗi.
+- Phù hợp: streaming sự kiện, event sourcing, đường ống dữ liệu, phân tích thời gian thực, thông lượng hàng triệu msg/giây.
+
+| Khía cạnh | RabbitMQ | Apache Kafka |
+|-----------|----------|--------------|
+| Mô hình lưu trữ | Hàng đợi, xóa sau ack | Log append-only, giữ theo retention |
+| Cơ chế nhận | Push tới consumer | Consumer pull theo offset |
+| Phát lại (replay) | Không (đã xóa) | Có (đọc lại từ offset bất kỳ) |
+| Định tuyến | Linh hoạt (4 kiểu exchange) | Theo topic + partition key |
+| Thứ tự | Theo hàng đợi | Trong từng partition |
+| Thông lượng | Chục nghìn msg/giây | Hàng triệu msg/giây |
+| Mở rộng ngang | Khó hơn (mirror queue) | Dễ (thêm partition/broker) |
+| Độ trễ | Rất thấp | Thấp, tối ưu cho throughput |
+| Tình huống điển hình | Tác vụ nền, RPC, ưu tiên | Event streaming, log, analytics |
+
 ## Ưu / nhược điểm
 
 - **Ưu:**
@@ -108,6 +162,54 @@ ch.start_consuming()
   - Tăng độ phức tạp vận hành (thêm một hệ thống phải giám sát).
   - Khó đảm bảo thứ tự và "exactly-once" tuyệt đối.
   - Khó gỡ lỗi luồng bất đồng bộ; cần giám sát DLQ và độ trễ.
+
+## Playground: Mô phỏng hàng đợi producer/consumer
+
+Demo dưới đây mô phỏng một producer đẩy nhiều thông điệp vào hàng đợi FIFO, và consumer lấy ra xử lý **đúng thứ tự vào trước ra trước**. Một thông điệp bị lỗi sẽ được thử lại; nếu quá số lần thử sẽ chuyển sang **DLQ**.
+
+<div class="js-demo" data-title="Hàng đợi producer/consumer + DLQ">
+<textarea class="js-demo-src">
+// Mô phỏng message queue FIFO với ack, retry và DLQ
+class MessageQueue {
+  constructor() { this.queue = []; this.dlq = []; }
+  publish(msg) {                         // producer đẩy vào cuối hàng đợi
+    this.queue.push({ ...msg, tries: 0 });
+    print(`[Producer] gửi: ${msg.id} (${msg.noi_dung})`);
+  }
+  consume(xuLy, maxRetries = 2) {        // consumer lấy ra từ đầu hàng đợi
+    while (this.queue.length > 0) {
+      const msg = this.queue.shift();    // FIFO: vào trước ra trước
+      try {
+        xuLy(msg);                       // thử xử lý
+        print(`[Consumer] ack: ${msg.id}`);
+      } catch (e) {
+        msg.tries++;
+        if (msg.tries > maxRetries) {
+          this.dlq.push(msg);
+          print(`[Consumer] ${msg.id} lỗi ${msg.tries} lần -> chuyển DLQ`);
+        } else {
+          this.queue.push(msg);          // đẩy lại để thử tiếp
+          print(`[Consumer] ${msg.id} lỗi, thử lại lần ${msg.tries}`);
+        }
+      }
+    }
+  }
+}
+
+const mq = new MessageQueue();
+mq.publish({ id: 'M1', noi_dung: 'don hang 1' });
+mq.publish({ id: 'M2', noi_dung: 'LOI' });      // thông điệp gây lỗi
+mq.publish({ id: 'M3', noi_dung: 'don hang 3' });
+
+print('--- Consumer bắt đầu xử lý ---');
+mq.consume(msg => {
+  if (msg.noi_dung === 'LOI') throw new Error('xử lý thất bại');
+  // xử lý thành công thì không làm gì thêm
+});
+
+print(`--- DLQ chứa ${mq.dlq.length} thông điệp: ${mq.dlq.map(m => m.id).join(', ')}`);
+</textarea>
+</div>
 
 ## Câu hỏi phỏng vấn thường gặp
 

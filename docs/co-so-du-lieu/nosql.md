@@ -54,6 +54,73 @@ MATCH (a:Nguoi {ten: 'Lan'})-[:BAN]->(:Nguoi)-[:BAN]->(fof)
 RETURN DISTINCT fof.ten
 ```
 
+## Thao tác thực tế: Document & Key-Value
+
+### Thao tác document (MongoDB) bằng JS và Python
+Cùng một nghiệp vụ (thêm, tìm, cập nhật, xoá hồ sơ nhân viên) viết bằng driver JS và Python.
+
+=== "JavaScript"
+    ```js
+    // MongoDB Node.js driver
+    const col = db.collection('nhan_vien');
+
+    // Chèn document (không cần schema cố định)
+    await col.insertOne({ _id: 'nv001', ho_ten: 'Lan', ky_nang: ['Python', 'SQL'] });
+
+    // Tìm theo phần tử mảng + chỉ lấy vài trường
+    const ds = await col.find(
+      { ky_nang: 'SQL' },
+      { projection: { ho_ten: 1 } }
+    ).toArray();
+
+    // Cập nhật: thêm kỹ năng mới vào mảng (không trùng)
+    await col.updateOne({ _id: 'nv001' }, { $addToSet: { ky_nang: 'Go' } });
+
+    // Xoá
+    await col.deleteOne({ _id: 'nv001' });
+    ```
+
+=== "Python"
+    ```python
+    # PyMongo driver
+    col = db["nhan_vien"]
+
+    # Chèn document (không cần schema cố định)
+    col.insert_one({"_id": "nv001", "ho_ten": "Lan", "ky_nang": ["Python", "SQL"]})
+
+    # Tìm theo phần tử mảng + chỉ lấy vài trường
+    ds = list(col.find({"ky_nang": "SQL"}, {"ho_ten": 1}))
+
+    # Cập nhật: thêm kỹ năng mới vào mảng (không trùng)
+    col.update_one({"_id": "nv001"}, {"$addToSet": {"ky_nang": "Go"}})
+
+    # Xoá
+    col.delete_one({"_id": "nv001"})
+    ```
+
+### Thao tác key-value (Redis) bằng JS và Python
+Mẫu điển hình: cache, session, bộ đếm nguyên tử.
+
+=== "JavaScript"
+    ```js
+    // node-redis
+    await client.set('session:abc123', 'user_id=42', { EX: 3600 }); // hết hạn 1h
+    const s = await client.get('session:abc123');
+    await client.incr('luot_xem:trang_chu');        // tăng bộ đếm nguyên tử
+    await client.hSet('user:42', { ten: 'Lan', tuoi: '30' }); // hash
+    await client.expire('user:42', 86400);
+    ```
+
+=== "Python"
+    ```python
+    # redis-py
+    r.set("session:abc123", "user_id=42", ex=3600)   # hết hạn 1h
+    s = r.get("session:abc123")
+    r.incr("luot_xem:trang_chu")                     # tăng bộ đếm nguyên tử
+    r.hset("user:42", mapping={"ten": "Lan", "tuoi": 30})  # hash
+    r.expire("user:42", 86400)
+    ```
+
 ## So sánh SQL và NoSQL
 | Tiêu chí | SQL (quan hệ) | NoSQL |
 |----------|---------------|-------|
@@ -124,6 +191,45 @@ Trong CSDL document, có hai cách mô hình hoá quan hệ:
 3. Định lý CAP liên quan thế nào tới NoSQL? (xem trang ACID)
 4. Vì sao NoSQL scale ngang dễ hơn SQL?
 5. Nhúng (embedding) và tham chiếu (referencing) trong MongoDB khác nhau ra sao?
+
+## Playground: mô phỏng kho document trong bộ nhớ
+
+Demo cài đặt một "collection" document đơn giản (như MongoDB thu nhỏ) hỗ trợ insert, tìm theo phần tử mảng và cập nhật — cho thấy vì sao NoSQL document linh hoạt về lược đồ.
+
+<div class="js-demo" data-title="Kho document mini kiểu MongoDB">
+<textarea class="js-demo-src">
+class Collection {
+  constructor() { this.docs = []; }
+  insert(doc) { this.docs.push(doc); return doc._id; }
+  // Tìm document mà một trường mảng CHỨA giá trị
+  findByArrayContains(field, value) {
+    return this.docs.filter(d => Array.isArray(d[field]) && d[field].includes(value));
+  }
+  update(id, patch) {
+    const d = this.docs.find(x => x._id === id);
+    if (d) Object.assign(d, patch);
+    return d;
+  }
+}
+
+const col = new Collection();
+// Ba document với LƯỢC ĐỒ KHÁC NHAU — hoàn toàn hợp lệ trong NoSQL
+col.insert({ _id: 'nv1', ho_ten: 'Lan',   ky_nang: ['Python', 'SQL'] });
+col.insert({ _id: 'nv2', ho_ten: 'Bình',  ky_nang: ['SQL', 'Go'], cap_bac: 'senior' });
+col.insert({ _id: 'nv3', ho_ten: 'Cường', ky_nang: ['Java'] });
+
+print('Người biết SQL:');
+for (const d of col.findByArrayContains('ky_nang', 'SQL'))
+  print('  -', d.ho_ten);
+
+col.update('nv3', { ky_nang: ['Java', 'SQL'], du_an: 3 });
+print('\nSau khi thêm SQL cho Cường:');
+for (const d of col.findByArrayContains('ky_nang', 'SQL'))
+  print('  -', d.ho_ten);
+
+print('\nDocument nv3 giờ có thêm trường du_an =', col.docs[2].du_an);
+</textarea>
+</div>
 
 ## Sơ đồ bốn loại NoSQL
 

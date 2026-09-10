@@ -82,6 +82,53 @@ an_toan, thu_tu = trang_thai_an_toan(available, maxm, alloc)
 print("An toàn:", an_toan, "| Thứ tự:", thu_tu)  # True, ví dụ [1,3,4,0,2]
 ```
 
+### Playground: phát hiện deadlock qua đồ thị chờ (wait-for graph)
+Mỗi cạnh `A -> B` nghĩa là tiến trình A đang **chờ** tài nguyên do B giữ. Nếu đồ thị có **chu trình**, hệ đang deadlock. Dùng DFS tô màu (trắng/xám/đen) để dò cạnh lùi (back edge).
+
+<div class="js-demo" data-title="Dò chu trình trong wait-for graph">
+<textarea class="js-demo-src">
+// Đồ thị chờ: canh[A] = [B, ...] nghĩa là A chờ tài nguyên B đang giữ.
+function coDeadlock(canh) {
+  const mau = {};                     // 0=trắng(chưa thăm),1=xám(đang xử lý),2=đen(xong)
+  const dinh = Object.keys(canh);
+  for (const v of dinh) mau[v] = 0;
+  let chuTrinh = null;
+
+  function dfs(u, duong) {
+    mau[u] = 1; duong.push(u);
+    for (const v of (canh[u] || [])) {
+      if (mau[v] === undefined) mau[v] = 0;
+      if (mau[v] === 1) {             // gặp đỉnh xám -> cạnh lùi -> chu trình
+        chuTrinh = duong.slice(duong.indexOf(v)).concat(v);
+        return true;
+      }
+      if (mau[v] === 0 && dfs(v, duong)) return true;
+    }
+    mau[u] = 2; duong.pop();
+    return false;
+  }
+
+  for (const v of dinh) if (mau[v] === 0 && dfs(v, [])) break;
+  return chuTrinh;
+}
+
+function kiemTra(ten, canh) {
+  const ct = coDeadlock(canh);
+  if (ct) print(`${ten}: CÓ deadlock — chu trình: ${ct.join(' -> ')}`);
+  else    print(`${ten}: KHÔNG deadlock (không có chu trình)`);
+}
+
+// Trường hợp 1: P1->P2->P3->P1 (vòng khép kín)
+kiemTra('Hệ 1', { P1: ['P2'], P2: ['P3'], P3: ['P1'] });
+
+// Trường hợp 2: chuỗi thẳng, không vòng
+kiemTra('Hệ 2', { P1: ['P2'], P2: ['P3'], P3: [] });
+
+// Trường hợp 3: vòng nhỏ P2<->P4 lồng trong hệ lớn hơn
+kiemTra('Hệ 3', { P1: ['P2'], P2: ['P4'], P3: ['P1'], P4: ['P2'] });
+</textarea>
+</div>
+
 ## Độ phức tạp (nếu có)
 | Thao tác | Thời gian | Bộ nhớ |
 |----------|-----------|--------|

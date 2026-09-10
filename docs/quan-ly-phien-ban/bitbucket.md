@@ -4,7 +4,8 @@
 1. [Khái niệm](#khai-niem)
 2. [Khi nào dùng / Vì sao quan trọng](#khi-nao-dung-vi-sao-quan-trong)
 3. [So sánh với GitHub và GitLab](#so-sanh-voi-github-va-gitlab)
-4. [Tính năng chính](#tinh-nang-chinh)
+4. [Ánh xạ thuật ngữ CI/CD giữa ba nền tảng](#anh-xa-thuat-ngu-cicd-giua-ba-nen-tang)
+5. [Tính năng chính](#tinh-nang-chinh)
 5. [Luồng làm việc cơ bản](#luong-lam-viec-co-ban)
 6. [Câu hỏi phỏng vấn thường gặp](#cau-hoi-phong-van-thuong-gap)
 7. [Tham khảo](#tham-khao)
@@ -29,12 +30,29 @@ Bitbucket đặc biệt phổ biến trong các doanh nghiệp đã sử dụng 
 |----------|-----------|--------|--------|
 | Nhà phát triển | Atlassian | Microsoft | GitLab Inc. |
 | CI/CD tích hợp | Bitbucket Pipelines | GitHub Actions | GitLab CI/CD |
+| Tệp cấu hình CI | `bitbucket-pipelines.yml` | `.github/workflows/*.yml` | `.gitlab-ci.yml` |
 | Tích hợp Jira | Gốc, chặt chẽ | Qua ứng dụng bên thứ ba | Qua ứng dụng bên thứ ba |
 | Tự lưu trữ | Data Center | GitHub Enterprise Server | Self-managed (rất mạnh) |
 | Cộng đồng mã nguồn mở | Nhỏ hơn | Lớn nhất | Trung bình |
+| Registry container | Không có sẵn (dùng ngoài) | GitHub Packages | Container Registry tích hợp |
+| Quản lý gói (package) | Hạn chế | GitHub Packages | Package Registry đầy đủ |
+| Wiki & tài liệu | Có (kèm Confluence) | Wiki gốc | Wiki gốc |
+| Đơn vị tính giá CI | Số phút build/tháng | Số phút build/tháng | Số phút CI/tháng |
+| Repo riêng tư miễn phí | Có (tối đa 5 người dùng) | Không giới hạn cộng tác viên | Có |
 | Điểm mạnh | Hệ sinh thái Atlassian | Cộng đồng, social coding | DevOps trọn vòng đời |
+| Phù hợp nhất cho | Doanh nghiệp dùng Jira/Confluence | Mã nguồn mở, cộng đồng | Nhóm cần DevOps end-to-end |
 
-Tóm lại: **GitHub** mạnh nhất về cộng đồng và mã nguồn mở; **GitLab** thiên về nền tảng DevOps trọn vòng đời (end-to-end); còn **Bitbucket** tỏa sáng khi tích hợp với Jira và các công cụ Atlassian trong môi trường doanh nghiệp.
+Tóm lại: **GitHub** mạnh nhất về cộng đồng và mã nguồn mở; **GitLab** thiên về nền tảng DevOps trọn vòng đời (end-to-end) với registry và package tích hợp; còn **Bitbucket** tỏa sáng khi tích hợp với Jira và các công cụ Atlassian trong môi trường doanh nghiệp.
+
+### Ánh xạ thuật ngữ CI/CD giữa ba nền tảng
+| Khái niệm | Bitbucket Pipelines | GitHub Actions | GitLab CI/CD |
+|-----------|---------------------|----------------|--------------|
+| Đơn vị chạy song song/tuần tự | `step` | `job` | `job` |
+| Nhóm các bước theo giai đoạn | `stage` | (theo `needs`) | `stage` |
+| Kích hoạt theo sự kiện | `pipelines:` (default, branches, pull-requests, tags) | `on:` | `rules:` / `only:` / `except:` |
+| Máy chạy | Docker image mỗi step | `runs-on` (runner) | `image` + `tags` (runner) |
+| Chạy nền phụ trợ (DB, cache…) | `services` | `services` | `services` |
+| Biến bí mật | Repository/Deployment variables | Secrets | CI/CD Variables |
 
 ## Tính năng chính
 1. **Pull request (yêu cầu hợp nhất)**: Cơ chế đề xuất, xem xét mã nguồn (code review) và thảo luận thay đổi trước khi hợp nhất vào nhánh chính. Hỗ trợ bình luận theo dòng (inline comment), người duyệt bắt buộc (required reviewers) và điều kiện hợp nhất (merge checks).
@@ -45,6 +63,7 @@ Tóm lại: **GitHub** mạnh nhất về cộng đồng và mã nguồn mở; *
 6. **Snippets**: Chia sẻ các đoạn mã ngắn, tương tự GitHub Gist.
 
 ### Ví dụ tệp cấu hình Pipelines
+Ví dụ tối giản cho một dự án Python:
 ```yaml
 # bitbucket-pipelines.yml — cấu hình CI/CD cho Bitbucket
 image: python:3.11        # môi trường Docker dùng để chạy
@@ -58,8 +77,103 @@ pipelines:
           - pytest        # chạy bộ kiểm thử
 ```
 
+### Ví dụ Pipelines chi tiết (build → test → deploy)
+Cấu hình thực tế thường phân luồng theo nhánh, dùng cache để tăng tốc, chạy dịch vụ phụ trợ (database) và triển khai theo môi trường:
+```yaml
+# bitbucket-pipelines.yml — pipeline nhiều giai đoạn
+image: node:20
+
+definitions:
+  caches:
+    npmcache: ~/.npm          # cache tùy biến cho npm
+  services:
+    postgres:                 # dịch vụ DB dùng khi chạy test tích hợp
+      image: postgres:16
+      variables:
+        POSTGRES_DB: appdb
+        POSTGRES_USER: app
+        POSTGRES_PASSWORD: secret
+  steps:
+    - step: &build-test       # định nghĩa bước tái sử dụng (YAML anchor)
+        name: Build và kiểm thử
+        caches:
+          - node
+          - npmcache
+        script:
+          - npm ci            # cài đặt phụ thuộc sạch, ổn định
+          - npm run lint      # kiểm tra chuẩn mã
+          - npm test          # chạy unit test
+        services:
+          - postgres
+        artifacts:
+          - dist/**           # lưu sản phẩm build cho các bước sau
+
+pipelines:
+  # Chạy cho mọi nhánh không khớp quy tắc riêng bên dưới
+  default:
+    - step: *build-test
+
+  # Chạy khi mở/ cập nhật pull request
+  pull-requests:
+    '**':
+      - step: *build-test
+
+  # Quy tắc riêng theo tên nhánh
+  branches:
+    main:
+      - step: *build-test
+      - step:
+          name: Triển khai staging
+          deployment: staging   # gắn với môi trường Deployment trên Bitbucket
+          script:
+            - pipe: atlassian/aws-s3-deploy:1.1.0
+              variables:
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID       # biến bí mật của repo
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: 'ap-southeast-1'
+                S3_BUCKET: 'my-app-staging'
+                LOCAL_PATH: 'dist'
+      - step:
+          name: Triển khai production
+          deployment: production
+          trigger: manual        # chỉ chạy khi bấm nút thủ công
+          script:
+            - echo "Đang triển khai lên production..."
+            - ./scripts/deploy-prod.sh
+
+  # Chạy khi tạo tag phiên bản, ví dụ v1.2.3
+  tags:
+    'v*':
+      - step:
+          name: Phát hành
+          script:
+            - echo "Đóng gói và phát hành cho tag $BITBUCKET_TAG"
+
+  # Chạy theo lịch (cấu hình lịch trên giao diện Bitbucket)
+  custom:
+    kiem-tra-bao-mat:
+      - step:
+          name: Quét lỗ hổng phụ thuộc
+          script:
+            - npm audit --audit-level=high
+```
+
+Một số biến môi trường dựng sẵn hữu ích: `$BITBUCKET_BRANCH` (tên nhánh), `$BITBUCKET_COMMIT` (hash commit), `$BITBUCKET_TAG` (tên tag), `$BITBUCKET_BUILD_NUMBER` (số thứ tự build), `$BITBUCKET_PR_ID` (mã pull request).
+
 ## Luồng làm việc cơ bản
 Luồng làm việc phổ biến với Bitbucket (feature branch workflow):
+
+```mermaid
+gitGraph
+   commit id: "main"
+   branch feature/PROJ-123
+   checkout feature/PROJ-123
+   commit id: "them form"
+   commit id: "them test"
+   checkout main
+   merge feature/PROJ-123 id: "merge PR"
+   commit tag: "deploy"
+```
 
 1. **Sao chép (clone)** kho lưu trữ: `git clone <bitbucket-url>`.
 2. **Tạo nhánh tính năng** liên kết với phiếu Jira, ví dụ: `git checkout -b feature/PROJ-123-dang-nhap`.

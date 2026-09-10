@@ -111,6 +111,59 @@ t1.start(); t2.start(); t1.join(); t2.join()
 ### Vấn đề triết gia ăn tối (Dining Philosophers)
 Bài toán kinh điển: 5 triết gia ngồi quanh bàn, mỗi người cần 2 chiếc đũa (chia sẻ với người bên cạnh) để ăn. Nếu ai cũng cầm đũa trái rồi chờ đũa phải → deadlock. Lời giải: đánh số đũa và luôn lấy đũa số nhỏ trước, hoặc giới hạn số triết gia ngồi cùng lúc bằng semaphore.
 
+### Playground: race condition vs có khoá
+Mô phỏng nhiều "luồng" cùng tăng một biến đếm. Vì `dem += 1` gồm 3 bước (đọc → cộng → ghi), khi các luồng đan xen mà **không có khoá**, một số cập nhật bị mất → kết quả nhỏ hơn kỳ vọng. Có khoá thì mỗi thao tác đọc-sửa-ghi là nguyên tử → luôn đúng.
+
+<div class="js-demo" data-title="Race condition vs Mutex (đếm chung)">
+<textarea class="js-demo-src">
+// Mô phỏng đan xen luồng: mỗi thao tác tăng chia thành 3 bước đọc/cộng/ghi.
+// Bộ lập lịch giả ngẫu nhiên chọn luồng chạy bước tiếp theo.
+const SO_LUONG = 4, TANG_MOI_LUONG = 50;
+const KY_VONG = SO_LUONG * TANG_MOI_LUONG;
+
+function chay(coKhoa) {
+  let dem = 0;
+  let khoaDangGiu = -1;          // luồng đang giữ khoá, -1 = trống
+  // mỗi luồng có "chương trình đếm": còn bao nhiêu lần tăng, và bước hiện tại
+  let luong = [];
+  for (let i = 0; i < SO_LUONG; i++)
+    luong.push({ conLai: TANG_MOI_LUONG, buoc: 0, tmp: 0 });
+
+  // rng đơn giản, có hạt giống -> kết quả tái lập được
+  let seed = 12345;
+  const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+
+  let conHoatDong = SO_LUONG;
+  while (conHoatDong > 0) {
+    const i = rnd(SO_LUONG);
+    const L = luong[i];
+    if (L.conLai === 0) continue;         // luồng này đã xong
+
+    if (coKhoa) {
+      // vào vùng găng: nếu khoá đang bị luồng khác giữ thì bỏ lượt (chờ)
+      if (khoaDangGiu !== -1 && khoaDangGiu !== i) continue;
+      khoaDangGiu = i;
+    }
+
+    if (L.buoc === 0) { L.tmp = dem; L.buoc = 1; }        // đọc
+    else if (L.buoc === 1) { L.tmp = L.tmp + 1; L.buoc = 2; } // cộng
+    else {                                                 // ghi
+      dem = L.tmp; L.buoc = 0; L.conLai--;
+      if (coKhoa) khoaDangGiu = -1;                        // nhả khoá sau 1 lần tăng
+      if (L.conLai === 0) conHoatDong--;
+    }
+  }
+  return dem;
+}
+
+const khongKhoa = chay(false);
+const coKhoa = chay(true);
+print('Kỳ vọng đúng:', KY_VONG);
+print('KHÔNG khoá  :', khongKhoa, khongKhoa === KY_VONG ? '' : '(mất cập nhật!)');
+print('CÓ khoá     :', coKhoa,   coKhoa === KY_VONG ? '(đúng)' : '');
+</textarea>
+</div>
+
 ## Độ phức tạp (nếu có)
 | Thao tác | Chi phí |
 |----------|---------|

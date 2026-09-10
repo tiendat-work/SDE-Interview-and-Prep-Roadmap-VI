@@ -25,6 +25,20 @@ Hai cách phối hợp một quy trình nghiệp vụ trải nhiều dịch vụ
 ### API Gateway
 Một cổng (API gateway) đứng trước các dịch vụ, làm điểm vào duy nhất cho client. Nó đảm nhận các mối quan tâm xuyên suốt (cross-cutting concerns): định tuyến yêu cầu, xác thực/phân quyền, giới hạn tốc độ (rate limiting), tổng hợp phản hồi (aggregation), SSL termination, ghi nhật ký. Nhờ đó, client không cần biết địa chỉ và cấu trúc bên trong của từng dịch vụ. Ví dụ: Kong, NGINX, AWS API Gateway. Mẫu mở rộng: **Backend for Frontend (BFF)** — mỗi loại client (web, mobile) có một gateway riêng phù hợp nhu cầu.
 
+Các trách nhiệm điển hình của API gateway và lý do gom về một chỗ:
+
+| Trách nhiệm | Vì sao đặt ở gateway |
+|-------------|----------------------|
+| Định tuyến (routing) | Ẩn cấu trúc nội bộ, một điểm vào cho client |
+| Xác thực & phân quyền | Không lặp logic auth ở từng dịch vụ |
+| Rate limiting / throttling | Bảo vệ backend khỏi lạm dụng, tấn công |
+| Tổng hợp phản hồi (aggregation) | Gộp nhiều lời gọi thành một, giảm chuyến khứ hồi cho mobile |
+| SSL/TLS termination | Giải mã một nơi, nội bộ dùng kết nối nhẹ hơn |
+| Ghi log, metrics, tracing | Quan sát tập trung mọi request vào/ra |
+| Chuyển đổi giao thức | REST ↔ gRPC/WebSocket, đổi phiên bản API |
+
+**Rủi ro:** gateway là điểm vào duy nhất nên vừa là **điểm lỗi đơn** vừa dễ thành **nghẽn cổ chai** — cần triển khai dư thừa (nhiều instance sau load balancer), giữ cho gateway "mỏng" (không nhồi logic nghiệp vụ), và tránh biến nó thành một monolith trá hình.
+
 ### Circuit Breaker (Bộ ngắt mạch)
 Ngăn lỗi của một dịch vụ lan truyền dây chuyền (cascading failure). Hoạt động như cầu dao điện với ba trạng thái:
 - **Closed (đóng)**: yêu cầu đi qua bình thường, đếm số lỗi.
@@ -44,6 +58,84 @@ stateDiagram-v2
     HalfOpen --> Open: "Yêu cầu thử vẫn lỗi"
 ```
 
+**Các tham số cấu hình quan trọng:** `failureThreshold` (số/tỉ lệ lỗi để mở mạch), `resetTimeout` (thời gian ở trạng thái Open trước khi thử lại), `halfOpenMaxCalls` (số yêu cầu thử ở Half-open), và cửa sổ trượt (sliding window) để tính tỉ lệ lỗi. Kết hợp **fallback** (giá trị mặc định, cache cũ, hàng đợi) để trải nghiệm người dùng không sụp khi mạch mở.
+
+<div class="js-demo" data-title="Circuit Breaker — đếm lỗi → mở mạch → nửa mở → đóng lại">
+<textarea class="js-demo-src">
+// Circuit breaker tối giản với 3 trạng thái
+class CircuitBreaker {
+  constructor({ failureThreshold = 3, resetTimeout = 2, halfOpenMax = 2 } = {}) {
+    this.failureThreshold = failureThreshold; // số lỗi liên tiếp để mở
+    this.resetTimeout = resetTimeout;         // "giây ảo" chờ trước khi thử
+    this.halfOpenMax = halfOpenMax;           // số lần thử ở half-open
+    this.state = 'CLOSED';
+    this.failures = 0;
+    this.openedAt = 0;
+    this.halfOpenSuccess = 0;
+  }
+  // now = đồng hồ ảo (giây); fn ném lỗi khi dịch vụ hỏng
+  call(fn, now) {
+    if (this.state === 'OPEN') {
+      if (now - this.openedAt >= this.resetTimeout) {
+        this.state = 'HALF_OPEN';
+        this.halfOpenSuccess = 0;
+        print('t=' + now + ': hết chờ -> chuyển HALF_OPEN (cho thử)');
+      } else {
+        print('t=' + now + ': [OPEN] fail-fast (chặn ngay, trả fallback)');
+        return 'fallback';
+      }
+    }
+    try {
+      const kq = fn();
+      this.onSuccess(now);
+      return kq;
+    } catch (e) {
+      this.onFailure(now);
+      return 'fallback';
+    }
+  }
+  onSuccess(now) {
+    if (this.state === 'HALF_OPEN') {
+      this.halfOpenSuccess++;
+      print('t=' + now + ': [HALF_OPEN] thử OK (' + this.halfOpenSuccess + '/' + this.halfOpenMax + ')');
+      if (this.halfOpenSuccess >= this.halfOpenMax) {
+        this.state = 'CLOSED'; this.failures = 0;
+        print('t=' + now + ': đủ lần thử OK -> ĐÓNG MẠCH (CLOSED)');
+      }
+    } else {
+      this.failures = 0;
+      print('t=' + now + ': [CLOSED] OK');
+    }
+  }
+  onFailure(now) {
+    if (this.state === 'HALF_OPEN') {
+      this.state = 'OPEN'; this.openedAt = now;
+      print('t=' + now + ': [HALF_OPEN] thử vẫn LỖI -> MỞ LẠI (OPEN)');
+      return;
+    }
+    this.failures++;
+    print('t=' + now + ': [CLOSED] LỖI (' + this.failures + '/' + this.failureThreshold + ')');
+    if (this.failures >= this.failureThreshold) {
+      this.state = 'OPEN'; this.openedAt = now;
+      print('t=' + now + ': lỗi vượt ngưỡng -> MỞ MẠCH (OPEN)');
+    }
+  }
+}
+
+// Kịch bản: dịch vụ hỏng từ t=0..5, hồi phục từ t=6 trở đi
+const cb = new CircuitBreaker({ failureThreshold: 3, resetTimeout: 2, halfOpenMax: 2 });
+function goiDichVu(now) {
+  if (now < 6) throw new Error('service down'); // đang hỏng
+  return 'OK';                                   // đã hồi phục
+}
+
+for (let t = 0; t <= 10; t++) {
+  cb.call(() => goiDichVu(t), t);
+}
+print('\nTrạng thái cuối: ' + cb.state);
+</textarea>
+</div>
+
 ### Saga Pattern (Giao dịch phân tán)
 Vì giao dịch ACID không trải được nhiều cơ sở dữ liệu độc lập, **saga** chia một giao dịch nghiệp vụ thành chuỗi các giao dịch cục bộ (local transaction), mỗi bước có một **hành động bù (compensating transaction)** để hoàn tác nếu bước sau thất bại. Hai kiểu triển khai tương ứng hai cách phối hợp ở trên:
 - **Choreography-based saga**: mỗi dịch vụ phát/nghe sự kiện để kích hoạt bước kế tiếp hoặc bước bù.
@@ -52,6 +144,59 @@ Vì giao dịch ACID không trải được nhiều cơ sở dữ liệu độc 
 Saga đảm bảo **nhất quán cuối cùng (eventual consistency)** thay vì nhất quán tức thời.
 
 Ví dụ đơn hàng: Đặt hàng → Trừ kho → Thanh toán. Nếu thanh toán lỗi, chạy bù ngược: hoàn kho → huỷ đơn.
+
+**Lưu ý thiết kế saga:** mỗi bước và mỗi hành động bù nên **idempotent** (chạy lại nhiều lần cho cùng kết quả) vì thông điệp có thể lặp; hành động bù không phải lúc nào cũng "hoàn tác hoàn hảo" (ví dụ đã gửi email thì bù bằng email xin lỗi, không thể "thu hồi"); cần lưu trạng thái saga bền vững (saga log) để phục hồi sau sự cố.
+
+Ví dụ điều phối saga (orchestration) tối giản với hành động bù:
+
+=== "JavaScript"
+    ```js
+    // Mỗi bước: {ten, lam, bu}. Nếu 'lam' ném lỗi -> chạy 'bu' cho các bước đã xong
+    async function chaySaga(steps) {
+      const daXong = [];
+      try {
+        for (const s of steps) {
+          await s.lam();
+          daXong.push(s);        // nhớ để bù nếu sau này lỗi
+        }
+        return 'THANH_CONG';
+      } catch (e) {
+        for (const s of daXong.reverse()) await s.bu(); // bù ngược
+        return 'DA_BU (rollback): ' + e.message;
+      }
+    }
+
+    const steps = [
+      { ten: 'don', lam: async () => {}, bu: async () => {} },
+      { ten: 'kho', lam: async () => {}, bu: async () => {} },
+      { ten: 'tt',  lam: async () => { throw new Error('thẻ bị từ chối'); },
+                    bu: async () => {} },
+    ];
+    // chaySaga(steps) -> "DA_BU (rollback): thẻ bị từ chối"
+    ```
+=== "Python"
+    ```python
+    # Saga điều phối: chạy tuần tự, lỗi thì bù ngược các bước đã xong
+    def chay_saga(steps):        # steps: list[(ten, lam, bu)]
+        da_xong = []
+        try:
+            for ten, lam, bu in steps:
+                lam()
+                da_xong.append(bu)   # lưu hàm bù tương ứng
+            return 'THANH_CONG'
+        except Exception as e:
+            for bu in reversed(da_xong):
+                bu()                 # bù ngược thứ tự
+            return f'DA_BU (rollback): {e}'
+
+    def tt_loi(): raise Exception('thẻ bị từ chối')
+    steps = [
+        ('don', lambda: None, lambda: None),
+        ('kho', lambda: None, lambda: None),
+        ('tt',  tt_loi,       lambda: None),
+    ]
+    # chay_saga(steps) -> "DA_BU (rollback): thẻ bị từ chối"
+    ```
 
 Sơ đồ tuần tự saga theo điều phối (orchestration) kèm bước bù khi thanh toán lỗi:
 

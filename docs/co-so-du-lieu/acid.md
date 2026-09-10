@@ -110,6 +110,47 @@ Thuật ngữ do Andreas Reuter và Theo Härder đặt năm 1983, hệ thống 
 4. So sánh ACID và BASE — khi nào chọn cái nào?
 5. Durability đạt được ra sao khi hệ thống có thể sập bất cứ lúc nào?
 
+## Playground: mô phỏng Atomicity (rollback khi lỗi)
+
+Demo mô phỏng chuyển khoản có **giao dịch nguyên tử**: nếu bất kỳ bước nào lỗi (số dư âm), toàn bộ thay đổi bị hoàn tác (rollback) và tài khoản trở về trạng thái ban đầu. Thử đổi `soTien` thành số lớn hơn số dư của A để thấy rollback.
+
+<div class="js-demo" data-title="Atomicity: rollback khi giao dịch lỗi">
+<textarea class="js-demo-src">
+// Trạng thái tài khoản ban đầu
+let taiKhoan = { A: 1000000, B: 500000 };
+
+function inTrangThai(nhan) {
+  print(`${nhan}: A = ${taiKhoan.A.toLocaleString()}đ, B = ${taiKhoan.B.toLocaleString()}đ`);
+}
+
+// Chuyển khoản NGUYÊN TỬ: chụp lại trạng thái, nếu lỗi thì khôi phục
+function chuyenKhoanAtomic(tu, den, soTien) {
+  const snapshot = { ...taiKhoan };   // undo log: lưu giá trị cũ
+  try {
+    taiKhoan[tu] -= soTien;                    // bước 1: trừ tiền
+    if (taiKhoan[tu] < 0) throw new Error('Số dư không đủ!'); // ràng buộc
+    taiKhoan[den] += soTien;                   // bước 2: cộng tiền
+    print(`✓ COMMIT: chuyển ${soTien.toLocaleString()}đ từ ${tu} sang ${den}`);
+  } catch (e) {
+    taiKhoan = snapshot;                        // ROLLBACK toàn bộ
+    print(`✗ LỖI (${e.message}) → ROLLBACK, mọi thay đổi bị huỷ`);
+  }
+}
+
+inTrangThai('Ban đầu');
+print('--- Giao dịch 1: chuyển 300.000đ (hợp lệ) ---');
+chuyenKhoanAtomic('A', 'B', 300000);
+inTrangThai('Sau GD1');
+
+print('--- Giao dịch 2: chuyển 5.000.000đ (quá số dư) ---');
+chuyenKhoanAtomic('A', 'B', 5000000);
+inTrangThai('Sau GD2');   // A không bị trừ oan nhờ atomicity
+
+const tong = taiKhoan.A + taiKhoan.B;
+print(`\nTổng tiền luôn bảo toàn: ${tong.toLocaleString()}đ (consistency)`);
+</textarea>
+</div>
+
 ## Sơ đồ bốn tính chất ACID
 
 ```mermaid

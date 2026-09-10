@@ -53,6 +53,66 @@ flowchart LR
 
 Giao thức phổ biến trong SOA truyền thống: **SOAP (Simple Object Access Protocol)** dùng XML, cùng các chuẩn WS-* (WS-Security, WS-ReliableMessaging).
 
+### ESB (Enterprise Service Bus) chi tiết
+
+ESB là "xương sống" của SOA truyền thống, đóng vai trò trung gian thông minh giữa các dịch vụ. Các chức năng cốt lõi của ESB:
+
+- **Định tuyến thông điệp (routing)**: Định tuyến theo nội dung (content-based routing) — quyết định gửi thông điệp tới dịch vụ nào dựa trên dữ liệu bên trong.
+- **Biến đổi định dạng (transformation)**: Chuyển đổi dữ liệu giữa các định dạng khác nhau (XML ↔ JSON, XSLT), để các hệ thống dùng chuẩn khác nhau vẫn nói chuyện được.
+- **Chuyển đổi giao thức (protocol bridging)**: Cầu nối giữa các giao thức (HTTP, JMS, FTP, SOAP) để hệ thống cũ và mới tích hợp.
+- **Điều phối (orchestration)**: Ghép nhiều lời gọi dịch vụ thành một quy trình nghiệp vụ (thường qua BPEL - Business Process Execution Language).
+- **Mối quan tâm xuyên suốt**: Bảo mật, ghi nhật ký, giám sát, xử lý lỗi và giao dịch tập trung tại ESB.
+
+**Rủi ro của ESB:** Vì mọi thứ đi qua ESB nên nó dễ trở thành **điểm nghẽn (bottleneck)** và **điểm lỗi tập trung (single point of failure)**. ESB cũng thường tích tụ quá nhiều logic nghiệp vụ ("ESB béo"), khiến việc thay đổi trở nên rủi ro và tập trung quyền lực vào đội quản trị ESB.
+
+### SOAP và WSDL chi tiết
+
+**SOAP (Simple Object Access Protocol)** là giao thức trao đổi thông điệp dựa trên XML. Một thông điệp SOAP gồm:
+
+- **Envelope (phong bì)**: Bao ngoài toàn bộ thông điệp.
+- **Header (tùy chọn)**: Chứa metadata như thông tin bảo mật (WS-Security), giao dịch, định tuyến.
+- **Body**: Chứa nội dung thực (lời gọi hàm và tham số, hoặc dữ liệu trả về).
+- **Fault**: Khối mô tả lỗi khi xử lý thất bại.
+
+```xml
+<!-- Ví dụ thông điệp SOAP gọi dịch vụ thanh toán -->
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  <soap:Header>
+    <!-- Thông tin bảo mật WS-Security có thể đặt ở đây -->
+  </soap:Header>
+  <soap:Body>
+    <XuLyThanhToan xmlns="http://example.com/thanhtoan">
+      <MaDon>DH001</MaDon>
+      <SoTien>500000</SoTien>
+    </XuLyThanhToan>
+  </soap:Body>
+</soap:Envelope>
+```
+
+**WSDL (Web Services Description Language)** là tài liệu XML mô tả **hợp đồng** của một web service — như một "bản kê khai giao diện" máy có thể đọc được. WSDL định nghĩa:
+
+- **`types`**: Kiểu dữ liệu (dùng XML Schema).
+- **`message`**: Cấu trúc các thông điệp trao đổi.
+- **`portType`** (hay `interface`): Tập hợp các thao tác (operations) mà dịch vụ cung cấp.
+- **`binding`**: Cách các thao tác ánh xạ sang giao thức cụ thể (thường SOAP over HTTP).
+- **`service`**: Địa chỉ endpoint thực tế của dịch vụ.
+
+Từ WSDL, công cụ có thể tự sinh mã client (stub) để gọi dịch vụ mà không cần viết tay. **UDDI (Universal Description, Discovery and Integration)** là chuẩn cho sổ đăng ký dịch vụ nơi các WSDL được công bố và tra cứu.
+
+### Chồng chuẩn WS-* (WS-* standards)
+
+SOA truyền thống đi kèm một bộ chuẩn "WS-*" giải quyết các mối quan tâm cấp doanh nghiệp:
+
+| Chuẩn | Mục đích |
+|-------|----------|
+| WS-Security | Mã hóa, ký số, xác thực ở cấp thông điệp |
+| WS-ReliableMessaging | Đảm bảo giao nhận tin cậy (không mất, không trùng) |
+| WS-AtomicTransaction | Giao dịch phân tán (two-phase commit) |
+| WS-Addressing | Định tuyến và địa chỉ hóa thông điệp độc lập giao thức |
+| WS-Policy | Mô tả yêu cầu/năng lực của dịch vụ |
+
+Sức mạnh của WS-* là chuẩn hóa cao và tính năng doanh nghiệp đầy đủ, nhưng đổi lại là **độ phức tạp lớn và overhead XML nặng nề**.
+
 ## Ví dụ
 
 ```python
@@ -98,6 +158,59 @@ print(ket_qua)  # {'ma_don': 'DH001', 'trang_thai': 'THANH_CONG', 'so_tien': 500
 | Trọng tâm | Tái sử dụng, tích hợp doanh nghiệp | Tính độc lập, tốc độ triển khai |
 
 Có thể coi microservices là một cách tiếp cận chi tiết hơn (fine-grained) và phi tập trung hơn so với SOA, loại bỏ ESB nặng nề.
+
+### Điểm giống và khác cốt lõi
+
+**Điểm giống:** Cả hai đều chia hệ thống thành các dịch vụ, đề cao liên kết lỏng lẻo, tái sử dụng và tách biệt mối quan tâm.
+
+**Khác biệt về tư tưởng:**
+
+- **Chia sẻ dữ liệu**: SOA thường dùng chung một cơ sở dữ liệu doanh nghiệp; microservices áp dụng nguyên tắc "database per service" — mỗi dịch vụ sở hữu dữ liệu riêng, giao tiếp qua API.
+- **Trung gian giao tiếp**: SOA đặt logic vào ESB thông minh ("smart pipes"); microservices dùng "smart endpoints, dumb pipes" — logic ở dịch vụ, hạ tầng truyền tin chỉ chuyển thông điệp.
+- **Kích thước dịch vụ**: SOA có dịch vụ thô, cấp doanh nghiệp; microservices nhỏ, mỗi dịch vụ một khả năng nghiệp vụ (bounded context theo DDD).
+- **Triển khai**: SOA thường đóng gói và triển khai lớn; microservices triển khai độc lập, thường qua container/Kubernetes, hỗ trợ CI/CD nhanh.
+- **Quản trị**: SOA quản trị tập trung, chuẩn hóa toàn doanh nghiệp; microservices quản trị phi tập trung, mỗi đội tự chọn công nghệ (polyglot).
+
+### Khi nào chọn cái nào
+
+| Chọn SOA khi... | Chọn Microservices khi... |
+|-----------------|---------------------------|
+| Cần tích hợp nhiều hệ thống legacy đa nền tảng | Cần tốc độ triển khai và mở rộng độc lập cao |
+| Doanh nghiệp lớn cần quản trị/chuẩn hóa tập trung | Đội ngũ nhỏ, tự chủ, theo mô hình DevOps |
+| Đã đầu tư vào ESB và chuẩn WS-* | Xây dựng hệ thống cloud-native mới |
+| Giao dịch phân tán phức tạp cần WS-* | Chấp nhận nhất quán cuối cùng để đổi lấy tính độc lập |
+
+## Playground: Mô phỏng định tuyến qua ESB
+
+Demo dưới đây mô phỏng một ESB đơn giản định tuyến thông điệp theo nội dung (content-based routing) tới đúng dịch vụ đăng ký xử lý, minh hoạ vai trò trung gian của ESB.
+
+<div class="js-demo" data-title="ESB định tuyến theo nội dung">
+<textarea class="js-demo-src">
+// Mô phỏng ESB định tuyến thông điệp tới dịch vụ phù hợp
+class ESB {
+  constructor() { this.routes = {}; }        // bản đồ loại -> dịch vụ
+  register(loai, handler) {                  // đăng ký dịch vụ
+    this.routes[loai] = handler;
+    print(`Đã đăng ký dịch vụ cho loại "${loai}"`);
+  }
+  send(msg) {                                // ESB nhận và định tuyến
+    const handler = this.routes[msg.loai];
+    if (!handler) { print(`Không có dịch vụ cho "${msg.loai}"`); return; }
+    print(`ESB định tuyến "${msg.loai}" -> dịch vụ tương ứng`);
+    handler(msg);
+  }
+}
+
+const esb = new ESB();
+esb.register('thanh_toan', m => print(`  [Thanh toán] xử lý đơn ${m.ma} số tiền ${m.so_tien}`));
+esb.register('kho_hang',  m => print(`  [Kho hàng] trừ tồn kho cho đơn ${m.ma}`));
+
+print('--- Bắt đầu gửi thông điệp ---');
+esb.send({ loai: 'thanh_toan', ma: 'DH001', so_tien: 500000 });
+esb.send({ loai: 'kho_hang', ma: 'DH001' });
+esb.send({ loai: 'giao_van', ma: 'DH001' });  // không có dịch vụ đăng ký
+</textarea>
+</div>
 
 ## Câu hỏi phỏng vấn thường gặp
 

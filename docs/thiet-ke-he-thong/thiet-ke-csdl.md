@@ -26,6 +26,71 @@ flowchart TD
     S2 -.->|"nhân bản"| S2R["Shard 2 Replica"]
 ```
 
+### Nhân bản (Replication) — đào sâu
+
+Nhân bản tạo nhiều bản sao dữ liệu để tăng khả năng đọc, chịu lỗi và giảm độ trễ theo vùng địa lý. Ba kiểu chính:
+
+- **Single-leader (primary–replica)**: một node nhận ghi rồi truyền log (ví dụ WAL/binlog) sang các replica đọc. Đơn giản, tránh xung đột ghi. Nhân bản **đồng bộ (synchronous)** an toàn nhưng chậm (chờ replica xác nhận); **bất đồng bộ (asynchronous)** nhanh nhưng có nguy cơ mất dữ liệu nếu leader chết trước khi kịp truyền. Đa số hệ dùng *semi-synchronous* (ít nhất một replica đồng bộ).
+- **Multi-leader**: nhiều node nhận ghi (phù hợp đa vùng), nhưng phải giải quyết **xung đột ghi** (LWW, hợp nhất theo ứng dụng, CRDT).
+- **Leaderless (quorum)**: mọi node nhận ghi/đọc, đảm bảo bằng W + R > N (Dynamo, Cassandra).
+
+**Replication lag** là bẫy kinh điển: ghi vào leader rồi đọc ngay từ replica bất đồng bộ có thể *không thấy* dữ liệu vừa ghi. Khắc phục bằng **read-your-writes** (đọc lại từ leader trong khoảng thời gian ngắn sau khi ghi) hoặc theo dõi vị trí log.
+
+```sql
+-- Ví dụ MySQL: bật binary log để nhân bản (trên leader, my.cnf)
+-- server-id = 1
+-- log_bin = /var/log/mysql/mysql-bin.log
+
+-- Tạo tài khoản cho replica kéo log
+CREATE USER 'repl'@'%' IDENTIFIED BY 'matkhau_manh';
+GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';
+
+-- Trên replica: trỏ về leader và bắt đầu nhân bản
+CHANGE REPLICATION SOURCE TO
+  SOURCE_HOST = '10.0.0.1',
+  SOURCE_USER = 'repl',
+  SOURCE_PASSWORD = 'matkhau_manh',
+  SOURCE_LOG_FILE = 'mysql-bin.000001',
+  SOURCE_LOG_POS = 154;
+START REPLICA;
+SHOW REPLICA STATUS;   -- theo dõi Seconds_Behind_Source (độ trễ nhân bản)
+```
+
+### Sharding — đào sâu
+
+Sharding (phân vùng ngang) chia bảng lớn thành nhiều mảnh trên nhiều máy để vượt giới hạn dung lượng/thông lượng của một node. Việc **chọn khoá phân mảnh** quyết định thành bại (xem mục "Chọn khoá phân mảnh" bên dưới). Thách thức đặc thù của sharding:
+
+- **Truy vấn liên mảnh (cross-shard query)**: `JOIN`/`GROUP BY` trải nhiều shard phải fan-out rồi gộp kết quả — chậm và phức tạp. Thiết kế để **truy vấn nóng chỉ chạm một shard**.
+- **Giao dịch liên mảnh**: mất ACID đơn giản; phải dùng 2PC (chậm) hoặc saga (nhất quán cuối cùng).
+- **Rebalancing**: khi thêm shard, dùng **consistent hashing** để chỉ dời một phần nhỏ dữ liệu (xem [Khả năng mở rộng](scalability.md)).
+- **Hotspot**: khoá lệch khiến một shard "nóng"; băm khoá hoặc thêm salt để rải đều.
+
+```sql
+-- Ví dụ ý tưởng sharding theo băm user_id thành 4 shard
+-- (được thực thi ở tầng ứng dụng / middleware định tuyến, không phải 1 lệnh SQL)
+
+-- shard_id = hash(user_id) % 4  -> chọn ra kết nối tới CSDL tương ứng
+
+-- Trên MỖI shard, bảng có cùng schema:
+CREATE TABLE orders (
+    order_id   BIGINT PRIMARY KEY,
+    user_id    BIGINT NOT NULL,      -- khoá phân mảnh (shard key)
+    amount     DECIMAL(12,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user (user_id)
+);
+
+-- Postdeclarative partitioning (PostgreSQL) — sharding "trong 1 node" theo HASH:
+CREATE TABLE orders (
+    order_id BIGINT, user_id BIGINT, amount NUMERIC
+) PARTITION BY HASH (user_id);
+
+CREATE TABLE orders_p0 PARTITION OF orders FOR VALUES WITH (MODULUS 4, REMAINDER 0);
+CREATE TABLE orders_p1 PARTITION OF orders FOR VALUES WITH (MODULUS 4, REMAINDER 1);
+CREATE TABLE orders_p2 PARTITION OF orders FOR VALUES WITH (MODULUS 4, REMAINDER 2);
+CREATE TABLE orders_p3 PARTITION OF orders FOR VALUES WITH (MODULUS 4, REMAINDER 3);
+```
+
 ### Khung nhìn vật chất hoá (Materialized View)
 Khung nhìn thông thường (view) là truy vấn được lưu, tính lại mỗi lần gọi. **Materialized view** lưu **kết quả đã tính sẵn** ra đĩa như một bảng thực. Ưu điểm: truy vấn tổng hợp phức tạp (join, group by) trả về gần như tức thì. Nhược điểm: dữ liệu có thể cũ, cần **làm mới (refresh)** định kỳ hoặc theo sự kiện. Dùng nhiều trong báo cáo, dashboard, kho dữ liệu (data warehouse).
 
@@ -50,6 +115,42 @@ Chuẩn hoá là quá trình tổ chức dữ liệu để giảm dư thừa (re
 - **BCNF (Boyce-Codd Normal Form)**: phiên bản chặt hơn 3NF — với mọi phụ thuộc hàm X → Y, X phải là siêu khoá (superkey). Xử lý một số trường hợp biên mà 3NF còn để lọt.
 
 **Chuẩn hoá** giảm dư thừa và tăng toàn vẹn nhưng làm truy vấn cần nhiều phép nối (join). **Phi chuẩn hoá (denormalization)** cố ý thêm dư thừa để tăng tốc đọc — thường dùng trong kho dữ liệu và hệ thống đọc nhiều.
+
+Ví dụ SQL minh hoạ chuẩn hoá 3NF (tách phụ thuộc bắc cầu) và phi chuẩn hoá có kiểm soát:
+
+```sql
+-- CHƯA CHUẨN: bảng "orders" nhồi cả tên & thành phố khách -> dư thừa, dễ dị thường
+CREATE TABLE orders_bad (
+    order_id     BIGINT PRIMARY KEY,
+    customer_id  BIGINT,
+    customer_name VARCHAR(100),   -- lặp mỗi đơn của cùng khách
+    customer_city VARCHAR(100),   -- phụ thuộc bắc cầu vào customer_id
+    amount       DECIMAL(12,2)
+);
+
+-- ĐÃ CHUẨN (3NF): tách thông tin khách sang bảng riêng
+CREATE TABLE customers (
+    customer_id  BIGINT PRIMARY KEY,
+    name         VARCHAR(100) NOT NULL,
+    city         VARCHAR(100)
+);
+CREATE TABLE orders (
+    order_id     BIGINT PRIMARY KEY,
+    customer_id  BIGINT NOT NULL REFERENCES customers(customer_id),  -- khoá ngoại
+    amount       DECIMAL(12,2) NOT NULL
+);
+
+-- Truy vấn cần join để lấy tên khách:
+SELECT o.order_id, c.name, o.amount
+FROM orders o JOIN customers c ON c.customer_id = o.customer_id;
+
+-- PHI CHUẨN HOÁ CÓ KIỂM SOÁT: bảng đọc nhiều cho dashboard, chấp nhận dư thừa
+-- để tránh join nặng; làm mới bằng trigger/CDC hoặc materialized view.
+CREATE MATERIALIZED VIEW order_report AS
+SELECT o.order_id, c.name AS customer_name, c.city, o.amount
+FROM orders o JOIN customers c ON c.customer_id = o.customer_id;
+-- REFRESH MATERIALIZED VIEW order_report;  -- làm mới định kỳ
+```
 
 ### Chỉ mục & tối ưu truy vấn (nhắc nhanh)
 Chỉ mục (index — thường là cây B-tree hoặc bảng băm) tăng tốc đọc nhưng làm chậm ghi và tốn dung lượng. Dùng công cụ `EXPLAIN` để phân tích kế hoạch truy vấn, tránh quét toàn bảng (full table scan), và đặt chỉ mục trên cột hay lọc/nối/sắp xếp.

@@ -36,12 +36,35 @@ Tìm đường đi ngắn nhất từ một nguồn tới mọi đích với tr�
 - Dùng hàng đợi ưu tiên (priority queue / min-heap) để tăng tốc.
 - Là cơ sở của thuật toán link state (ví dụ giao thức OSPF).
 
+**Các bước chi tiết (dùng đồ thị ở trên, nguồn A):**
+
+1. Khởi tạo: `dist[A]=0`, mọi nút khác `= ∞`. Tập chưa chốt = {A,B,C,D}.
+2. Chọn A (nhỏ nhất, dist=0), chốt A. Relax hàng xóm: `dist[B]=1`, `dist[C]=4`.
+3. Chọn B (dist=1, nhỏ nhất trong chưa chốt), chốt B. Relax: qua B tới C là
+   `1+2=3 < 4` → `dist[C]=3`; tới D là `1+5=6` → `dist[D]=6`.
+4. Chọn C (dist=3), chốt C. Relax: qua C tới D là `3+1=4 < 6` → `dist[D]=4`.
+5. Chọn D (dist=4), chốt D. Hết nút. Kết quả: A=0, B=1, C=3, D=4.
+
+Đường đi ngắn nhất A→D được truy vết qua "nút cha" (predecessor): D←C←B←A,
+tức **A→B→C→D** với tổng chi phí 4.
+
+!!! warning "Vì sao Dijkstra sai với trọng số âm"
+    Dijkstra "chốt" một nút ngay khi lấy ra khỏi hàng đợi, giả định rằng không
+    có đường nào rẻ hơn xuất hiện sau. Với cạnh âm, một đường đi qua nút chốt
+    muộn hơn có thể rẻ hơn → giả định bị phá vỡ. Khi đó phải dùng Bellman-Ford.
+
 ### Bellman-Ford
 Tìm đường đi ngắn nhất từ một nguồn, **cho phép trọng số âm** và phát hiện
 chu trình âm (negative cycle).
 - Lặp lại `V-1` lần, mỗi lần relax tất cả các cạnh.
 - Chậm hơn Dijkstra nhưng linh hoạt hơn; là cơ sở của thuật toán distance
   vector (ví dụ giao thức RIP).
+
+**Vì sao lặp đúng `V-1` lần?** Một đường đi ngắn nhất (không có chu trình) có
+tối đa `V-1` cạnh. Sau vòng lặp thứ `k`, mọi đường đi ngắn nhất dùng ≤ `k`
+cạnh đã được tính đúng. Do đó sau `V-1` vòng, mọi khoảng cách đã ổn định.
+**Phát hiện chu trình âm:** nếu ở vòng thứ `V` (thêm một vòng nữa) vẫn còn cạnh
+relax được, tức tồn tại chu trình âm — khoảng cách sẽ giảm mãi không đáy.
 
 ### So sánh hai thuật toán
 | Tiêu chí | Dijkstra | Bellman-Ford |
@@ -97,6 +120,64 @@ do_thi = {
 }
 print(dijkstra(do_thi, "A"))   # {'A': 0, 'B': 1, 'C': 3, 'D': 4}
 ```
+
+!!! tip "Chạy được ngay — Dijkstra in đường đi ngắn nhất"
+    Đoạn dưới chạy Dijkstra trên đúng đồ thị ở sơ đồ trên, in khoảng cách nhỏ
+    nhất tới mọi nút **và truy vết đường đi** từ A tới D. Bấm **▶ Chạy**; đổi
+    `graph`, `source` hoặc `target` để thử đồ thị/đích khác.
+
+<div class="js-demo" data-title="Dijkstra — đường đi ngắn nhất trên đồ thị nhỏ">
+<textarea class="js-demo-src">
+// Đồ thị vô hướng: nút -> [[hàng xóm, trọng số], ...]
+const graph = {
+  A: [['B', 1], ['C', 4]],
+  B: [['A', 1], ['C', 2], ['D', 5]],
+  C: [['A', 4], ['B', 2], ['D', 1]],
+  D: [['B', 5], ['C', 1]],
+};
+const source = 'A', target = 'D';
+
+function dijkstra(graph, source) {
+  const dist = {}, prev = {}, visited = {};
+  for (const n in graph) dist[n] = Infinity;
+  dist[source] = 0;
+
+  // Hàng đợi ưu tiên "nghèo" (đồ thị nhỏ nên quét tuyến tính là đủ)
+  while (true) {
+    let u = null, best = Infinity;
+    for (const n in graph) {
+      if (!visited[n] && dist[n] < best) { best = dist[n]; u = n; }
+    }
+    if (u === null) break;          // hết nút tới được
+    visited[u] = true;
+    for (const [v, w] of graph[u]) {  // relax các cạnh
+      if (dist[u] + w < dist[v]) {
+        dist[v] = dist[u] + w;
+        prev[v] = u;
+        print(`  relax ${u}→${v}: dist[${v}] = ${dist[v]}`);
+      }
+    }
+  }
+  return { dist, prev };
+}
+
+const { dist, prev } = dijkstra(graph, source);
+print('');
+print('Khoảng cách ngắn nhất từ ' + source + ':');
+for (const n in dist) print('  ' + n + ' = ' + dist[n]);
+
+// Truy vết đường đi source -> target qua mảng prev
+let path = [], cur = target;
+while (cur !== undefined) { path.unshift(cur); cur = prev[cur]; }
+print('');
+if (path[0] === source)
+  print('Đường đi ngắn nhất ' + source + '→' + target + ': ' +
+        path.join(' → ') + '  (chi phí ' + dist[target] + ')');
+else
+  print('Không có đường đi tới ' + target);
+</textarea>
+</div>
+
 ```python
 def bellman_ford(canh, so_nut, nguon):
     # canh: list [(u, v, trong_so)] – cho phép trọng số âm

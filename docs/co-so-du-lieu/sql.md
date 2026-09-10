@@ -35,8 +35,38 @@ ALTER TABLE nhan_vien ADD COLUMN email VARCHAR(120) UNIQUE;
 ### DML — thao tác dữ liệu
 ```sql
 INSERT INTO nhan_vien (ho_ten, phong_id, luong) VALUES ('Lan', 1, 15000000);
+
+-- Chèn nhiều hàng một lệnh
+INSERT INTO nhan_vien (ho_ten, phong_id, luong) VALUES
+    ('Bình', 1, 18000000),
+    ('Cường', 2, 22000000),
+    ('Dung', 2, 16000000);
+
 UPDATE nhan_vien SET luong = luong * 1.1 WHERE phong_id = 1;  -- tăng 10%
 DELETE FROM nhan_vien WHERE ngay_vao < '2015-01-01';
+
+-- UPSERT: chèn nếu chưa có, cập nhật nếu trùng khoá (PostgreSQL)
+INSERT INTO nhan_vien (id, ho_ten, luong) VALUES (5, 'Em', 14000000)
+ON CONFLICT (id) DO UPDATE SET luong = EXCLUDED.luong;
+```
+
+> Phân biệt xoá dữ liệu: `DELETE` xoá từng hàng theo điều kiện (ghi log, có thể rollback, kích hoạt trigger); `TRUNCATE` xoá sạch bảng cực nhanh (không log từng hàng, đặt lại AUTO_INCREMENT); `DROP` xoá luôn cả cấu trúc bảng.
+
+### DCL — phân quyền
+`DCL` kiểm soát ai được làm gì trên đối tượng CSDL.
+```sql
+GRANT SELECT, INSERT ON nhan_vien TO 'ke_toan';   -- cấp quyền đọc & chèn
+GRANT ALL PRIVILEGES ON DATABASE cong_ty TO 'admin';
+REVOKE INSERT ON nhan_vien FROM 'ke_toan';        -- thu hồi quyền chèn
+```
+
+### TCL — điều khiển giao dịch
+`TCL` gom nhiều lệnh DML thành một đơn vị "tất-cả-hoặc-không".
+```sql
+BEGIN;                       -- (hoặc START TRANSACTION)
+UPDATE tai_khoan SET so_du = so_du - 500000 WHERE id = 'A';
+UPDATE tai_khoan SET so_du = so_du + 500000 WHERE id = 'B';
+COMMIT;                      -- ghi bền vững; hoặc ROLLBACK để huỷ toàn bộ
 ```
 
 ## Chuẩn hoá (Normalization)
@@ -50,6 +80,25 @@ Chuẩn hoá loại bỏ dư thừa (redundancy) và bất thường khi cập n
 | BCNF | Đạt 3NF + mọi phụ thuộc hàm đều có vế trái là siêu khoá (superkey) |
 
 Thực tế thường chuẩn hoá tới 3NF, đôi khi **phi chuẩn hoá (denormalize)** có chủ đích để tăng tốc đọc.
+
+### Ví dụ chuẩn hoá từng bước
+Bảng chưa chuẩn hoá (một hàng đơn hàng gộp mọi thứ):
+
+| don_id | khach | sp_1, sp_2 | phong | truong_phong |
+|--------|-------|------------|-------|--------------|
+| 1 | An | Bút, Vở | KD | Hùng |
+
+- **Vi phạm 1NF:** cột `sp_1, sp_2` chứa nhiều giá trị (nhóm lặp). Sửa: tách mỗi sản phẩm thành một hàng riêng.
+- **Vi phạm 2NF:** nếu khoá chính là `(don_id, sp_id)` mà `khach` chỉ phụ thuộc `don_id` → phụ thuộc bộ phận. Sửa: tách bảng `don_hang(don_id, khach)` riêng.
+- **Vi phạm 3NF:** `truong_phong` phụ thuộc `phong`, mà `phong` không phải khoá → phụ thuộc bắc cầu. Sửa: tách bảng `phong_ban(phong, truong_phong)`.
+
+```sql
+-- Sau chuẩn hoá 3NF: mỗi thực thể một bảng, quan hệ qua khoá ngoại
+CREATE TABLE phong_ban (id INT PRIMARY KEY, ten VARCHAR(50), truong_phong VARCHAR(50));
+CREATE TABLE khach_hang (id INT PRIMARY KEY, ten VARCHAR(50));
+CREATE TABLE don_hang (id INT PRIMARY KEY, khach_id INT REFERENCES khach_hang(id));
+CREATE TABLE chi_tiet_don (don_id INT, sp_id INT, so_luong INT, PRIMARY KEY (don_id, sp_id));
+```
 
 ## Truy vấn (DQL)
 
@@ -67,6 +116,26 @@ LEFT JOIN phong_ban pb ON nv.phong_id = pb.id;
 
 -- CROSS JOIN: tích Descartes mọi cặp hàng
 SELECT a.mau, b.size FROM mau a CROSS JOIN size b;
+
+-- FULL OUTER JOIN: giữ mọi hàng cả hai bảng, thiếu thì NULL
+SELECT nv.ho_ten, pb.ten
+FROM nhan_vien nv
+FULL OUTER JOIN phong_ban pb ON nv.phong_id = pb.id;
+
+-- SELF JOIN: nối bảng với chính nó (tìm nhân viên & quản lý)
+SELECT nv.ho_ten AS nhan_vien, sep.ho_ten AS quan_ly
+FROM nhan_vien nv
+LEFT JOIN nhan_vien sep ON nv.quan_ly_id = sep.id;
+```
+
+Minh hoạ trực quan tập kết quả của các JOIN trên hai bảng A và B:
+
+```text
+A = {1,2,3}   B = {2,3,4}   (nối theo giá trị)
+INNER      → {2,3}            (giao)
+LEFT       → {1,2,3}          (mọi hàng A; 1 kèm NULL bên B)
+RIGHT      → {2,3,4}          (mọi hàng B; 4 kèm NULL bên A)
+FULL OUTER → {1,2,3,4}        (hợp; hai đầu thiếu là NULL)
 ```
 
 | Loại JOIN | Kết quả |
@@ -100,6 +169,40 @@ SELECT ho_ten, phong_id, luong,
        RANK() OVER (PARTITION BY phong_id ORDER BY luong DESC) AS hang_luong
 FROM nhan_vien;
 ```
+
+Các hàm cửa sổ thông dụng:
+```sql
+SELECT ho_ten, phong_id, luong,
+       ROW_NUMBER() OVER (ORDER BY luong DESC)              AS stt,        -- số thứ tự duy nhất
+       RANK()       OVER (ORDER BY luong DESC)              AS hang,       -- hạng, nhảy số khi bằng
+       DENSE_RANK() OVER (ORDER BY luong DESC)              AS hang_lien,  -- hạng, không nhảy số
+       AVG(luong)   OVER (PARTITION BY phong_id)            AS luong_tb_phong,
+       LAG(luong)   OVER (ORDER BY ngay_vao)                AS luong_nguoi_truoc,
+       SUM(luong)   OVER (ORDER BY ngay_vao)                AS luong_luy_ke   -- cộng dồn
+FROM nhan_vien;
+```
+
+| Hàm | Công dụng |
+|-----|-----------|
+| `ROW_NUMBER()` | Đánh số thứ tự duy nhất từng hàng |
+| `RANK()` / `DENSE_RANK()` | Xếp hạng; RANK nhảy số khi trùng, DENSE_RANK thì không |
+| `LAG()` / `LEAD()` | Lấy giá trị hàng trước / hàng sau |
+| `SUM()/AVG() OVER(...)` | Tổng/trung bình lũy kế hoặc theo nhóm mà giữ nguyên số hàng |
+
+### CTE và tập hợp (UNION / INTERSECT / EXCEPT)
+```sql
+-- CTE (Common Table Expression): đặt tên truy vấn con cho dễ đọc
+WITH luong_cao AS (
+    SELECT * FROM nhan_vien WHERE luong > 20000000
+)
+SELECT phong_id, COUNT(*) FROM luong_cao GROUP BY phong_id;
+
+-- UNION loại trùng; UNION ALL giữ trùng (nhanh hơn)
+SELECT ho_ten FROM nhan_vien_ha_noi
+UNION
+SELECT ho_ten FROM nhan_vien_da_nang;
+```
+`UNION` khử bản ghi trùng (tốn thêm bước sắp xếp/băm), còn `UNION ALL` nối thẳng không khử → nhanh hơn khi biết chắc không trùng.
 
 ## Đối tượng khác
 
@@ -138,6 +241,57 @@ VALUES (OLD.id, OLD.luong, NEW.luong);
 3. Sự khác nhau giữa INNER JOIN và LEFT JOIN? Khi nào kết quả có NULL?
 4. Window function khác GROUP BY như thế nào?
 5. `UNION` và `UNION ALL` khác nhau ra sao?
+
+## Playground: mô phỏng INNER JOIN vs LEFT JOIN
+
+Demo dưới đây thực hiện JOIN thủ công trên hai mảng object (nhân viên và phòng ban) để thấy rõ khác biệt giữa INNER và LEFT JOIN. Bấm **Chạy** và sửa dữ liệu để thử.
+
+<div class="js-demo" data-title="INNER JOIN vs LEFT JOIN trên 2 mảng object">
+<textarea class="js-demo-src">
+// Hai "bảng" dưới dạng mảng object
+const nhanVien = [
+  { id: 1, ho_ten: 'Lan',   phong_id: 1 },
+  { id: 2, ho_ten: 'Bình',  phong_id: 2 },
+  { id: 3, ho_ten: 'Cường', phong_id: 3 },   // phòng 3 KHÔNG tồn tại
+  { id: 4, ho_ten: 'Dung',  phong_id: null }, // chưa có phòng
+];
+const phongBan = [
+  { id: 1, ten: 'Kinh doanh' },
+  { id: 2, ten: 'Kỹ thuật' },
+];
+
+// INNER JOIN: chỉ giữ hàng khớp ở CẢ hai bảng
+function innerJoin(nv, pb) {
+  const out = [];
+  for (const n of nv) {
+    const p = pb.find(x => x.id === n.phong_id);
+    if (p) out.push({ ho_ten: n.ho_ten, phong: p.ten });
+  }
+  return out;
+}
+
+// LEFT JOIN: giữ MỌI hàng bảng trái; không khớp thì phòng = NULL
+function leftJoin(nv, pb) {
+  return nv.map(n => {
+    const p = pb.find(x => x.id === n.phong_id);
+    return { ho_ten: n.ho_ten, phong: p ? p.ten : 'NULL' };
+  });
+}
+
+print('=== INNER JOIN (chỉ hàng khớp) ===');
+for (const r of innerJoin(nhanVien, phongBan))
+  print(`  ${r.ho_ten.padEnd(6)} | ${r.phong}`);
+
+print('');
+print('=== LEFT JOIN (giữ mọi nhân viên) ===');
+for (const r of leftJoin(nhanVien, phongBan))
+  print(`  ${r.ho_ten.padEnd(6)} | ${r.phong}`);
+
+print('');
+print(`INNER trả ${innerJoin(nhanVien, phongBan).length} hàng, ` +
+      `LEFT trả ${leftJoin(nhanVien, phongBan).length} hàng.`);
+</textarea>
+</div>
 
 ## Sơ đồ quan hệ (ERD)
 

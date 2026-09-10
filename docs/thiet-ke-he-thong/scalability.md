@@ -44,6 +44,104 @@ Tự động mở rộng tự thêm hoặc bớt instance dựa trên số liệ
 
 Auto-scaling tiết kiệm chi phí (chỉ trả cho tài nguyên đang dùng) và duy trì hiệu năng khi tải biến động. Nó đòi hỏi dịch vụ phải **không trạng thái (stateless)** để instance mới có thể phục vụ ngay.
 
+## Mở rộng dọc vs. ngang — đào sâu
+
+**Mở rộng dọc (scale up)** phù hợp giai đoạn đầu: đơn giản, không cần đổi kiến trúc, giữ được nhất quán mạnh vì vẫn một máy/một CSDL. Nhưng nó có trần cứng (cỗ máy lớn nhất trên thị trường), chi phí tăng phi tuyến (máy gấp đôi sức mạnh thường đắt hơn gấp đôi), và vẫn là **điểm lỗi đơn** — máy chết là hệ thống chết.
+
+**Mở rộng ngang (scale out)** gần như không giới hạn và loại bỏ điểm lỗi đơn nhờ dư thừa, nhưng đẩy độ phức tạp lên: cần cân bằng tải, đồng bộ trạng thái, xử lý nhất quán dữ liệu giữa các node, và đối mặt với các đánh đổi CAP. Quy tắc thực tế: **scale up trước cho đến khi chạm giới hạn hợp lý, rồi mới scale out** — nhưng thiết kế stateless ngay từ đầu để việc chuyển sang scale out không phải viết lại.
+
+Một điểm dễ nhầm: mở rộng dọc và ngang **không loại trừ nhau**. Hệ thống lớn thường dùng nhiều máy khá mạnh (kết hợp cả hai) thay vì hàng nghìn máy tí hon hay một siêu máy duy nhất.
+
+## Băm nhất quán — đào sâu
+
+Với băm modulo `hash(key) % N`, khi N đổi (thêm/bớt node) **hầu hết** khoá đổi node vì mẫu số đổi. Ví dụ N=4 → N=5: khoảng 80% khoá phải di chuyển — thảm hoạ với cache (cache miss hàng loạt) và CSDL (rebalance khổng lồ).
+
+**Băm nhất quán** giải bài toán này:
+
+1. Ánh xạ không gian băm thành một **vòng tròn** (ví dụ 0 … 2³²−1, nối đuôi 0).
+2. Băm mỗi **node** lên vòng (theo tên/IP) → mỗi node chiếm một điểm.
+3. Băm mỗi **khoá** lên vòng; khoá thuộc về node **đầu tiên gặp khi đi theo chiều kim đồng hồ**.
+4. Thêm node mới: chỉ các khoá nằm giữa node mới và node liền trước nó bị di chuyển — trung bình chỉ **K/N khoá** (K = tổng khoá). Bớt node: chỉ khoá của node đó chuyển sang node kế tiếp.
+
+**Vấn đề phân bố lệch:** nếu chỉ đặt mỗi node một điểm, các cung trên vòng dài ngắn khác nhau → tải lệch. **Node ảo (virtual nodes / vnodes)** khắc phục: mỗi node vật lý được băm thành nhiều điểm ảo (ví dụ 100–200 vnode/node) rải khắp vòng. Càng nhiều vnode, phân bố càng đều và khi một node chết, tải của nó được chia đều cho các node còn lại thay vì dồn hết vào một node kế tiếp.
+
+Sơ đồ vòng băm với node ảo:
+
+```mermaid
+flowchart LR
+    K1["key: user42"] -->|"CW →"| VB["vnode B#3"]
+    K2["key: cart99"] -->|"CW →"| VA["vnode A#7"]
+    VA --> NA["Node A"]
+    VB --> NB["Node B"]
+    subgraph "Vòng băm (mỗi node có nhiều vnode)"
+        VA
+        VB
+    end
+```
+
+<div class="js-demo" data-title="Consistent hashing — phân bố key → node (có vnode)">
+<textarea class="js-demo-src">
+// Băm chuỗi đơn giản (FNV-1a rút gọn) -> số 32-bit không âm
+function hashStr(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+
+// Xây vòng băm với node ảo
+function buildRing(nodes, vnodesPerNode) {
+  const ring = []; // {pos, node}
+  for (const node of nodes)
+    for (let v = 0; v < vnodesPerNode; v++)
+      ring.push({ pos: hashStr(node + '#' + v), node });
+  ring.sort((a, b) => a.pos - b.pos);
+  return ring;
+}
+
+// Tìm node phụ trách một key: node đầu tiên theo chiều kim đồng hồ
+function lookup(ring, key) {
+  const h = hashStr(key);
+  for (const e of ring) if (e.pos >= h) return e.node;
+  return ring[0].node; // vòng lại đầu
+}
+
+function phanBo(nodes, vnodes, soKey) {
+  const ring = buildRing(nodes, vnodes);
+  const dem = Object.fromEntries(nodes.map(n => [n, 0]));
+  for (let i = 0; i < soKey; i++) dem[lookup(ring, 'key' + i)]++;
+  return dem;
+}
+
+const nodes = ['NodeA', 'NodeB', 'NodeC'];
+const SO_KEY = 3000;
+
+print('=== Chỉ 1 vnode/node (phân bố lệch) ===');
+let d1 = phanBo(nodes, 1, SO_KEY);
+for (const n of nodes) print(n + ': ' + d1[n] + ' key (' + (100*d1[n]/SO_KEY).toFixed(1) + '%)');
+
+print('\n=== 150 vnode/node (phân bố đều hơn) ===');
+let d2 = phanBo(nodes, 150, SO_KEY);
+for (const n of nodes) print(n + ': ' + d2[n] + ' key (' + (100*d2[n]/SO_KEY).toFixed(1) + '%)');
+
+// Thêm NodeD: đo tỉ lệ key phải di chuyển
+const ringBefore = buildRing(nodes, 150);
+const ringAfter  = buildRing([...nodes, 'NodeD'], 150);
+let moved = 0;
+for (let i = 0; i < SO_KEY; i++) {
+  const k = 'key' + i;
+  if (lookup(ringBefore, k) !== lookup(ringAfter, k)) moved++;
+}
+print('\n=== Thêm NodeD (từ 3 -> 4 node) ===');
+print('Số key phải di chuyển: ' + moved + '/' + SO_KEY +
+      ' (' + (100*moved/SO_KEY).toFixed(1) + '%)');
+print('So sánh: băm modulo (hash % N) khi 3 -> 4 node sẽ dời ~75% key,');
+print('còn consistent hashing chỉ dời ~K/N ≈ 25% — nhỏ hơn nhiều.');
+</textarea>
+</div>
+
 ## Ví dụ
 ```text
 Sơ đồ mở rộng ngang có cân bằng tải:

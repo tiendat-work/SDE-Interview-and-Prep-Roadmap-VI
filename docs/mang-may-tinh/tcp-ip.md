@@ -29,6 +29,34 @@ này tới ứng dụng khác qua mạng.
 
 Mẹo nhớ: "All People Seem To Need Data Processing" (từ tầng 7 xuống 1).
 
+#### Chi tiết từng tầng OSI
+
+- **Tầng 7 – Ứng dụng (Application):** cung cấp giao diện cho phần mềm người
+  dùng truy cập dịch vụ mạng. Không phải bản thân trình duyệt/mail client, mà
+  là các giao thức chúng dùng: HTTP/HTTPS (web), DNS (phân giải tên), SMTP/IMAP
+  (email), FTP (truyền file). Đây là nơi dữ liệu "có nghĩa" với ứng dụng.
+- **Tầng 6 – Trình diễn (Presentation):** chuẩn hoá cách biểu diễn dữ liệu để
+  hai bên hiểu nhau: mã hoá ký tự (ASCII, UTF-8), nén (JPEG, GIF), và mã hoá
+  bảo mật (TLS/SSL nằm bắc cầu giữa tầng 6 và 4). Ví dụ: chuyển số nguyên
+  big-endian ↔ little-endian, serialize/deserialize.
+- **Tầng 5 – Phiên (Session):** thiết lập, duy trì, đồng bộ và kết thúc phiên
+  hội thoại giữa hai ứng dụng. Đặt "checkpoint" để khôi phục khi đứt (ví dụ
+  tải file lớn có thể tiếp tục). Ví dụ: RPC, NetBIOS, phiên SQL.
+- **Tầng 4 – Giao vận (Transport):** truyền dữ liệu end-to-end giữa hai tiến
+  trình, phân biệt bằng **số cổng (port)**. TCP đảm bảo tin cậy (đúng thứ tự,
+  không mất, kiểm soát luồng và tắc nghẽn); UDP nhanh, nhẹ, không đảm bảo.
+  Chia dữ liệu lớn thành các segment.
+- **Tầng 3 – Mạng (Network):** định tuyến gói tin (packet) qua nhiều mạng dựa
+  trên **địa chỉ IP logic**. Chọn đường đi (routing), phân mảnh (fragmentation)
+  khi vượt MTU. Ví dụ: IP, ICMP (ping/traceroute), giao thức định tuyến OSPF/BGP.
+- **Tầng 2 – Liên kết dữ liệu (Data Link):** truyền frame giữa các nút **trong
+  cùng một mạng cục bộ**, dùng **địa chỉ MAC vật lý**. Phát hiện lỗi bằng CRC/FCS,
+  điều khiển truy cập môi trường (MAC). Ví dụ: Ethernet, Wi-Fi (802.11), ARP,
+  switch. Chia thành hai lớp con LLC và MAC.
+- **Tầng 1 – Vật lý (Physical):** truyền chuỗi bit thô qua môi trường: điện áp
+  trên cáp đồng, xung ánh sáng trong cáp quang, sóng vô tuyến. Quy định đầu nối,
+  tốc độ, mã đường truyền. Ví dụ: cáp UTP, cáp quang, hub, bộ lặp (repeater).
+
 Sơ đồ dưới minh hoạ chồng 7 tầng OSI và cách ánh xạ sang 4 tầng TCP/IP:
 
 ```mermaid
@@ -89,7 +117,14 @@ giao thức tầng Giao vận nhưng khác nhau căn bản:
 | Thứ tự gói tin | Sắp xếp lại đúng thứ tự | Không đảm bảo |
 | Tốc độ / độ trễ | Chậm hơn, overhead lớn | Nhanh, overhead thấp |
 | Kích thước header | 20-60 byte | 8 byte |
+| Truyền quảng bá (broadcast/multicast) | Không hỗ trợ | Hỗ trợ |
+| Kiểm soát luồng (Flow control) | Có (cửa sổ trượt) | Không |
+| Đơn vị dữ liệu (PDU) | Segment | Datagram |
 | Ứng dụng | Web (HTTP), email, truyền file | Video call, game, DNS, streaming |
+
+**Chọn TCP khi:** cần dữ liệu đến đủ và đúng thứ tự (tải trang, tải file,
+giao dịch ngân hàng). **Chọn UDP khi:** ưu tiên độ trễ thấp và chấp nhận mất
+gói lẻ tẻ (thoại/video thời gian thực, game online, DNS truy vấn nhỏ).
 
 ### Bắt tay 3 bước (Three-way Handshake)
 Để mở một kết nối TCP tin cậy, hai bên thực hiện 3 bước trao đổi:
@@ -120,6 +155,94 @@ sequenceDiagram
 ```
 
 Đóng kết nối dùng cơ chế 4 bước (four-way handshake) với cờ FIN và ACK.
+
+### Đóng kết nối 4 bước (Four-way Handshake)
+Vì TCP là song công (full-duplex), mỗi chiều truyền phải được đóng riêng:
+```
+Client                                Server
+   |------- FIN ---------------------->|   1. Client hết dữ liệu gửi
+   |<------ ACK -----------------------|   2. Server xác nhận
+   |<------ FIN -----------------------|   3. Server cũng hết dữ liệu gửi
+   |------- ACK ---------------------->|   4. Client xác nhận
+   | (đợi TIME_WAIT ~2·MSL rồi đóng)   |
+```
+- **TIME_WAIT:** sau khi gửi ACK cuối, bên chủ động đóng đợi khoảng `2·MSL`
+  (Maximum Segment Lifetime) để: (1) đảm bảo ACK cuối tới nơi, (2) tránh gói
+  cũ lạc vào kết nối mới cùng cặp cổng. Đây là lý do server bận có thể tích
+  luỹ nhiều socket ở trạng thái TIME_WAIT.
+- **Half-close:** một bên có thể gửi FIN (hết gửi) nhưng vẫn nhận dữ liệu từ
+  bên kia cho đến khi bên kia cũng FIN.
+
+### Cửa sổ trượt (Sliding Window) & kiểm soát luồng
+TCP không gửi từng byte rồi chờ ACK (quá chậm) mà cho phép gửi trước một
+"cửa sổ" nhiều byte chưa được xác nhận:
+- **Cửa sổ nhận (receive window – rwnd):** bên nhận báo còn bao nhiêu chỗ
+  trống trong bộ đệm qua trường Window Size. Đây là **kiểm soát luồng (flow
+  control)** — tránh bên gửi làm tràn bộ đệm bên nhận.
+- Cửa sổ "trượt" về phía trước khi các byte đầu cửa sổ đã được ACK, cho phép
+  gửi tiếp các byte mới. Nhờ vậy nhiều gói "bay" đồng thời trên đường truyền.
+- **Cumulative ACK:** một ACK xác nhận tất cả byte tới số đó. **SACK
+  (Selective ACK)** cho phép báo nhận các đoạn rời rạc để truyền lại chính xác.
+
+```
+Đã ACK  | Đang bay (chưa ACK)  | Được phép gửi | Chưa gửi được
+[=======|======================|===============]················
+        ^ mép trái            ^ mép phải = trái + kích thước cửa sổ
+        cửa sổ trượt phải khi mép trái nhận thêm ACK
+```
+
+### Kiểm soát tắc nghẽn (Congestion Control)
+Ngoài rwnd (bảo vệ bên nhận), TCP còn giữ **cửa sổ tắc nghẽn (congestion
+window – cwnd)** để không làm nghẽn mạng. Lượng gửi thực tế = `min(rwnd, cwnd)`.
+Các pha kinh điển (TCP Reno/NewReno):
+- **Slow Start (khởi động chậm):** cwnd bắt đầu nhỏ (1–10 MSS), **nhân đôi mỗi
+  RTT** (tăng theo hàm mũ) cho tới khi đạt ngưỡng `ssthresh`.
+- **Congestion Avoidance (tránh tắc nghẽn):** khi cwnd ≥ ssthresh, tăng **tuyến
+  tính** (+1 MSS mỗi RTT) để dò băng thông thận trọng.
+- **Phát hiện mất gói:**
+    - **3 ACK trùng (duplicate ACK):** nghi mất 1 gói → **Fast Retransmit**
+      (truyền lại ngay) + **Fast Recovery** (giảm cwnd còn một nửa, không về 1).
+    - **Timeout (RTO):** nghẽn nặng → đặt ssthresh = cwnd/2, cwnd về 1, quay
+      lại Slow Start.
+- Mô hình "răng cưa" (AIMD – Additive Increase, Multiplicative Decrease): tăng
+  cộng dồn từ từ, giảm nhân khi mất gói → công bằng và ổn định giữa các luồng.
+  Thuật toán hiện đại như **CUBIC** (mặc định trên Linux) và **BBR** (Google)
+  cải thiện thông lượng trên đường truyền độ trễ cao.
+
+!!! tip "Chạy được ngay — mô phỏng Slow Start & Congestion Avoidance"
+    Đoạn dưới mô phỏng `cwnd` qua từng RTT: nhân đôi trong pha Slow Start, tăng
+    tuyến tính khi vượt `ssthresh`, và giảm nửa khi "mất gói" tại RTT số 8.
+    Bấm **▶ Chạy**; đổi `ssthresh` hay `lossAtRTT` để xem hành vi khác.
+
+<div class="js-demo" data-title="Mô phỏng cửa sổ tắc nghẽn TCP (cwnd)">
+<textarea class="js-demo-src">
+let cwnd = 1;            // cửa sổ tắc nghẽn (đơn vị MSS)
+let ssthresh = 16;       // ngưỡng chuyển sang tránh tắc nghẽn
+const lossAtRTT = 8;     // giả lập mất gói tại RTT này
+const rounds = 14;
+
+print('RTT | cwnd | pha');
+print('----+------+----------------------');
+for (let rtt = 1; rtt <= rounds; rtt++) {
+  let pha;
+  if (rtt === lossAtRTT) {
+    // Phát hiện mất gói (3 ACK trùng): giảm nửa, Fast Recovery
+    ssthresh = Math.max(2, Math.floor(cwnd / 2));
+    cwnd = ssthresh;
+    pha = 'MẤT GÓI → cwnd = cwnd/2';
+  } else if (cwnd < ssthresh) {
+    cwnd = cwnd * 2;                 // Slow Start: tăng theo hàm mũ
+    pha = 'Slow Start (x2)';
+  } else {
+    cwnd = cwnd + 1;                 // Congestion Avoidance: tuyến tính
+    pha = 'Congestion Avoidance (+1)';
+  }
+  print(String(rtt).padStart(3) + ' | ' + String(cwnd).padStart(4) + ' | ' + pha);
+}
+print('');
+print('ssthresh cuối:', ssthresh);
+</textarea>
+</div>
 
 ## Ví dụ
 ```python

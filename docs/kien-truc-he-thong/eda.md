@@ -46,6 +46,27 @@ flowchart LR
 - **Ưu điểm**: Có lịch sử đầy đủ (audit log), có thể tái dựng trạng thái tại bất kỳ thời điểm nào, dễ gỡ lỗi và phân tích.
 - **Nhược điểm**: Phức tạp hơn, cần xử lý việc phát lại và **snapshot (ảnh chụp)** để tối ưu hiệu năng.
 
+### Cách hoạt động chi tiết
+
+Thay vì cập nhật "tại chỗ" (in-place) một bản ghi, mỗi thay đổi được lưu thành một **sự kiện bất biến (append-only)**. Ví dụ tài khoản ngân hàng:
+
+```
+TaiKhoanMo(so_du=0)
+TienDaNap(+100000)
+TienDaRut(-30000)
+TienDaNap(+50000)
+=> Trạng thái hiện tại: số dư = 120000 (tái dựng bằng cách cộng dồn các sự kiện)
+```
+
+**Các khái niệm cốt lõi:**
+
+- **Event Store**: Kho lưu chuỗi sự kiện, chỉ ghi thêm (append-only), không sửa/xóa.
+- **Tái dựng (rehydration)**: Nạp lại trạng thái một thực thể (aggregate) bằng cách phát lại các sự kiện của nó.
+- **Snapshot (ảnh chụp)**: Lưu định kỳ trạng thái tại một thời điểm để không phải phát lại từ đầu — chỉ phát lại các sự kiện sau snapshot gần nhất.
+- **Projection (phép chiếu)**: Xây dựng các "khung nhìn" đọc (read view) từ luồng sự kiện, phục vụ truy vấn nhanh.
+
+**Ưu điểm bổ sung:** Có thể "du hành thời gian" (time-travel) để xem trạng thái quá khứ, dễ phân tích hành vi, hỗ trợ tự nhiên cho CQRS. **Rủi ro:** lược đồ sự kiện (event schema) thay đổi theo thời gian cần **versioning sự kiện**; phát lại lâu nếu không snapshot; đường cong học tập dốc.
+
 ## CQRS (Command Query Responsibility Segregation)
 
 **CQRS (Command Query Responsibility Segregation)** là mẫu tách riêng đường **ghi (command)** và đường **đọc (query)** thành hai mô hình khác nhau.
@@ -54,6 +75,24 @@ flowchart LR
 - **Truy vấn (Query)**: Chỉ đọc, dùng mô hình dữ liệu được tối ưu riêng cho đọc.
 
 CQRS thường kết hợp với Event Sourcing: lệnh sinh sự kiện, sự kiện cập nhật mô hình đọc (read model). Điều này cho phép tối ưu độc lập hai phía và mở rộng phần đọc riêng biệt.
+
+### Vì sao tách đọc/ghi
+
+Trong nhiều hệ thống, đặc điểm đọc và ghi rất khác nhau: đọc thường nhiều gấp hàng chục–trăm lần ghi, cần mô hình phi chuẩn hóa (denormalized) để nhanh; ghi cần đảm bảo quy tắc nghiệp vụ và tính toàn vẹn. Tách hai đường cho phép:
+
+- **Mở rộng độc lập**: nhân bản nhiều read model để chịu tải đọc, giữ write model gọn nhẹ.
+- **Mô hình dữ liệu tối ưu riêng**: write model chuẩn hóa cho tính đúng đắn; read model phi chuẩn hóa/nhiều khung nhìn cho tốc độ.
+- **Bảo mật rõ ràng**: phân quyền ghi và đọc riêng biệt.
+
+**Cái giá phải trả:** phức tạp hơn, và vì read model cập nhật bất đồng bộ nên chấp nhận **nhất quán cuối cùng (eventual consistency)** — người dùng có thể thấy dữ liệu trễ một chút sau khi ghi.
+
+| Tiêu chí | Không CQRS | Có CQRS |
+|----------|-----------|---------|
+| Mô hình dữ liệu | Một mô hình cho cả đọc/ghi | Hai mô hình riêng |
+| Mở rộng | Đọc và ghi chung tài nguyên | Mở rộng độc lập |
+| Độ phức tạp | Thấp | Cao hơn |
+| Nhất quán | Thường tức thời | Thường nhất quán cuối cùng |
+| Phù hợp | CRUD đơn giản | Đọc nhiều, logic ghi phức tạp |
 
 ```
 [Command] --> [Write Model] --phát sự kiện--> [Event Store]
@@ -101,6 +140,67 @@ for msg in consumer:
     su_kien = msg.value
     print("Kho nhan su kien:", su_kien)  # phản ứng: trừ tồn kho...
 ```
+
+## Playground: Event bus đơn giản (emit / subscribe)
+
+Demo dưới đây cài đặt một **event bus** tối giản: các consumer đăng ký (subscribe) một loại sự kiện, producer phát (emit) sự kiện và mọi subscriber quan tâm đều được gọi — minh hoạ liên kết lỏng lẻo của EDA.
+
+<div class="js-demo" data-title="Event bus emit/subscribe">
+<textarea class="js-demo-src">
+// Event bus tối giản: nhiều subscriber phản ứng độc lập với một sự kiện
+class EventBus {
+  constructor() { this.handlers = {}; }        // loại sự kiện -> danh sách handler
+  subscribe(loai, handler) {                   // đăng ký lắng nghe
+    (this.handlers[loai] = this.handlers[loai] || []).push(handler);
+  }
+  emit(loai, data) {                           // phát sự kiện tới mọi subscriber
+    print(`>> Phát sự kiện: ${loai}`);
+    (this.handlers[loai] || []).forEach(h => h(data));
+  }
+}
+
+const bus = new EventBus();
+// Ba consumer độc lập cùng quan tâm sự kiện "DonHangDaDat"
+bus.subscribe('DonHangDaDat', d => print(`  [Kho] trừ tồn kho cho đơn ${d.ma}`));
+bus.subscribe('DonHangDaDat', d => print(`  [Email] gửi xác nhận cho ${d.khach}`));
+bus.subscribe('DonHangDaDat', d => print(`  [Phân tích] ghi nhận doanh thu ${d.so_tien}`));
+bus.subscribe('ThanhToanThatBai', d => print(`  [Cảnh báo] đơn ${d.ma} thanh toán lỗi`));
+
+bus.emit('DonHangDaDat', { ma: 'DH001', khach: 'An', so_tien: 500000 });
+bus.emit('ThanhToanThatBai', { ma: 'DH002' });
+</textarea>
+</div>
+
+## Playground: Event Sourcing tái dựng trạng thái
+
+Demo minh hoạ Event Sourcing: trạng thái tài khoản không được lưu trực tiếp mà **tái dựng bằng cách phát lại** chuỗi sự kiện.
+
+<div class="js-demo" data-title="Event Sourcing: phát lại sự kiện">
+<textarea class="js-demo-src">
+// Lưu chuỗi sự kiện và tái dựng số dư bằng cách phát lại
+const eventStore = [];
+function ghiSuKien(loai, soTien) {
+  eventStore.push({ loai, soTien });
+  print(`Ghi sự kiện: ${loai} (${soTien})`);
+}
+
+// Tái dựng trạng thái bằng cách cộng dồn (reduce) toàn bộ sự kiện
+function taiDungSoDu() {
+  return eventStore.reduce((soDu, e) => {
+    if (e.loai === 'TienDaNap') return soDu + e.soTien;
+    if (e.loai === 'TienDaRut') return soDu - e.soTien;
+    return soDu;
+  }, 0);
+}
+
+ghiSuKien('TienDaNap', 100000);
+ghiSuKien('TienDaRut', 30000);
+ghiSuKien('TienDaNap', 50000);
+
+print('--- Phát lại toàn bộ sự kiện ---');
+print('Số dư hiện tại:', taiDungSoDu());   // 120000
+</textarea>
+</div>
 
 ## Ưu / nhược điểm
 

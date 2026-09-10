@@ -101,6 +101,56 @@ Hệ điều hành thực tế phân loại tác vụ và dùng nhiều bộ l�
 - **Short-term scheduler (CPU scheduler):** chọn tiến trình chạy tiếp, gọi rất thường xuyên nên phải nhanh.
 - **Medium-term scheduler:** hoán đổi (swap) tiến trình ra/vào đĩa để giải phóng RAM.
 
+### Playground: so sánh thời gian chờ FCFS vs RR
+Tính thời gian chờ và hoàn thành cho từng tiến trình, in bảng và thời gian chờ trung bình của hai thuật toán trên cùng bộ dữ liệu.
+
+<div class="js-demo" data-title="FCFS vs Round Robin: bảng thời gian chờ">
+<textarea class="js-demo-src">
+// Giả sử tất cả tiến trình đến t=0. waiting = turnaround - burst.
+const tt = [
+  { ten: 'P1', burst: 8 },
+  { ten: 'P2', burst: 4 },
+  { ten: 'P3', burst: 2 },
+  { ten: 'P4', burst: 6 },
+];
+
+function fcfs(proc) {
+  let t = 0; const ht = {};
+  for (const p of proc) { t += p.burst; ht[p.ten] = t; }  // thời điểm hoàn thành
+  return ht;
+}
+
+function roundRobin(proc, quantum) {
+  const conLai = {}, ht = {};
+  proc.forEach(p => conLai[p.ten] = p.burst);
+  let hangDoi = proc.map(p => p.ten), t = 0;
+  while (hangDoi.length) {
+    const ten = hangDoi.shift();
+    const chay = Math.min(quantum, conLai[ten]);
+    t += chay; conLai[ten] -= chay;
+    if (conLai[ten] > 0) hangDoi.push(ten);
+    else ht[ten] = t;                                      // vừa hoàn thành
+  }
+  return ht;
+}
+
+function inBang(nhan, proc, ht) {
+  let tongCho = 0;
+  print(`\n=== ${nhan} ===`);
+  print('Tiến trình | Burst | Hoàn thành | Chờ');
+  for (const p of proc) {
+    const cho = ht[p.ten] - p.burst;                       // turnaround - burst
+    tongCho += cho;
+    print(`${p.ten.padEnd(10)} | ${String(p.burst).padEnd(5)} | ${String(ht[p.ten]).padEnd(10)} | ${cho}`);
+  }
+  print('Thời gian chờ trung bình:', (tongCho / proc.length).toFixed(2));
+}
+
+inBang('FCFS', tt, fcfs(tt));
+inBang('Round Robin (quantum=3)', tt, roundRobin(tt, 3));
+</textarea>
+</div>
+
 ## Độ phức tạp (nếu có)
 | Thuật toán | Chọn tiến trình kế |
 |------------|--------------------|

@@ -72,6 +72,55 @@ Là khả năng hệ thống tiếp tục hoạt động đúng dù một số t
 - **Idempotency & retry**: thử lại an toàn khi lỗi tạm thời.
 - **Chịu lỗi Byzantine (Byzantine fault tolerance)**: chịu được cả node "phản trắc" trả lời sai (dùng trong blockchain).
 
+## CAP & PACELC — đào sâu và so sánh
+
+CAP thường bị hiểu sai là "chọn 2 trong 3". Chính xác hơn: phân vùng mạng (P) là điều **bắt buộc phải chịu** trong hệ phân tán thực (mạng luôn có thể đứt/chậm), nên khi P xảy ra bạn chỉ được chọn **C hoặc A**. Khi mạng bình thường (không P), một hệ tốt có thể đạt **cả C và A** cùng lúc — đó là lỗ hổng mà **PACELC** lấp: *nếu Partition thì chọn A/C; Else (bình thường) thì đánh đổi Latency/Consistency*. Nghĩa là ngay cả lúc mạng ổn, muốn nhất quán mạnh (đồng bộ nhiều bản sao) vẫn phải trả giá bằng độ trễ.
+
+| Hệ thống | Khi có Partition (PA/PC) | Khi bình thường (EL/EC) | Xếp loại PACELC |
+|----------|--------------------------|--------------------------|-----------------|
+| DynamoDB / Cassandra | PA (ưu tiên sẵn sàng) | EL (ưu tiên độ trễ) | **PA/EL** |
+| MongoDB (mặc định) | PC (ưu tiên nhất quán) | EC (ưu tiên nhất quán) | **PC/EC** |
+| Google Spanner | PC | EC (nhất quán mạnh nhờ TrueTime) | **PC/EC** |
+| Cassandra (tinh chỉnh) | PA | EL | **PA/EL** |
+| PostgreSQL (1 node) | — (không phân tán) | ưu tiên C | ~ **EC** |
+
+## Eventual consistency — đào sâu
+
+Nhất quán cuối cùng nói rằng nếu **ngừng ghi mới**, mọi bản sao sẽ hội tụ cùng giá trị "cuối cùng". Câu hỏi quan trọng là *hội tụ thế nào khi có xung đột*:
+
+- **Last-Write-Wins (LWW)**: dùng timestamp, giá trị ghi sau thắng. Đơn giản nhưng có thể **mất cập nhật** nếu đồng hồ lệch.
+- **Vector clock**: phát hiện ghi song song (concurrent) không có quan hệ nhân quả, để lộ xung đột cho tầng trên xử lý (như Dynamo).
+- **CRDT (Conflict-free Replicated Data Types)**: cấu trúc dữ liệu tự hợp nhất không xung đột (bộ đếm G-Counter, tập OR-Set) — dùng trong soạn thảo cộng tác, Redis CRDT.
+- **Read repair & anti-entropy**: khi đọc phát hiện bản sao lệch thì sửa ngay; nền chạy Merkle tree để đồng bộ dần (Cassandra).
+
+Các mức đảm bảo lấy-người-dùng-làm-trung-tâm (client-centric) thường gặp: **read-your-writes** (thấy ghi của chính mình), **monotonic reads** (không "lùi" về giá trị cũ hơn), **monotonic writes** (ghi của một client áp dụng theo thứ tự), **writes-follow-reads**.
+
+## Paxos vs. Raft — đào sâu và so sánh
+
+Cả hai giải cùng bài toán **đồng thuận**: nhiều node thống nhất một giá trị/chuỗi lệnh dù có node lỗi (crash, không phản hồi — *không* xét node độc hại).
+
+**Paxos** (Lamport) hoạt động theo hai pha với các vai trò *proposer / acceptor / learner*:
+1. **Pha 1 (Prepare/Promise)**: proposer chọn số hiệu `n`, hỏi đa số acceptor; acceptor hứa không chấp nhận đề xuất số nhỏ hơn `n`, và trả về giá trị đã chấp nhận (nếu có).
+2. **Pha 2 (Accept/Accepted)**: proposer gửi giá trị (giá trị đã chấp nhận cao nhất, hoặc giá trị của mình nếu chưa có) tới đa số; khi đa số chấp nhận thì giá trị được chốt.
+
+*Multi-Paxos* tối ưu bằng cách bầu một leader ổn định để bỏ qua pha 1 lặp lại. Paxos đúng đắn nhưng nổi tiếng **khó hiểu và khó cài đúng**.
+
+**Raft** chia bài toán thành ba mảnh dễ nắm:
+1. **Bầu leader (leader election)**: node ở trạng thái follower; hết *election timeout* mà không nghe leader → thành candidate, tăng *term*, xin phiếu; nhận đa số → thành leader.
+2. **Nhân bản nhật ký (log replication)**: leader nhận lệnh, ghi vào log, gửi `AppendEntries` tới follower; khi đa số ghi xong thì *commit* và áp dụng vào máy trạng thái.
+3. **An toàn (safety)**: chỉ bầu leader có log đủ mới; một term chỉ một leader; entry đã commit không bao giờ mất.
+
+| Tiêu chí | Paxos | Raft |
+|----------|-------|------|
+| Mục tiêu thiết kế | Đúng đắn lý thuyết | Dễ hiểu, dễ cài |
+| Vai trò | proposer/acceptor/learner | leader/follower/candidate |
+| Leader | Tuỳ chọn (Multi-Paxos) | Bắt buộc, trung tâm |
+| Nhân bản log | Không quy định rõ | Quy định chặt chẽ |
+| Độ khó cài đặt | Cao | Trung bình |
+| Hệ dùng | Google Chubby, Spanner | etcd, Consul, TiKV, CockroachDB |
+
+Điểm chung cốt lõi: **cần đa số (quorum = ⌊N/2⌋+1)** để tiến; cụm N node chịu được tối đa ⌊(N−1)/2⌋ node hỏng (5 node chịu 2 hỏng). Đây là lý do cụm đồng thuận thường có số node **lẻ**.
+
 ## Ví dụ
 ```text
 Bỏ phiếu đa số (quorum) với N = 3 bản sao, W = 2, R = 2:

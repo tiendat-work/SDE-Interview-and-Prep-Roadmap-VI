@@ -92,6 +92,141 @@ os.remove("vidu_lien_ket.txt"); os.remove(duong_dan)
 ### Hệ tệp hiện đại: copy-on-write
 Các hệ như **ZFS** và **Btrfs** dùng **copy-on-write (COW):** không ghi đè dữ liệu cũ mà ghi ra vị trí mới rồi cập nhật con trỏ, cho phép **snapshot** tức thời, checksum toàn vẹn dữ liệu, và tự phục hồi lỗi. Đây là hướng thay thế journaling truyền thống.
 
+### Cấu trúc inode chi tiết và con trỏ khối
+Một inode điển hình (ext2/3/4) chứa metadata cố định và một mảng con trỏ khối nhiều cấp để hỗ trợ cả tệp nhỏ lẫn tệp rất lớn:
+
+| Thành phần inode | Vai trò |
+|------------------|---------|
+| Mode + quyền | Loại tệp (thường/thư mục/symlink) và rwx cho owner/group/other |
+| UID / GID | Chủ sở hữu và nhóm |
+| Kích thước | Số byte của tệp |
+| Dấu thời gian | atime (truy cập), mtime (sửa nội dung), ctime (sửa metadata) |
+| Link count | Số hard link trỏ tới inode; =0 thì giải phóng |
+| 12 con trỏ trực tiếp | Trỏ thẳng tới 12 khối dữ liệu đầu — nhanh cho tệp nhỏ |
+| 1 con trỏ gián tiếp đơn | Trỏ tới một khối chứa toàn con trỏ khối |
+| 1 con trỏ gián tiếp đôi | Hai tầng con trỏ → tệp lớn hơn |
+| 1 con trỏ gián tiếp ba | Ba tầng → tệp rất lớn (hàng TB) |
+
+Lưu ý: inode **không** chứa tên tệp — tên nằm trong mục thư mục (directory entry) ánh xạ tên → số inode, nhờ đó hard link (nhiều tên, một inode) hoạt động.
+
+```mermaid
+graph LR
+    DIR["Mục thư mục<br/>tên -> số inode"] --> INODE["inode #1234<br/>(metadata + con trỏ)"]
+    INODE --> D0["Khối trực tiếp 0..11"]
+    INODE --> SI["Con trỏ gián tiếp đơn"]
+    SI --> B1["Khối con trỏ"]
+    B1 --> DD["Nhiều khối dữ liệu"]
+```
+
+### Cơ chế journaling từng bước
+Một giao dịch ghi journaling (chế độ metadata) diễn ra theo trình tự bảo đảm nguyên tử:
+
+```mermaid
+sequenceDiagram
+    participant App as Ứng dụng
+    participant FS as Hệ tệp
+    participant J as Journal
+    participant D as Vùng chính (đĩa)
+    App->>FS: ghi tệp
+    FS->>J: 1. Ghi bản ghi ý định (BEGIN + thay đổi)
+    FS->>J: 2. Ghi COMMIT (chốt giao dịch)
+    FS->>D: 3. Áp thay đổi lên vùng chính (checkpoint)
+    FS->>J: 4. Xoá bản ghi khỏi journal
+    Note over FS,J: Mất điện trước COMMIT -> bỏ giao dịch<br/>Sau COMMIT -> phát lại (replay) khi khởi động
+```
+
+### Minh hoạ code: duyệt cây thư mục
+Duyệt đệ quy toàn bộ cây thư mục và in kích thước từng tệp — thao tác cơ bản đọc directory entry và inode:
+
+=== "JavaScript"
+    ```js
+    // Node.js: duyệt đệ quy cây thư mục, in tệp và tổng kích thước
+    const fs = require('fs');
+    const path = require('path');
+
+    function duyet(thuMuc, tien = '') {
+      let tong = 0;
+      const muc = fs.readdirSync(thuMuc, { withFileTypes: true });
+      for (const e of muc) {
+        const dd = path.join(thuMuc, e.name);
+        if (e.isDirectory()) {
+          console.log(`${tien}[DIR] ${e.name}`);
+          tong += duyet(dd, tien + '  ');       // đệ quy vào thư mục con
+        } else {
+          const kt = fs.statSync(dd).size;       // đọc metadata từ inode
+          console.log(`${tien}${e.name} (${kt} byte)`);
+          tong += kt;
+        }
+      }
+      return tong;
+    }
+
+    console.log('Tổng byte:', duyet('.'));
+    ```
+=== "Python"
+    ```python
+    import os
+
+    # Duyệt đệ quy cây thư mục bằng os.walk, cộng dồn kích thước tệp
+    def duyet(goc):
+        tong = 0
+        for thu_muc, cac_tm_con, cac_tep in os.walk(goc):
+            muc = thu_muc.count(os.sep)
+            print("  " * muc + f"[DIR] {os.path.basename(thu_muc) or thu_muc}")
+            for ten in cac_tep:
+                dd = os.path.join(thu_muc, ten)
+                kt = os.stat(dd).st_size          # đọc metadata từ inode
+                print("  " * (muc + 1) + f"{ten} ({kt} byte)")
+                tong += kt
+        return tong
+
+    print("Tổng byte:", duyet("."))
+    ```
+
+### Playground: duyệt cây thư mục & tính tổng kích thước
+Cho một cây thư mục dạng dữ liệu, duyệt đệ quy (DFS) để in cấu trúc và cộng dồn kích thước — mô phỏng cách hệ tệp đi từ thư mục gốc qua các directory entry:
+
+<div class="js-demo" data-title="Duyệt cây thư mục (DFS) và tổng kích thước">
+<textarea class="js-demo-src">
+// Mô hình cây thư mục: thư mục có 'con', tệp có 'size' (byte).
+const cay = {
+  ten: '/', con: [
+    { ten: 'home', con: [
+      { ten: 'user', con: [
+        { ten: 'bao-cao.pdf', size: 24000 },
+        { ten: 'anh', con: [
+          { ten: 'meo.jpg', size: 8000 },
+          { ten: 'cho.jpg', size: 12000 },
+        ]},
+      ]},
+    ]},
+    { ten: 'etc', con: [ { ten: 'passwd', size: 1500 } ] },
+  ]
+};
+
+let soTep = 0, soThuMuc = 0;
+
+function duyet(node, tien) {
+  if (node.con) {                       // là thư mục
+    soThuMuc++;
+    print(`${tien}[DIR] ${node.ten}`);
+    let tong = 0;
+    for (const c of node.con) tong += duyet(c, tien + '  ');
+    return tong;
+  } else {                              // là tệp
+    soTep++;
+    print(`${tien}${node.ten} (${node.size} byte)`);
+    return node.size;
+  }
+}
+
+const tongKichThuoc = duyet(cay, '');
+print('---');
+print('Số thư mục:', soThuMuc, '| Số tệp:', soTep);
+print('Tổng kích thước:', tongKichThuoc, 'byte');
+</textarea>
+</div>
+
 ## Độ phức tạp (nếu có)
 | Thao tác | Ghi chú |
 |----------|---------|

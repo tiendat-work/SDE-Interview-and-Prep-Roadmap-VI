@@ -102,6 +102,110 @@ if __name__ == "__main__":
         print("Tổng:", sum(ket_qua))
 ```
 
+### Cấu trúc PCB (Process Control Block) chi tiết
+Mỗi tiến trình được nhân biểu diễn bằng một **PCB** — bản ghi lưu toàn bộ trạng thái để có thể tạm dừng và khôi phục:
+
+| Nhóm thông tin | Ví dụ trường lưu |
+|----------------|------------------|
+| Định danh | PID, PPID (cha), UID/GID người dùng |
+| Trạng thái | New/Ready/Running/Waiting/Terminated |
+| Ngữ cảnh CPU | Program counter, các thanh ghi, con trỏ stack |
+| Lập lịch | Mức ưu tiên, con trỏ hàng đợi, thống kê CPU đã dùng |
+| Bộ nhớ | Con trỏ bảng trang, giới hạn segment |
+| I/O & tệp | Bảng file mở, thiết bị đang chờ, tín hiệu chờ xử lý |
+| Kế toán | Thời gian tạo, thời gian CPU, giới hạn tài nguyên |
+
+Sơ đồ chuyển ngữ cảnh giữa hai tiến trình qua PCB:
+
+```mermaid
+sequenceDiagram
+    participant P0 as Tiến trình A
+    participant K as Nhân (kernel)
+    participant P1 as Tiến trình B
+    P0->>K: ngắt/gọi hệ thống (đến lượt chuyển)
+    K->>K: Lưu ngữ cảnh A vào PCB(A)
+    K->>K: Chọn B từ ready queue
+    K->>K: Nạp ngữ cảnh từ PCB(B)
+    K->>P1: Trả CPU cho B (tiếp tục chạy)
+```
+
+### Minh hoạ code: đa luồng vs song song
+Cùng một ý tưởng "chạy nhiều việc chồng lấn" thể hiện qua Web Worker (JS) và thread (Python):
+
+=== "JavaScript"
+    ```js
+    // Node.js: worker_threads cho tác vụ CPU-bound (song song thật)
+    const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
+
+    function tinhNang(n) {                 // tác vụ nặng CPU
+      let s = 0;
+      for (let i = 0; i < n; i++) s += i * i;
+      return s;
+    }
+
+    if (isMainThread) {
+      const dulieu = [1e6, 1e6, 1e6, 1e6];
+      let conLai = dulieu.length, tong = 0;
+      for (const n of dulieu) {
+        // mỗi worker chạy trên một luồng HĐH riêng -> tận dụng đa lõi
+        const w = new Worker(__filename, { workerData: n });
+        w.on('message', (kq) => {
+          tong += kq;
+          if (--conLai === 0) console.log('Tổng:', tong);
+        });
+      }
+    } else {
+      parentPort.postMessage(tinhNang(workerData));
+    }
+    ```
+=== "Python"
+    ```python
+    import threading, time
+
+    # threading: tốt cho I/O-bound (các luồng chồng lấn thời gian chờ)
+    def tai(ten):
+        print(f"Luồng {ten} bắt đầu")
+        time.sleep(1)               # mô phỏng chờ mạng
+        print(f"Luồng {ten} xong")
+
+    luongs = [threading.Thread(target=tai, args=(i,)) for i in range(3)]
+    for l in luongs: l.start()      # tổng ~1s thay vì 3s
+    for l in luongs: l.join()
+    ```
+
+### Playground: mô phỏng chuyển ngữ cảnh Round Robin
+Xem CPU luân phiên giữa các tiến trình và đếm số lần chuyển ngữ cảnh:
+
+<div class="js-demo" data-title="Mô phỏng chuyển ngữ cảnh (Round Robin, quantum=2)">
+<textarea class="js-demo-src">
+// Mỗi tiến trình có tổng burst; CPU chạy tối đa "quantum" đơn vị mỗi lượt.
+let procs = [
+  { ten: 'P1', conLai: 5 },
+  { ten: 'P2', conLai: 3 },
+  { ten: 'P3', conLai: 4 },
+];
+const quantum = 2;
+let t = 0, chuyenNguCanh = 0;
+let hangDoi = procs.slice();
+
+while (hangDoi.length > 0) {
+  const p = hangDoi.shift();
+  const chay = Math.min(quantum, p.conLai);
+  print(`t=${t}..${t+chay}: chạy ${p.ten} (${chay} đơn vị)`);
+  t += chay;
+  p.conLai -= chay;
+  if (p.conLai > 0) {
+    hangDoi.push(p);          // chưa xong -> về cuối hàng đợi
+  } else {
+    print(`   -> ${p.ten} HOÀN THÀNH tại t=${t}`);
+  }
+  if (hangDoi.length > 0) chuyenNguCanh++;  // còn việc -> phải chuyển ngữ cảnh
+}
+print('Tổng thời gian:', t);
+print('Số lần chuyển ngữ cảnh:', chuyenNguCanh);
+</textarea>
+</div>
+
 ## Độ phức tạp (nếu có)
 | Thao tác | Chi phí tương đối |
 |----------|-------------------|

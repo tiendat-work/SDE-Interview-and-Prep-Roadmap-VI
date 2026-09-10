@@ -2,9 +2,12 @@
 
 ## Mục lục
 1. [Git](#git)
-2. [GitHub](#github)
-3. [GitOps](#gitops)
-4. [75 câu hỏi phỏng vấn hàng đầu về Git, GitHub và GitOps](#75-cau-hoi-phong-van-hang-au-ve-git-github-va-gitops)
+2. [Minh hoạ nhánh và hợp nhất bằng sơ đồ](#minh-hoa-nhanh-va-hop-nhat-bang-so-do)
+3. [Bảng lệnh Git theo nhóm](#bang-lenh-git-theo-nhom)
+4. [Ví dụ workflow chi tiết](#vi-du-workflow-chi-tiet)
+5. [GitHub](#github)
+6. [GitOps](#gitops)
+7. [75 câu hỏi phỏng vấn hàng đầu về Git, GitHub và GitOps](#75-cau-hoi-phong-van-hang-au-ve-git-github-va-gitops)
 
 ## Git
 **Git** là một hệ thống quản lý phiên bản phân tán (distributed version control system) dùng để theo dõi các thay đổi trong mã nguồn trong quá trình phát triển phần mềm. Nó cho phép nhiều lập trình viên cùng làm việc trên một dự án đồng thời mà không gây ảnh hưởng đến thay đổi của nhau. Dưới đây là một số khái niệm và lệnh quan trọng:
@@ -32,6 +35,223 @@
 - `git merge <branch>`: Hợp nhất một nhánh vào nhánh hiện tại.
 - `git pull`: Lấy và hợp nhất các thay đổi từ kho lưu trữ từ xa.
 - `git push`: Đẩy các thay đổi cục bộ lên kho lưu trữ từ xa.
+
+## Minh hoạ nhánh và hợp nhất bằng sơ đồ
+
+### Feature branch và merge
+Một nhánh tính năng (`feature`) được tách ra từ `main`, phát triển vài commit rồi hợp nhất trở lại. Khi merge, Git tạo một **commit hợp nhất** (merge commit) nối hai dòng lịch sử:
+
+```mermaid
+gitGraph
+   commit id: "khoi tao"
+   commit id: "cau hinh"
+   branch feature
+   checkout feature
+   commit id: "them form"
+   commit id: "them API"
+   checkout main
+   commit id: "sua README"
+   merge feature id: "merge feature"
+   commit id: "phat hanh"
+```
+
+### Rebase: viết lại lịch sử cho tuyến tính
+Khác với merge, `git rebase` **áp dụng lại** các commit của nhánh tính năng lên trên đỉnh mới nhất của `main`, giúp lịch sử phẳng và tuyến tính (không có merge commit). Sơ đồ dưới minh hoạ nhánh `feature` sau khi rebase lên `main`:
+
+```mermaid
+gitGraph
+   commit id: "A"
+   commit id: "B"
+   branch feature
+   checkout feature
+   commit id: "C (rebased)"
+   commit id: "D (rebased)"
+   checkout main
+   merge feature id: "fast-forward"
+```
+
+!!! note "Merge hay Rebase?"
+    - **Merge**: giữ nguyên lịch sử thật, có merge commit — an toàn cho nhánh dùng chung (`main`, `develop`).
+    - **Rebase**: lịch sử phẳng, dễ đọc `git log` — chỉ nên rebase nhánh **cục bộ chưa đẩy lên** để tránh viết lại lịch sử người khác đã có (nguyên tắc *"không rebase nhánh công khai"*).
+
+### Nhiều nhánh song song (Git Flow rút gọn)
+```mermaid
+gitGraph
+   commit id: "init"
+   branch develop
+   checkout develop
+   commit id: "nen tang"
+   branch feature/login
+   checkout feature/login
+   commit id: "UI dang nhap"
+   commit id: "xac thuc"
+   checkout develop
+   merge feature/login
+   branch release/1.0
+   checkout release/1.0
+   commit id: "vá loi 1.0"
+   checkout main
+   merge release/1.0 tag: "v1.0"
+   checkout develop
+   merge release/1.0
+```
+
+## Bảng lệnh Git theo nhóm
+
+### Nhóm 1 — Khởi tạo & cấu hình
+| Lệnh | Công dụng |
+|------|-----------|
+| `git init` | Khởi tạo kho lưu trữ mới trong thư mục hiện tại |
+| `git clone <url>` | Sao chép kho lưu trữ từ xa về máy |
+| `git config --global user.name "Tên"` | Đặt tên tác giả cho commit (phạm vi toàn cục) |
+| `git config --global user.email "email"` | Đặt email tác giả |
+| `git config --list` | Xem toàn bộ cấu hình hiện tại |
+
+### Nhóm 2 — Thay đổi hằng ngày (staging & commit)
+| Lệnh | Công dụng |
+|------|-----------|
+| `git status` | Xem trạng thái tệp (untracked/modified/staged) |
+| `git add <file>` | Đưa tệp vào vùng chờ (staging area) |
+| `git add -p` | Chọn từng đoạn thay đổi để đưa vào vùng chờ |
+| `git commit -m "msg"` | Ghi nhận thay đổi kèm thông điệp |
+| `git commit --amend` | Sửa lại commit gần nhất (nội dung hoặc thông điệp) |
+| `git restore <file>` | Bỏ thay đổi chưa staged của tệp |
+| `git restore --staged <file>` | Đưa tệp ra khỏi vùng chờ |
+
+### Nhóm 3 — Nhánh & hợp nhất
+| Lệnh | Công dụng |
+|------|-----------|
+| `git branch` | Liệt kê nhánh |
+| `git branch <tên>` | Tạo nhánh mới |
+| `git switch <tên>` / `git checkout <tên>` | Chuyển nhánh |
+| `git switch -c <tên>` / `git checkout -b <tên>` | Tạo và chuyển sang nhánh mới |
+| `git merge <nhánh>` | Hợp nhất nhánh vào nhánh hiện tại |
+| `git rebase <nhánh>` | Áp dụng lại commit lên nền của nhánh khác |
+| `git branch -d <tên>` | Xóa nhánh đã hợp nhất |
+| `git branch -D <tên>` | Xóa nhánh (kể cả chưa hợp nhất) |
+
+### Nhóm 4 — Đồng bộ với kho từ xa (remote)
+| Lệnh | Công dụng |
+|------|-----------|
+| `git remote -v` | Xem danh sách remote |
+| `git remote add <tên> <url>` | Thêm một remote mới |
+| `git fetch` | Tải thay đổi từ remote, chưa hợp nhất |
+| `git pull` | Fetch + merge từ remote |
+| `git pull --rebase` | Fetch + rebase (giữ lịch sử phẳng) |
+| `git push` | Đẩy commit lên remote |
+| `git push -u origin <nhánh>` | Đẩy và thiết lập nhánh theo dõi (tracking) |
+
+### Nhóm 5 — Xem lịch sử & so sánh
+| Lệnh | Công dụng |
+|------|-----------|
+| `git log --oneline --graph --all` | Xem lịch sử dạng đồ thị gọn |
+| `git diff` | So sánh thư mục làm việc với vùng chờ |
+| `git diff --staged` | So sánh vùng chờ với commit gần nhất |
+| `git show <hash>` | Xem chi tiết một commit |
+| `git blame <file>` | Xem ai sửa mỗi dòng và khi nào |
+
+### Nhóm 6 — Hoàn tác & cứu nguy
+| Lệnh | Công dụng |
+|------|-----------|
+| `git revert <hash>` | Tạo commit mới hủy tác dụng của commit cũ (an toàn) |
+| `git reset --soft HEAD~1` | Bỏ commit gần nhất, giữ thay đổi ở vùng chờ |
+| `git reset --mixed HEAD~1` | Bỏ commit gần nhất, giữ thay đổi ở thư mục làm việc |
+| `git reset --hard HEAD~1` | Bỏ commit **và** xóa thay đổi (nguy hiểm) |
+| `git stash` | Cất tạm thay đổi chưa commit |
+| `git stash pop` | Lấy lại và xóa bản cất tạm |
+| `git reflog` | Xem lịch sử di chuyển của HEAD — cứu commit "mất" |
+
+## Ví dụ workflow chi tiết
+
+### Workflow 1 — Phát triển một tính năng qua feature branch
+```bash
+# 1. Cập nhật main mới nhất trước khi tách nhánh
+git switch main
+git pull origin main
+
+# 2. Tạo nhánh tính năng đặt tên rõ ràng
+git switch -c feature/gio-hang
+
+# 3. Viết code, kiểm tra thay đổi
+git status
+git add src/cart.js
+git commit -m "feat: thêm chức năng giỏ hàng"
+
+# 4. Đẩy nhánh lên remote lần đầu (thiết lập tracking)
+git push -u origin feature/gio-hang
+
+# 5. Tiếp tục commit thêm rồi đẩy như bình thường
+git add tests/cart.test.js
+git commit -m "test: bổ sung test cho giỏ hàng"
+git push
+
+# 6. Mở pull request trên GitHub/GitLab/Bitbucket để được review
+# 7. Sau khi được duyệt và merge, dọn dẹp nhánh cục bộ
+git switch main
+git pull origin main
+git branch -d feature/gio-hang
+```
+
+### Workflow 2 — Giữ nhánh tính năng cập nhật bằng rebase
+```bash
+# main đã có commit mới của người khác; đưa chúng vào nhánh của bạn
+git switch feature/gio-hang
+git fetch origin
+git rebase origin/main          # áp dụng lại commit của bạn lên đỉnh main
+
+# Nếu đã từng push nhánh này, cần force-push AN TOÀN
+git push --force-with-lease     # không ghi đè commit người khác vừa đẩy
+```
+
+### Workflow 3 — Giải quyết xung đột khi merge
+```bash
+git switch main
+git merge feature/thanh-toan
+# → Git báo: CONFLICT (content): Merge conflict in src/payment.js
+```
+
+Mở tệp bị xung đột, bạn sẽ thấy các dấu phân định:
+```text
+<<<<<<< HEAD
+const fee = 0.02;          // phiên bản ở nhánh main
+=======
+const fee = 0.015;         // phiên bản ở nhánh feature/thanh-toan
+>>>>>>> feature/thanh-toan
+```
+
+```bash
+# 1. Sửa thủ công: giữ lại đoạn đúng, xóa các dấu <<<<, ====, >>>>
+# 2. Đánh dấu tệp đã giải quyết
+git add src/payment.js
+
+# 3. Kiểm tra còn tệp nào xung đột không
+git status
+
+# 4. Hoàn tất merge (mở sẵn thông điệp merge)
+git commit
+
+# Nếu muốn hủy toàn bộ và quay lại trạng thái trước merge:
+git merge --abort
+```
+
+!!! tip "Mẹo giảm xung đột"
+    - Commit nhỏ, thường xuyên; kéo (`git pull --rebase`) `main` về sớm và đều đặn.
+    - Bật `git config --global rerere.enabled true` để Git ghi nhớ cách bạn giải quyết xung đột lặp lại.
+    - Dùng công cụ trực quan: `git mergetool`.
+
+### Workflow 4 — Cất tạm để chuyển việc gấp
+```bash
+# Đang làm dở nhưng cần vá gấp trên main
+git stash push -m "dang lam form dang ky"
+git switch main
+git switch -c hotfix/loi-dang-nhap
+# ... vá lỗi, commit, push, merge ...
+
+# Quay lại công việc dang dở
+git switch feature/dang-ky
+git stash list                  # xem các bản cất tạm
+git stash pop                   # lấy lại thay đổi và xóa khỏi stash
+```
 
 ## GitHub
 **GitHub** là một nền tảng dựa trên web sử dụng Git để quản lý phiên bản. Nó cung cấp nhiều tính năng cộng tác như:

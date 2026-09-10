@@ -88,6 +88,54 @@ Với không gian địa chỉ 64-bit, bảng trang một cấp sẽ khổng l�
 ### Working set và nguyên lý cục bộ (locality)
 Chương trình có xu hướng truy cập theo **nguyên lý cục bộ**: cục bộ thời gian (vừa dùng sẽ dùng lại) và cục bộ không gian (dùng ô lân cận). **Working set** là tập trang được truy cập tích cực trong một cửa sổ thời gian; nếu RAM giữ đủ working set thì page fault thấp — đây là cơ sở để chống thrashing bằng cách điều chỉnh mức đa chương.
 
+### Playground: LRU vs FIFO đếm page fault
+Chạy cùng một chuỗi truy cập trang trên hai thuật toán thay trang và đếm số lỗi trang (page fault) của mỗi thuật toán.
+
+<div class="js-demo" data-title="LRU vs FIFO: đếm page fault">
+<textarea class="js-demo-src">
+const chuoi = [7,0,1,2,0,3,0,4,2,3,0,3,2,1,2,0,1,7,0,1];
+const soKhung = 3;
+
+function fifo(chuoi, k) {
+  const trongKhung = new Set();
+  const hangDoi = [];          // thứ tự nạp vào
+  let loi = 0;
+  for (const t of chuoi) {
+    if (!trongKhung.has(t)) {
+      loi++;
+      if (trongKhung.size >= k) {
+        const cu = hangDoi.shift();   // nạn nhân = vào sớm nhất
+        trongKhung.delete(cu);
+      }
+      trongKhung.add(t); hangDoi.push(t);
+    }
+  }
+  return loi;
+}
+
+function lru(chuoi, k) {
+  const gan = [];              // thứ tự dùng gần đây, cũ nhất ở đầu
+  let loi = 0;
+  for (const t of chuoi) {
+    const idx = gan.indexOf(t);
+    if (idx === -1) {
+      loi++;
+      if (gan.length >= k) gan.shift();   // nạn nhân = lâu nhất không dùng
+    } else {
+      gan.splice(idx, 1);       // vừa dùng -> bỏ vị trí cũ
+    }
+    gan.push(t);                // đưa về cuối (mới nhất)
+  }
+  return loi;
+}
+
+print('Chuỗi truy cập:', chuoi.join(' '));
+print('Số khung:', soKhung);
+print('FIFO page fault:', fifo(chuoi, soKhung));
+print('LRU  page fault:', lru(chuoi, soKhung));
+</textarea>
+</div>
+
 ## Độ phức tạp (nếu có)
 | Thao tác | Thời gian |
 |----------|-----------|

@@ -48,6 +48,20 @@ T2 ghi 100 - 30 = 70  → ghi đè, cập nhật +50 của T1 bị MẤT
 ```
 Cách chống: khoá bi quan (`SELECT ... FOR UPDATE`) hoặc khoá lạc quan (optimistic lock bằng cột version).
 
+### Minh hoạ non-repeatable read vs phantom read
+```text
+Non-repeatable read (cùng HÀNG đổi giá trị):
+T1: SELECT so_du FROM tk WHERE id='A';  → 100
+T2: UPDATE tk SET so_du=200 WHERE id='A'; COMMIT;
+T1: SELECT so_du FROM tk WHERE id='A';  → 200  (khác lần đọc trước!)
+
+Phantom read (SỐ HÀNG khớp điều kiện đổi):
+T1: SELECT COUNT(*) FROM tk WHERE so_du > 50;  → 3 hàng
+T2: INSERT INTO tk VALUES ('E', 90); COMMIT;
+T1: SELECT COUNT(*) FROM tk WHERE so_du > 50;  → 4 hàng (xuất hiện "bóng ma")
+```
+Khác biệt cốt lõi: non-repeatable read là **giá trị của hàng đã có** thay đổi; phantom read là **tập hàng khớp điều kiện** thay đổi (do chèn/xoá).
+
 ## Bốn mức cô lập (chuẩn SQL)
 Từ lỏng lẻo (nhanh, ít an toàn) đến chặt chẽ (chậm, an toàn):
 
@@ -59,6 +73,16 @@ Từ lỏng lẻo (nhanh, ít an toàn) đến chặt chẽ (chậm, an toàn):
 | Serializable | ✅ Ngăn | ✅ Ngăn | ✅ Ngăn |
 
 (*Chuẩn SQL cho phép phantom ở Repeatable Read; nhưng InnoDB của MySQL dùng next-key lock nên ngăn được phần lớn phantom.)
+
+### Mức cô lập mặc định theo hệ quản trị
+| Hệ quản trị | Mức cô lập mặc định |
+|-------------|---------------------|
+| PostgreSQL | Read Committed |
+| Oracle | Read Committed |
+| SQL Server | Read Committed |
+| MySQL / InnoDB | Repeatable Read |
+
+Đổi mức cô lập là đánh đổi: mức càng cao càng ít anomaly nhưng càng nhiều khoá/chờ và giảm thông lượng. Chọn mức thấp nhất vẫn đảm bảo đúng đắn cho nghiệp vụ.
 
 ### Diễn giải từng mức
 - **Read Uncommitted:** đọc được cả dữ liệu chưa commit. Nhanh nhất, kém an toàn nhất, hiếm khi dùng.
@@ -116,6 +140,46 @@ Nếu thu tiền lỗi → chạy bù: hoàn kho (undo bước trước)
 3. `COMMIT`, `ROLLBACK`, `SAVEPOINT` khác nhau ra sao?
 4. MVCC hoạt động thế nào và giúp gì cho tính cô lập?
 5. Deadlock là gì và làm sao phòng tránh?
+
+## Playground: mô phỏng Lost Update và cách chống
+
+Demo mô phỏng hai giao dịch cùng đọc rồi ghi số dư. Không khoá → xảy ra **lost update**. Dùng khoá lạc quan (kiểm tra cột `version`) → phát hiện xung đột và thử lại.
+
+<div class="js-demo" data-title="Lost update vs khoá lạc quan (version)">
+<textarea class="js-demo-src">
+// --- Trường hợp 1: KHÔNG khoá → mất cập nhật ---
+let so_du = 100;
+const t1_doc = so_du;          // T1 đọc 100
+const t2_doc = so_du;          // T2 đọc 100 (cùng lúc)
+so_du = t1_doc + 50;           // T1 ghi 150
+so_du = t2_doc - 30;           // T2 ghi 70  → đè mất +50 của T1
+print('KHÔNG khoá:');
+print(`  Kỳ vọng đúng = 100 + 50 - 30 = 120`);
+print(`  Thực tế      = ${so_du}  → +50 của T1 bị MẤT\n`);
+
+// --- Trường hợp 2: khoá lạc quan bằng cột version ---
+let row = { so_du: 100, version: 1 };
+function ghiCoVersion(readVersion, newSoDu) {
+  if (row.version !== readVersion) return false; // ai đó đã sửa trước
+  row.so_du = newSoDu;
+  row.version++;
+  return true;
+}
+// T1 và T2 cùng đọc version 1
+const v1 = row.version, base1 = row.so_du;
+const v2 = row.version, base2 = row.so_du;
+print('Khoá lạc quan (version):');
+print(`  T1 ghi 150: ${ghiCoVersion(v1, base1 + 50) ? 'OK' : 'từ chối'}`);
+let ok2 = ghiCoVersion(v2, base2 - 30);
+print(`  T2 ghi 70 : ${ok2 ? 'OK' : 'TỪ CHỐI (version đã đổi) → phải thử lại'}`);
+if (!ok2) {
+  const retry = row.so_du - 30;   // đọc lại rồi tính trên giá trị mới nhất
+  ghiCoVersion(row.version, retry);
+  print(`  T2 thử lại trên số dư mới: ${retry}`);
+}
+print(`  Kết quả cuối = ${row.so_du}  → đúng, không mất cập nhật`);
+</textarea>
+</div>
 
 ## Sơ đồ vòng đời giao dịch
 
