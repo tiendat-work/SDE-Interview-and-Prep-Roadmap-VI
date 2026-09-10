@@ -25,6 +25,18 @@ Cache đặc biệt hiệu quả khi dữ liệu **đọc nhiều hơn ghi** (re
 Ghi: cập nhật DB rồi xoá (invalidate) key trong cache
 ```
 
+Sơ đồ dưới đây minh hoạ luồng đọc theo chiến lược cache-aside (xử lý cả hit và miss):
+
+```mermaid
+flowchart TB
+    APP["Ứng dụng"] -->|"1. Tìm trong cache"| CACHE[("Cache")]
+    CACHE -->|"2. Cache hit: trả về"| APP
+    CACHE -->|"Cache miss"| APP
+    APP -->|"3. Đọc từ DB khi miss"| DB[("Cơ sở dữ liệu")]
+    DB -->|"Dữ liệu"| APP
+    APP -->|"4. Ghi lại vào cache"| CACHE
+```
+
 - **Ưu:** Chỉ cache dữ liệu thực sự được dùng; cache lỗi không làm sập hệ thống.
 - **Nhược:** Lần miss đầu chậm; có thể xảy ra dữ liệu cũ (stale) nếu invalidate sai.
 

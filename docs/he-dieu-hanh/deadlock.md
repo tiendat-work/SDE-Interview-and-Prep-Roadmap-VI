@@ -3,6 +3,16 @@
 ## Khái niệm
 **Bế tắc (deadlock)** là tình huống một tập hợp tiến trình/luồng bị kẹt vĩnh viễn vì mỗi cái đang giữ một tài nguyên và chờ tài nguyên mà cái khác trong tập đang giữ — tạo thành vòng chờ khép kín. Không ai nhường, không ai tiến triển.
 
+Chu trình chờ tài nguyên khép kín tạo ra bế tắc:
+
+```mermaid
+graph LR
+    P1["Tiến trình 1"] -->|"chờ"| R1["Tài nguyên A"]
+    R1 -->|"đang giữ bởi"| P2["Tiến trình 2"]
+    P2 -->|"chờ"| R2["Tài nguyên B"]
+    R2 -->|"đang giữ bởi"| P1
+```
+
 ## Khi nào dùng / Vì sao quan trọng
 Bế tắc xuất hiện bất cứ khi nào nhiều thực thể tranh giành tài nguyên hữu hạn có tính loại trừ: khoá trong cơ sở dữ liệu, tài nguyên hệ điều hành, khoá lồng nhau trong code đa luồng. Nhận diện và xử lý deadlock là kỹ năng cốt lõi khi xây dựng hệ thống đồng thời tin cậy.
 

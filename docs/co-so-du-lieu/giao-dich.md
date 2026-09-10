@@ -117,5 +117,24 @@ Nếu thu tiền lỗi → chạy bù: hoàn kho (undo bước trước)
 4. MVCC hoạt động thế nào và giúp gì cho tính cô lập?
 5. Deadlock là gì và làm sao phòng tránh?
 
+## Sơ đồ vòng đời giao dịch
+
+Vòng đời của một giao dịch (transaction) đi qua các trạng thái từ khi bắt đầu đến khi kết thúc (commit hoặc rollback).
+
+```mermaid
+stateDiagram-v2
+    [*] --> DangHoatDong: "BEGIN"
+    DangHoatDong --> DaHoanTat: "thực thi xong"
+    DangHoatDong --> ThatBai: "lỗi / vi phạm ràng buộc"
+    DaHoanTat --> DaCommit: "COMMIT (ghi bền vững)"
+    ThatBai --> DaHuy: "ROLLBACK"
+    DaCommit --> [*]
+    DaHuy --> [*]
+```
+
+- **Đang hoạt động:** các câu lệnh đang được thực thi.
+- **Đã hoàn tất → Đã commit:** thay đổi được ghi bền vững (durability).
+- **Thất bại → Đã huỷ:** mọi thay đổi bị hoàn tác (rollback), đảm bảo tính nguyên tử (atomicity).
+
 ## Tham khảo
 - Xem thêm: [Tính chất ACID](acid.md), [Chỉ mục](chi-muc.md), [SQL](sql.md)

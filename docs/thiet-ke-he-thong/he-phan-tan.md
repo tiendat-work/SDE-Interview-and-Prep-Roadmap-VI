@@ -34,11 +34,34 @@ Vì phân vùng mạng là điều không thể tránh trong thực tế, lựa 
 
 Mở rộng của CAP là **định lý PACELC**: khi có Partition thì chọn A hay C; Else (bình thường) thì đánh đổi giữa Latency và Consistency.
 
+Sơ đồ ra quyết định theo CAP khi mạng bị phân vùng:
+
+```mermaid
+flowchart TD
+    P{"Có phân vùng mạng (P)?"}
+    P -->|"Không"| N["Đạt cả C và A (bình thường)"]
+    P -->|"Có"| Choice{"Chọn ưu tiên?"}
+    Choice -->|"Consistency"| CP["Hệ CP: từ chối/chờ để giữ nhất quán (HBase, etcd)"]
+    Choice -->|"Availability"| AP["Hệ AP: luôn phản hồi, chấp nhận dữ liệu cũ (Cassandra, DynamoDB)"]
+```
+
 ### Bầu leader & đồng thuận (Leader Election & Consensus)
 Nhiều hệ phân tán cần một node "leader" điều phối (ví dụ node ghi duy nhất). Thuật toán đồng thuận (consensus) đảm bảo các node thống nhất về một giá trị/leader dù có lỗi:
 
 - **Paxos**: thuật toán đồng thuận kinh điển, chứng minh đúng đắn về mặt lý thuyết nhưng khó hiểu và khó cài đặt. Dùng các vai trò proposer, acceptor, learner qua hai pha.
 - **Raft**: thiết kế để **dễ hiểu hơn** Paxos với cùng độ mạnh. Chia bài toán thành: bầu leader (leader election), nhân bản nhật ký (log replication) và an toàn (safety). Node ở một trong ba trạng thái: follower, candidate, leader; leader được bầu qua bỏ phiếu đa số (majority quorum) theo từng nhiệm kỳ (term). Dùng trong etcd, Consul, TiKV.
+
+Sơ đồ trạng thái bầu leader trong Raft:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Follower
+    Follower --> Candidate: "Hết thời gian chờ, không nghe leader"
+    Candidate --> Candidate: "Không đủ phiếu, mở nhiệm kỳ mới"
+    Candidate --> Leader: "Nhận đa số phiếu (quorum)"
+    Candidate --> Follower: "Phát hiện leader hợp lệ"
+    Leader --> Follower: "Thấy nhiệm kỳ cao hơn"
+```
 
 ### Khả năng chịu lỗi (Fault Tolerance)
 Là khả năng hệ thống tiếp tục hoạt động đúng dù một số thành phần lỗi. Các kỹ thuật:

@@ -25,6 +25,16 @@
                               |  msg1 | msg2 | msg3 |
 ```
 
+Sơ đồ dưới đây minh hoạ luồng bất đồng bộ producer → hàng đợi → consumer:
+
+```mermaid
+flowchart LR
+    P["Producer (bên gửi)"] -->|"Gửi thông điệp"| Q["Message Broker / Hàng đợi"]
+    Q -->|"Lấy thông điệp"| C["Consumer (bên nhận)"]
+    C -->|"Ack (xác nhận)"| Q
+    Q -.->|"Lỗi sau nhiều lần thử"| DLQ["Dead Letter Queue"]
+```
+
 1. Producer gửi thông điệp tới broker.
 2. Broker lưu thông điệp (có thể bền vững trên đĩa).
 3. Consumer lấy thông điệp ra (pull) hoặc được đẩy (push) và xử lý.

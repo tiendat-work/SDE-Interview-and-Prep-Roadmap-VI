@@ -59,6 +59,25 @@ print("Đối tượng đã thu hồi:", thu_hoi)
 4. Generational GC dựa trên giả thuyết nào và vì sao hiệu quả?
 5. "Stop-the-world" pause là gì? Cách giảm thiểu?
 
+## Sơ đồ thuật toán Mark-and-Sweep
+
+Thuật toán đánh dấu và quét (mark-and-sweep) gồm hai pha: từ tập gốc (root) đánh dấu mọi đối tượng còn tiếp cận được, sau đó quét và thu hồi các đối tượng chưa được đánh dấu.
+
+```mermaid
+graph LR
+    ROOT["Gốc (Root)"]
+    A["Đối tượng A<br/>(đánh dấu)"]
+    B["Đối tượng B<br/>(đánh dấu)"]
+    C["Đối tượng C<br/>(rác - thu hồi)"]
+    D["Đối tượng D<br/>(rác - thu hồi)"]
+    ROOT -->|"tiếp cận"| A
+    A -->|"tiếp cận"| B
+    C -.->|"không ai trỏ tới"| D
+```
+
+- **Pha Mark:** duyệt từ root, đánh dấu mọi đối tượng còn tham chiếu (A, B).
+- **Pha Sweep:** quét toàn bộ heap, giải phóng các đối tượng không được đánh dấu (C, D).
+
 ## Tham khảo
 
 - *The Garbage Collection Handbook* (Jones et al.)

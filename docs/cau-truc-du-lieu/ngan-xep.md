@@ -4,6 +4,16 @@
 
 Ngăn xếp (stack) là một cấu trúc dữ liệu tuyến tính tuân theo nguyên tắc **LIFO (Last In, First Out)** — phần tử vào sau cùng sẽ được lấy ra đầu tiên. Hãy hình dung một chồng đĩa: bạn chỉ có thể đặt đĩa lên trên và lấy đĩa từ trên xuống. Mọi thao tác thêm/xóa đều diễn ra tại một đầu duy nhất gọi là **đỉnh (top)**.
 
+Nguyên tắc LIFO: phần tử vào sau cùng nằm ở đỉnh và được lấy ra trước nhất.
+
+```mermaid
+graph TD
+    P["Push (thêm vào đỉnh)"] --> T["Đỉnh — phần tử 3"]
+    T --> E2["phần tử 2"]
+    E2 --> E1["phần tử 1 (đáy)"]
+    T --> O["Pop (lấy từ đỉnh)"]
+```
+
 ## Khi nào dùng / Vì sao quan trọng
 
 Dùng ngăn xếp khi bạn cần truy cập dữ liệu theo thứ tự ngược với lúc đưa vào, hoặc cần "ghi nhớ trạng thái để quay lại sau". Các tình huống điển hình:

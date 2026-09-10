@@ -3,6 +3,25 @@
 ## Khái niệm
 **Tiến trình (process)** là một chương trình đang chạy, kèm theo toàn bộ tài nguyên hệ điều hành cấp cho nó: không gian địa chỉ bộ nhớ riêng, bảng file mở, bộ đếm chương trình (program counter), thanh ghi và ngăn xếp (stack). **Luồng (thread)** là đơn vị thực thi nhỏ nhất bên trong một tiến trình; nhiều luồng cùng tiến trình **chia sẻ** không gian địa chỉ và tài nguyên nhưng mỗi luồng có ngăn xếp và bộ đếm chương trình riêng.
 
+Vòng đời một tiến trình đi qua các trạng thái sau:
+
+```mermaid
+stateDiagram-v2
+    state "Mới tạo (New)" as new
+    state "Sẵn sàng (Ready)" as ready
+    state "Đang chạy (Running)" as running
+    state "Chờ (Waiting)" as waiting
+    state "Kết thúc (Terminated)" as terminated
+    [*] --> new
+    new --> ready: được nạp
+    ready --> running: bộ lập lịch chọn
+    running --> ready: hết lượt (preempt)
+    running --> waiting: chờ I/O
+    waiting --> ready: I/O xong
+    running --> terminated: hoàn thành
+    terminated --> [*]
+```
+
 ## Khi nào dùng / Vì sao quan trọng
 Hiểu sự khác biệt tiến trình – luồng là nền tảng để thiết kế phần mềm đồng thời (concurrent) và song song (parallel):
 

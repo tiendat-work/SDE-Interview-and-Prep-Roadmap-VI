@@ -125,5 +125,24 @@ Trong CSDL document, có hai cách mô hình hoá quan hệ:
 4. Vì sao NoSQL scale ngang dễ hơn SQL?
 5. Nhúng (embedding) và tham chiếu (referencing) trong MongoDB khác nhau ra sao?
 
+## Sơ đồ bốn loại NoSQL
+
+```mermaid
+graph TD
+    NoSQL["Cơ sở dữ liệu NoSQL"]
+    KV["Key-Value<br/>(Khoá - Giá trị)"]
+    DOC["Document<br/>(Tài liệu)"]
+    COL["Column-Family<br/>(Họ cột)"]
+    GRAPH["Graph<br/>(Đồ thị)"]
+    NoSQL --> KV
+    NoSQL --> DOC
+    NoSQL --> COL
+    NoSQL --> GRAPH
+    KV --> KV1["Redis, DynamoDB"]
+    DOC --> DOC1["MongoDB, CouchDB"]
+    COL --> COL1["Cassandra, HBase"]
+    GRAPH --> GRAPH1["Neo4j, JanusGraph"]
+```
+
 ## Tham khảo
 - Xem thêm: [Tính chất ACID & BASE](acid.md), [SQL](sql.md), [Cẩm nang phỏng vấn CSDL](cam-nang-phong-van-csdl.md)

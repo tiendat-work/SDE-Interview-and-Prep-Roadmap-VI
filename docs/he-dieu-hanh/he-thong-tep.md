@@ -3,6 +3,21 @@
 ## Khái niệm
 **Hệ thống tệp (file system)** là cách hệ điều hành tổ chức, lưu trữ, đặt tên và truy xuất dữ liệu trên thiết bị lưu trữ. Nó ánh xạ khái niệm trừu tượng "tệp và thư mục" xuống các khối (block) vật lý trên đĩa, đồng thời quản lý siêu dữ liệu (metadata): quyền truy cập, thời gian, kích thước, vị trí khối.
 
+Cây thư mục tổ chức tệp theo thứ bậc từ thư mục gốc:
+
+```mermaid
+graph TD
+    R["/ (gốc)"] --> H["home"]
+    R --> E["etc"]
+    R --> B["bin"]
+    H --> U["user"]
+    U --> D["tai-lieu"]
+    U --> A["anh"]
+    D --> F1["bao-cao.pdf"]
+    A --> F2["meo.jpg"]
+    E --> C1["passwd"]
+```
+
 ## Khi nào dùng / Vì sao quan trọng
 Mọi dữ liệu bền vững đều đi qua hệ thống tệp. Thiết kế của nó quyết định độ tin cậy (không mất dữ liệu khi mất điện), hiệu năng (tuần tự vs ngẫu nhiên), khả năng chia sẻ qua mạng và khả năng mở rộng lên hàng petabyte trong hệ phân tán.
 

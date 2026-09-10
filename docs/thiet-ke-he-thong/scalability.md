@@ -64,6 +64,21 @@ Sơ đồ mở rộng ngang có cân bằng tải:
                  └──────────────────┘
 ```
 
+Sơ đồ kiến trúc mở rộng ngang: load balancer phân phối tới nhiều server, phía sau là CSDL nhân bản:
+
+```mermaid
+flowchart TD
+    U["Người dùng"] --> LB["Load Balancer"]
+    LB --> A1["App Server #1"]
+    LB --> A2["App Server #2"]
+    LB --> A3["App Server #3 (auto-scaling)"]
+    A1 --> M[("CSDL Master (ghi)")]
+    A2 --> M
+    A3 --> M
+    M -.->|"nhân bản"| R1[("Replica 1 (đọc)")]
+    M -.->|"nhân bản"| R2[("Replica 2 (đọc)")]
+```
+
 ## Các kỹ thuật hỗ trợ mở rộng
 
 - **Bộ nhớ đệm (caching)**: lưu kết quả hay truy cập vào bộ nhớ nhanh (Redis, Memcached) để giảm tải CSDL và độ trễ. Có nhiều tầng: cache trình duyệt, CDN, cache ứng dụng, cache CSDL.

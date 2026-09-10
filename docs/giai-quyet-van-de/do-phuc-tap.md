@@ -97,6 +97,25 @@ def count_halvings(n):
 3. Độ phức tạp bộ nhớ của một hàm đệ quy sâu `n` tầng là bao nhiêu, vì sao?
 4. Quicksort trung bình `O(n log n)` nhưng xấu nhất `O(n²)` — khi nào xảy ra trường hợp xấu?
 
+## Sơ đồ so sánh các mức độ phức tạp
+
+Bảng dưới minh hoạ số phép tính tăng thế nào khi kích thước đầu vào `n` tăng, cho thấy độ dốc của từng đường cong độ phức tạp.
+
+| n | O(1) | O(log n) | O(n) | O(n log n) | O(n²) | O(2ⁿ) |
+|---|------|----------|------|-----------|-------|-------|
+| 10 | 1 | ~3 | 10 | ~33 | 100 | 1 024 |
+| 100 | 1 | ~7 | 100 | ~664 | 10 000 | ~10³⁰ |
+| 1 000 | 1 | ~10 | 1 000 | ~9 966 | 1 000 000 | quá lớn |
+
+Xếp hạng từ tốt đến tệ (khi n lớn):
+
+```mermaid
+graph LR
+    A["O(1)"] --> B["O(log n)"] --> C["O(n)"] --> D["O(n log n)"] --> E["O(n²)"] --> F["O(2ⁿ)"] --> G["O(n!)"]
+```
+
+Càng sang phải, đường cong càng dốc và thời gian chạy tăng càng nhanh theo `n`.
+
 ## Tham khảo
 
 - [Kỹ thuật lập trình](ky-thuat-coding.md)

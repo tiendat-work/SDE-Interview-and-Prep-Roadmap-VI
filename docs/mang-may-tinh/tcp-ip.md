@@ -29,6 +29,35 @@ này tới ứng dụng khác qua mạng.
 
 Mẹo nhớ: "All People Seem To Need Data Processing" (từ tầng 7 xuống 1).
 
+Sơ đồ dưới minh hoạ chồng 7 tầng OSI và cách ánh xạ sang 4 tầng TCP/IP:
+
+```mermaid
+flowchart LR
+    subgraph OSI["Mô hình OSI (7 tầng)"]
+        direction TB
+        L7["Tầng 7: Ứng dụng"]
+        L6["Tầng 6: Trình diễn"]
+        L5["Tầng 5: Phiên"]
+        L4["Tầng 4: Giao vận"]
+        L3["Tầng 3: Mạng"]
+        L2["Tầng 2: Liên kết dữ liệu"]
+        L1["Tầng 1: Vật lý"]
+        L7 --> L6 --> L5 --> L4 --> L3 --> L2 --> L1
+    end
+    subgraph TCPIP["Chồng TCP/IP (4 tầng)"]
+        direction TB
+        T4["Ứng dụng (HTTP, DNS, TLS)"]
+        T3["Giao vận (TCP, UDP)"]
+        T2["Internet (IP, ICMP)"]
+        T1["Truy cập mạng (Ethernet, Wi-Fi)"]
+        T4 --> T3 --> T2 --> T1
+    end
+    L7 -.-> T4
+    L4 -.-> T3
+    L3 -.-> T2
+    L1 -.-> T1
+```
+
 ### Ánh xạ sang mô hình TCP/IP 4 tầng
 | TCP/IP (4 tầng) | Tương ứng OSI | Giao thức tiêu biểu |
 |-----------------|---------------|---------------------|
@@ -74,6 +103,21 @@ Client                                Server
 - **ACK** (Acknowledgment): xác nhận đã nhận.
 - Sau 3 bước, kết nối chuyển sang trạng thái ESTABLISHED và bắt đầu truyền
   dữ liệu.
+
+Sơ đồ tuần tự (sequence diagram) của bắt tay 3 bước:
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    C->>S: SYN (seq=x)
+    Note right of C: 1. Xin mở kết nối
+    S->>C: SYN-ACK (seq=y, ack=x+1)
+    Note left of S: 2. Chấp nhận + xin mở chiều ngược
+    C->>S: ACK (ack=y+1)
+    Note right of C: 3. Xác nhận → ESTABLISHED
+    C->>S: Bắt đầu truyền dữ liệu
+```
 
 Đóng kết nối dùng cơ chế 4 bước (four-way handshake) với cờ FIN và ACK.
 

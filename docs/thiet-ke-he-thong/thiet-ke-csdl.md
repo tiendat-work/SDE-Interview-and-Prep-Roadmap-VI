@@ -15,6 +15,17 @@ Chia một bảng/tập dữ liệu lớn thành nhiều phần nhỏ để tăn
 
 Chọn **khoá phân vùng (partition/shard key)** tốt là then chốt để tránh dữ liệu lệch (data skew) và điểm nóng (hotspot). Xem thêm băm nhất quán ở trang [Khả năng mở rộng](scalability.md).
 
+Sơ đồ dưới minh hoạ sharding (chia theo hàng) kết hợp replication (mỗi shard nhân bản để đọc và chịu lỗi):
+
+```mermaid
+flowchart TD
+    App["Ứng dụng"] --> Router["Bộ định tuyến theo shard key"]
+    Router -->|"user A–M"| S1["Shard 1 (Primary)"]
+    Router -->|"user N–Z"| S2["Shard 2 (Primary)"]
+    S1 -.->|"nhân bản"| S1R["Shard 1 Replica"]
+    S2 -.->|"nhân bản"| S2R["Shard 2 Replica"]
+```
+
 ### Khung nhìn vật chất hoá (Materialized View)
 Khung nhìn thông thường (view) là truy vấn được lưu, tính lại mỗi lần gọi. **Materialized view** lưu **kết quả đã tính sẵn** ra đĩa như một bảng thực. Ưu điểm: truy vấn tổng hợp phức tạp (join, group by) trả về gần như tức thì. Nhược điểm: dữ liệu có thể cũ, cần **làm mới (refresh)** định kỳ hoặc theo sự kiện. Dùng nhiều trong báo cáo, dashboard, kho dữ liệu (data warehouse).
 

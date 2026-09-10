@@ -24,6 +24,15 @@
 └─────────────────────────────────────┘
 ```
 
+Sơ đồ dưới đây minh hoạ các tầng xếp chồng với phụ thuộc một chiều từ trên xuống:
+
+```mermaid
+flowchart TB
+    P["Tầng trình bày (UI, API controller)"] --> B["Tầng logic nghiệp vụ (service)"]
+    B --> DA["Tầng truy cập dữ liệu (repository, DAO)"]
+    DA --> DB[("Tầng cơ sở dữ liệu")]
+```
+
 1. **Tầng trình bày (Presentation Layer)**: Xử lý tương tác với người dùng hoặc client — giao diện, controller, API endpoint. Nhận đầu vào, trả kết quả, không chứa logic nghiệp vụ.
 2. **Tầng logic nghiệp vụ (Business Logic Layer)**: Chứa các quy tắc nghiệp vụ (business rules), điều phối luồng xử lý, kiểm tra hợp lệ. Đây là "bộ não" của ứng dụng.
 3. **Tầng truy cập dữ liệu (Data Access Layer)**: Trừu tượng hóa việc đọc/ghi dữ liệu, ẩn chi tiết cơ sở dữ liệu qua các repository/DAO (Data Access Object).

@@ -74,6 +74,17 @@ Một dịch vụ web (web service) tuân theo các nguyên tắc của REST có
 
 ## Ví dụ về luồng làm việc của REST API
 
+Sơ đồ dưới đây minh hoạ vòng đời một yêu cầu HTTP tới REST API, đi qua các tầng trung gian:
+
+```mermaid
+flowchart LR
+    C["Client"] -->|"Yêu cầu HTTP (GET/POST/PUT/DELETE)"| LB["Bộ cân bằng tải / Máy trung gian"]
+    LB --> API["Máy chủ REST API"]
+    API -->|"Truy vấn / cập nhật"| DB[("Cơ sở dữ liệu")]
+    DB -->|"Dữ liệu"| API
+    API -->|"Phản hồi + mã trạng thái HTTP"| C
+```
+
 1. **Định danh tài nguyên**:
    - URI: `https://api.example.com/users/{userId}`
    - URI này định danh duy nhất một tài nguyên người dùng.

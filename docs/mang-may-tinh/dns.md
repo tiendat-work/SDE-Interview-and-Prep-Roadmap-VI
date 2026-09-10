@@ -45,6 +45,25 @@ Resolver -> Client: 93.184.216.34  (kèm TTL để cache)
 ```
 Đầu tiên hệ thống luôn kiểm tra bộ đệm (cache) ở nhiều cấp trước khi đi hỏi.
 
+Sơ đồ tuần tự minh hoạ phân giải đệ quy (client) kết hợp lặp (resolver):
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant R as Resolver (đệ quy)
+    participant Root as Root Server
+    participant TLD as TLD Server (.com)
+    participant Auth as Authoritative Server
+    C->>R: www.example.com = ?
+    R->>Root: Hỏi www.example.com
+    Root->>R: Hỏi TLD .com
+    R->>TLD: Hỏi www.example.com
+    TLD->>R: Hỏi authoritative ns.example.com
+    R->>Auth: Hỏi www.example.com
+    Auth->>R: 93.184.216.34
+    R->>C: 93.184.216.34 (kèm TTL để cache)
+```
+
 ### Các loại bản ghi (Record Types)
 | Bản ghi | Ý nghĩa |
 |---------|---------|

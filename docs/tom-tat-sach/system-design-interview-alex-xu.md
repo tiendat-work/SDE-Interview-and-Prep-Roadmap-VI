@@ -4,9 +4,10 @@
 chuẩn bị cho vòng phỏng vấn thiết kế hệ thống (system design interview). Sách không chỉ
 cung cấp kiến thức nền về xây dựng hệ thống có khả năng mở rộng (scalable) mà còn đưa ra
 một khung tư duy (framework) 4 bước để giải quyết các bài toán mở, mơ hồ đặc trưng của
-dạng phỏng vấn này. Bản tóm tắt dưới đây trình bày cô đọng từng chương với: (a) vấn đề/yêu
-cầu, (b) các quyết định thiết kế chính, (c) đánh đổi (trade-off) và (d) mô tả kiến trúc.
-Đây là tài liệu ôn tập nhanh, không thay thế việc đọc bản gốc.
+dạng phỏng vấn này. Bản ghi chú dưới đây trình bày chi tiết từng chương với: (a) phân tích
+vấn đề/yêu cầu, (b) các quyết định thiết kế chính, (c) đánh đổi (trade-off), (d) sơ đồ
+kiến trúc/luồng dữ liệu bằng Mermaid, và (e) code minh hoạ cho các chương có thuật toán.
+Đây là ghi chú ôn tập diễn đạt lại bằng lời người viết, không thay thế việc đọc bản gốc.
 
 ## Mục lục
 
@@ -31,376 +32,807 @@ cầu, (b) các quyết định thiết kế chính, (c) đánh đổi (trade-of
 
 ## Chương 1: Scale từ 0 đến hàng triệu người dùng (Scale From Zero to Millions of Users)
 
-**Vấn đề:** Xây dựng một hệ thống khởi đầu chỉ phục vụ một người dùng rồi mở rộng dần lên
-hàng triệu người dùng, minh họa các kỹ thuật mở rộng cơ bản.
+**Vấn đề:** Chương mở đầu kể một câu chuyện tiến hoá: hệ thống ban đầu chỉ chạy trên một
+máy chủ đơn (single server) phục vụ vài người dùng, rồi qua từng bước cải tiến trở thành
+kiến trúc phân tán phục vụ hàng triệu người. Mỗi bước giải quyết một nút thắt cổ chai
+(bottleneck) cụ thể xuất hiện khi lưu lượng tăng, và mỗi giải pháp lại kéo theo đánh đổi mới.
 
-**Các quyết định thiết kế chính:** Bắt đầu từ máy chủ đơn (single server) chứa cả web, cơ
-sở dữ liệu (database) và cache. Khi tải tăng: (1) tách tầng web và tầng dữ liệu để mở rộng
-độc lập; (2) chọn cơ sở dữ liệu quan hệ (RDBMS) hoặc phi quan hệ (NoSQL) tùy đặc điểm dữ
-liệu; (3) thêm bộ cân bằng tải (load balancer) để chống lỗi và phân phối lưu lượng; (4)
-nhân bản cơ sở dữ liệu (database replication) theo mô hình master-slave — master ghi,
-slave đọc; (5) thêm tầng cache và mạng phân phối nội dung (CDN) cho tài nguyên tĩnh; (6)
-làm tầng web không trạng thái (stateless) bằng cách đưa session ra kho lưu trữ dùng chung;
-(7) triển khai nhiều trung tâm dữ liệu (data center) định tuyến bằng geoDNS; (8) dùng hàng
-đợi thông điệp (message queue) để tách rời (decouple) các thành phần; (9) mở rộng tầng dữ
-liệu bằng sharding.
+**Phân tích và các quyết định thiết kế chính:** Điểm khởi đầu là một máy chủ gói cả web
+server, cơ sở dữ liệu (database) và cache. Dòng đời mở rộng diễn ra theo trình tự:
 
-**Đánh đổi:** Mở rộng dọc (vertical scaling) đơn giản nhưng có giới hạn phần cứng và không
-chống lỗi; mở rộng ngang (horizontal scaling) phức tạp hơn nhưng bền vững. Sharding gây khó
-join, vấn đề hotspot key (celebrity problem) và tái phân mảnh (resharding).
+1. **Tách tầng dữ liệu khỏi tầng web** để hai tầng mở rộng độc lập. Đây là bước đầu tiên
+   phá vỡ sự phụ thuộc phần cứng chung.
+2. **Chọn loại cơ sở dữ liệu:** RDBMS (MySQL, PostgreSQL) cho dữ liệu quan hệ, giao dịch;
+   NoSQL (key-value, document, column, graph) khi cần độ trễ cực thấp, dữ liệu phi cấu trúc,
+   hoặc khối lượng khổng lồ khó join.
+3. **Bộ cân bằng tải (load balancer):** phân phối lưu lượng tới nhiều web server, che giấu
+   IP nội bộ, chống lỗi (failover) khi một server chết.
+4. **Nhân bản cơ sở dữ liệu (replication):** mô hình master-slave (leader-follower) — master
+   nhận ghi, slave phục vụ đọc, tăng thông lượng đọc và độ sẵn sàng.
+5. **Cache và CDN:** cache (Redis/Memcached) giảm tải đọc DB theo mẫu read-through; CDN phục
+   vụ tài nguyên tĩnh (ảnh, JS, CSS) từ edge gần người dùng.
+6. **Tầng web không trạng thái (stateless):** đưa session ra kho dùng chung (Redis/NoSQL) để
+   mọi request có thể tới bất kỳ server nào, giúp auto-scaling dễ dàng.
+7. **Nhiều trung tâm dữ liệu (data center):** định tuyến người dùng tới DC gần nhất bằng
+   geoDNS, tăng độ trễ tốt và chịu thảm hoạ vùng.
+8. **Message queue:** tách rời (decouple) producer và consumer, xử lý tác vụ nặng bất đồng bộ.
+9. **Sharding tầng dữ liệu:** chia dữ liệu theo shard key để vượt giới hạn một DB.
 
-**Kiến trúc tổng quát (mô tả):** Client → geoDNS → Load Balancer → cụm web stateless →
-(Cache/Redis, cụm DB master-slave đã shard); tài nguyên tĩnh phục vụ qua CDN; các tác vụ
-nặng đẩy qua message queue cho worker xử lý bất đồng bộ; kèm logging, metrics, automation.
+```mermaid
+flowchart TD
+    U["Người dùng"] --> DNS["geoDNS"]
+    DNS --> LB["Bộ cân bằng tải"]
+    LB --> W1["Web server 1 - stateless"]
+    LB --> W2["Web server 2 - stateless"]
+    W1 --> CA["Cache - Redis"]
+    W2 --> CA
+    W1 --> MST["DB master - ghi"]
+    MST --> SL1["DB slave - đọc"]
+    MST --> SL2["DB slave - đọc"]
+    W1 --> MQ["Message queue"]
+    MQ --> WK["Worker xử lý bất đồng bộ"]
+    U --> CDN["CDN - tài nguyên tĩnh"]
+```
+
+**Đánh đổi:**
+
+| Tiêu chí | Mở rộng dọc (vertical) | Mở rộng ngang (horizontal) |
+|---|---|---|
+| Cách làm | Thêm CPU/RAM cho một máy | Thêm nhiều máy |
+| Độ phức tạp | Đơn giản | Cao (đồng bộ, phân tán) |
+| Giới hạn | Chạm trần phần cứng | Gần như không giới hạn |
+| Chịu lỗi | Kém (SPOF) | Tốt (dự phòng) |
+
+Sharding tuy mở rộng vô hạn nhưng gây khó join, sinh vấn đề hotspot key (celebrity problem)
+và tái phân mảnh (resharding) tốn kém — cần consistent hashing (chương 5) để giảm đau.
 
 ---
 
 ## Chương 2: Ước lượng back-of-the-envelope (Back-of-the-Envelope Estimation)
 
-**Vấn đề:** Trong phỏng vấn, ứng viên thường phải ước lượng nhanh dung lượng hoặc hiệu năng
-hệ thống để đánh giá tính khả thi của thiết kế.
+**Vấn đề:** Trong phỏng vấn, ứng viên thường phải ước lượng nhanh dung lượng, thông lượng
+hoặc hiệu năng hệ thống để đánh giá tính khả thi và định cỡ (sizing) hạ tầng. Mục tiêu không
+phải con số chính xác tuyệt đối mà là thể hiện tư duy định lượng có cơ sở.
 
-**Các quyết định/kiến thức nền chính:** Nắm vững ba nhóm số liệu — lũy thừa của 2 (đơn vị
-dữ liệu: KB, MB, GB, TB, PB), các con số độ trễ (latency numbers every programmer should
-know) của Jeff Dean, và các con số về tính sẵn sàng (availability). Hiểu QPS (query per
-second), peak QPS, dung lượng lưu trữ, cache, số máy chủ. Ví dụ điển hình: ước lượng QPS và
-storage của Twitter — với 300 triệu MAU, 50% dùng hằng ngày, mỗi người 2 tweet/ngày → DAU
-150 triệu, tweet QPS ≈ 3500, peak ≈ 7000; storage media 5 năm ≈ 55 PB.
+**Kiến thức nền cần nắm:** Ba nhóm số liệu cốt lõi:
 
-**Đánh đổi:** Trọng tâm là *quá trình* chứ không phải con số chính xác. Nên làm tròn
-(rounding/approximation) để tính nhanh, ghi rõ giả định (assumptions) và ghi kèm đơn vị
-(labels) để tránh nhầm lẫn.
+- **Lũy thừa của 2:** 2^10 = 1 KB, 2^20 = 1 MB, 2^30 = 1 GB, 2^40 = 1 TB, 2^50 = 1 PB.
+- **Latency numbers every programmer should know (Jeff Dean):** truy cập cache L1 ~0.5 ns,
+  đọc RAM ~100 ns, gửi gói qua data center ~500 μs, round-trip trong cùng DC ~1 ms, đọc đĩa
+  tuần tự 1 MB ~30 ms, round-trip California ↔ Hà Lan ~150 ms. Kết luận: bộ nhớ nhanh, đĩa
+  chậm, mạng liên vùng rất chậm — tránh disk seek, nén trước khi truyền, giảm chuyến đi mạng.
+- **Tính sẵn sàng (availability):** đo bằng "số chín" — 99.9% ≈ 8.76 giờ downtime/năm,
+  99.99% ≈ 52.6 phút, 99.999% ≈ 5.26 phút; ràng buộc bởi SLA (service level agreement).
 
-**Các mốc quan trọng:** Bộ nhớ nhanh, đĩa chậm — tránh disk seek; nén dữ liệu trước khi
-truyền qua mạng; truyền dữ liệu giữa các data center tốn thời gian. Tính sẵn sàng đo bằng
-"số chín" (99.9%, 99.99%...) và ràng buộc bởi SLA (service level agreement).
+**Ví dụ điển hình — ước lượng Twitter:** Giả định 300 triệu MAU, 50% dùng hằng ngày → DAU
+150 triệu; mỗi người đăng 2 tweet/ngày → 300 triệu tweet/ngày. Tweet QPS ≈ 300 triệu /
+86400 giây ≈ 3500; peak QPS ≈ 2× ≈ 7000. Nếu 10% tweet có media 1 MB → 30 TB/ngày media,
+lưu 5 năm ≈ 30 TB × 365 × 5 ≈ 55 PB.
+
+```mermaid
+flowchart LR
+    A["Giả định:<br/>DAU, hành vi/người"] --> B["QPS trung bình"]
+    B --> C["Peak QPS<br/>(nhân hệ số 2-10x)"]
+    A --> D["Storage/ngày"]
+    D --> E["Storage nhiều năm<br/>(nhân số ngày)"]
+    C --> F["Số máy chủ,<br/>băng thông cần"]
+    E --> F
+```
+
+**Đánh đổi và nguyên tắc:** Trọng tâm là *quá trình* chứ không phải con số. Nên làm tròn
+(rounding) để tính nhẩm nhanh, ghi rõ giả định (assumptions), luôn kèm đơn vị (labels) và
+phân biệt QPS trung bình với peak QPS. Ước lượng giúp trả lời sớm các câu hỏi: cần bao nhiêu
+server, có cần cache/CDN không, dữ liệu có vừa RAM không — định hướng toàn bộ thiết kế sau đó.
 
 ---
 
 ## Chương 3: Khung 4 bước cho phỏng vấn thiết kế hệ thống (A Framework for System Design Interviews)
 
-**Vấn đề:** Câu hỏi thiết kế hệ thống mơ hồ, phạm vi rộng, không có đáp án đúng duy nhất.
-Người phỏng vấn đánh giá khả năng cộng tác, xử lý sự mơ hồ và bảo vệ lựa chọn thiết kế.
+**Vấn đề:** Câu hỏi thiết kế hệ thống cố tình mơ hồ, phạm vi rộng và không có đáp án đúng
+duy nhất. Người phỏng vấn không tìm "lời giải hoàn hảo" mà đánh giá khả năng cộng tác, xử lý
+sự mơ hồ, đưa ra và bảo vệ các lựa chọn thiết kế dựa trên trade-off. Một ứng viên giỏi kỹ
+thuật vẫn có thể trượt nếu lao ngay vào giải pháp mà bỏ qua làm rõ yêu cầu.
 
 **Khung 4 bước:**
 
-- **Bước 1 — Hiểu vấn đề và xác định phạm vi (scope):** Đặt câu hỏi làm rõ; không vội đưa
-  giải pháp. Xác định tính năng, quy mô, ràng buộc, giả định.
+- **Bước 1 — Hiểu vấn đề và xác định phạm vi (understand & scope):** Đặt câu hỏi làm rõ,
+  không vội đưa giải pháp. Xác định tính năng cần có, ai dùng, quy mô (số user, QPS), ràng
+  buộc và giả định. Ghi lại yêu cầu chức năng và phi chức năng.
 - **Bước 2 — Đề xuất thiết kế cấp cao và lấy đồng thuận (get buy-in):** Vẽ sơ đồ khối các
-  thành phần chính, thống nhất hướng đi với người phỏng vấn, làm phép tính back-of-the-envelope.
-- **Bước 3 — Đào sâu thiết kế (design deep dive):** Cùng người phỏng vấn đi sâu vào các
-  thành phần/nút thắt cổ chai quan trọng.
-- **Bước 4 — Tổng kết (wrap up):** Nêu điểm nghẽn, hướng cải tiến, mở rộng, xử lý lỗi,
-  monitoring.
+  thành phần chính (client, API, DB, cache, queue...), thống nhất hướng đi với người phỏng
+  vấn, làm vài phép tính back-of-the-envelope để kiểm chứng khả thi.
+- **Bước 3 — Đào sâu thiết kế (design deep dive):** Cùng người phỏng vấn chọn 1-2 thành
+  phần hoặc nút thắt quan trọng để phân tích chi tiết (ví dụ schema DB, thuật toán, cách xử
+  lý hotkey), thảo luận các phương án và đánh đổi.
+- **Bước 4 — Tổng kết (wrap up):** Nêu điểm nghẽn còn lại, hướng cải tiến, cách mở rộng, xử
+  lý lỗi, logging/monitoring và vận hành.
 
-**Đánh đổi/cảnh báo:** Tránh "red flag" như over-engineering (thiết kế thừa, bỏ qua
-trade-off), bảo thủ, hẹp hòi. Phân bổ thời gian hợp lý, không sa đà chi tiết quá sớm.
+```mermaid
+flowchart LR
+    S1["1. Hiểu &amp; xác định phạm vi"] --> S2["2. Thiết kế cấp cao<br/>lấy đồng thuận"]
+    S2 --> S3["3. Đào sâu<br/>thành phần trọng yếu"]
+    S3 --> S4["4. Tổng kết:<br/>nghẽn, mở rộng, lỗi"]
+    S3 -.->|"điều chỉnh"| S2
+```
 
-**Kiến trúc/quy trình:** Đây là chương khung tư duy, được áp dụng lặp lại xuyên suốt các
-chương thiết kế sau (chương 4 trở đi).
+**Phân bổ thời gian tham khảo (buổi 45 phút):** Bước 1 ~3-10 phút, Bước 2 ~10-15 phút,
+Bước 3 ~10-25 phút, Bước 4 ~3-5 phút.
+
+**Đánh đổi và cảnh báo "red flag":** Tránh over-engineering (vẽ thừa thành phần, phớt lờ
+trade-off), giữ khư khư một công nghệ ưa thích, hoặc im lặng suy nghĩ một mình. Nên "suy
+nghĩ thành lời", chủ động đề xuất và luôn giải thích *vì sao* chọn phương án này thay vì
+phương án kia. Đây là chương khung tư duy, được áp dụng lặp lại xuyên suốt các chương thiết
+kế từ chương 4 trở đi.
 
 ---
 
 ## Chương 4: Thiết kế Rate Limiter (Design a Rate Limiter)
 
-**Vấn đề:** Xây dựng bộ giới hạn tốc độ (rate limiter) để chặn bớt request vượt ngưỡng,
-chống lạm dụng/DoS, giảm chi phí và tránh quá tải máy chủ; cần chính xác, ít tốn bộ nhớ,
-hoạt động phân tán, chịu lỗi tốt.
+**Vấn đề:** Xây dựng bộ giới hạn tốc độ (rate limiter) chặn bớt request vượt ngưỡng nhằm
+chống lạm dụng/tấn công DoS, giảm chi phí (đặc biệt với API tính tiền theo lượt gọi) và
+tránh quá tải máy chủ. Yêu cầu phi chức năng: chính xác, độ trễ thấp, tốn ít bộ nhớ, hoạt
+động phân tán, có thông báo rõ ràng cho client, và chịu lỗi tốt.
 
-**Quyết định thiết kế:** Đặt rate limiter phía server hoặc trong API gateway (middleware)
-thay vì client (dễ bị giả mạo). Lựa chọn thuật toán:
+**Vị trí đặt:** Nên đặt phía server hoặc trong API gateway (dạng middleware) thay vì client
+— vì client dễ bị giả mạo và không kiểm soát được. API gateway là nơi lý tưởng vì đã tập
+trung xác thực, SSL termination và whitelist.
 
-- **Token bucket:** nạp token định kỳ, mỗi request tiêu một token; cho phép burst; Amazon,
-  Stripe dùng.
-- **Leaking bucket:** hàng đợi FIFO xử lý tốc độ cố định; đầu ra ổn định nhưng burst cũ có
-  thể chặn request mới.
-- **Fixed window counter:** đơn giản nhưng burst ở rìa cửa sổ có thể vượt quota gấp đôi.
-- **Sliding window log:** chính xác tuyệt đối nhưng tốn bộ nhớ.
-- **Sliding window counter:** lai hai loại trên, mượt và tiết kiệm bộ nhớ, chỉ là xấp xỉ.
+**So sánh các thuật toán:**
 
-**Đánh đổi:** Độ chính xác đổi lấy bộ nhớ; token/leaking bucket khó tinh chỉnh hai tham số.
-Trong môi trường phân tán có race condition (giải bằng Lua script hoặc sorted set của Redis)
-và vấn đề đồng bộ (dùng kho tập trung Redis, mô hình eventual consistency).
+| Thuật toán | Ưu điểm | Nhược điểm |
+|---|---|---|
+| Token bucket | Cho phép burst, ít bộ nhớ | Chỉnh 2 tham số (rate, capacity) khó |
+| Leaking bucket | Đầu ra ổn định, mượt | Burst cũ chặn request mới; 2 tham số |
+| Fixed window counter | Đơn giản, ít bộ nhớ | Burst ở rìa cửa sổ vượt quota gấp đôi |
+| Sliding window log | Chính xác tuyệt đối | Tốn bộ nhớ (lưu mọi timestamp) |
+| Sliding window counter | Mượt, tiết kiệm bộ nhớ | Chỉ là xấp xỉ |
 
-**Kiến trúc:** Client → Rate limiter middleware → (Redis lưu counter với INCR/EXPIRE). Nếu
-vượt ngưỡng trả HTTP 429 kèm header `X-Ratelimit-Remaining/Limit/Retry-After`; luật lưu ở
-file cấu hình, worker nạp vào cache.
+Token bucket được Amazon và Stripe dùng phổ biến. Nguyên lý: một "xô" chứa tối đa `capacity`
+token, được nạp lại với tốc độ `refill_rate` token/giây; mỗi request tiêu một token — hết
+token thì bị từ chối.
+
+```python
+import time
+
+class TokenBucket:
+    def __init__(self, capacity: int, refill_rate: float):
+        self.capacity = capacity          # số token tối đa
+        self.refill_rate = refill_rate    # token nạp mỗi giây
+        self.tokens = capacity
+        self.last = time.monotonic()
+
+    def allow(self, cost: int = 1) -> bool:
+        now = time.monotonic()
+        # nạp token theo thời gian đã trôi qua
+        self.tokens = min(self.capacity,
+                          self.tokens + (now - self.last) * self.refill_rate)
+        self.last = now
+        if self.tokens >= cost:
+            self.tokens -= cost
+            return True
+        return False   # vượt ngưỡng -> trả HTTP 429
+```
+
+```mermaid
+flowchart TD
+    C["Máy khách"] --> GW["API Gateway<br/>+ Rate limiter middleware"]
+    GW --> R["Redis<br/>counter INCR/EXPIRE"]
+    R -->|"còn quota"| S["Dịch vụ backend"]
+    R -->|"vượt ngưỡng"| E["HTTP 429<br/>Retry-After"]
+    CFG["File cấu hình luật"] --> WK["Worker nạp luật"]
+    WK --> GW
+```
+
+**Đánh đổi và môi trường phân tán:** Độ chính xác đổi lấy bộ nhớ. Khi triển khai nhiều node,
+xuất hiện **race condition** (giải bằng Lua script atomic hoặc sorted set trong Redis) và
+**vấn đề đồng bộ** (dùng kho tập trung Redis theo mô hình eventual consistency thay vì
+sticky session). Khi vượt ngưỡng, trả HTTP 429 kèm header `X-Ratelimit-Remaining`,
+`X-Ratelimit-Limit`, `Retry-After`. Luật giới hạn lưu ở file cấu hình, worker định kỳ nạp
+vào cache.
 
 ---
 
 ## Chương 5: Consistent Hashing (Design Consistent Hashing)
 
-**Vấn đề:** Khi phân phối key qua N server bằng `hash % N`, thêm/bớt server làm hầu hết key
-bị ánh xạ lại, gây khối lượng di chuyển dữ liệu khổng lồ. Cần kỹ thuật giảm thiểu việc này.
+**Vấn đề:** Khi phân phối key qua N server bằng `hash(key) % N`, việc thêm hoặc bớt một
+server làm thay đổi N và khiến gần như *toàn bộ* key bị ánh xạ lại (remap), gây một cơn bão
+cache miss và di chuyển dữ liệu khổng lồ. Cần một kỹ thuật sao cho khi cụm thay đổi kích
+thước, chỉ một phần nhỏ key phải di chuyển.
 
-**Quyết định thiết kế:** Dùng consistent hashing — ánh xạ cả server lẫn key lên một "vòng
-băm" (hash ring). Mỗi key thuộc về server đầu tiên gặp khi đi theo chiều kim đồng hồ từ vị
-trí key. Khi thêm/bớt server, chỉ một phần nhỏ key giữa server đó và server liền trước cần
-tái phân bố. Để khắc phục hai nhược điểm (phân vùng không đều và phân phối key lệch), dùng
-**nút ảo (virtual nodes/replicas)**: mỗi server đại diện bởi nhiều điểm trên vòng.
+**Ý tưởng vòng băm (hash ring):** Ánh xạ cả server lẫn key lên cùng một không gian băm hình
+tròn (ví dụ 0 → 2^160 của SHA-1, nối đầu và cuối thành vòng). Mỗi key thuộc về server đầu
+tiên gặp được khi đi theo chiều kim đồng hồ từ vị trí của key. Khi thêm/bớt một server, chỉ
+những key nằm giữa server đó và server liền trước trên vòng mới cần tái phân bố.
 
-**Đánh đổi:** Càng nhiều virtual node, phân phối càng cân bằng (độ lệch chuẩn giảm) nhưng
-tốn thêm bộ nhớ lưu metadata — cần tinh chỉnh số lượng phù hợp.
+**Hai nhược điểm và cách khắc phục:** (1) Kích thước phân vùng không đều khi thêm/bớt server;
+(2) Phân phối key lệch (một server ôm nhiều key hơn). Giải pháp: **nút ảo (virtual nodes /
+replicas)** — mỗi server vật lý được biểu diễn bằng nhiều điểm trên vòng. Càng nhiều virtual
+node, phân phối càng cân bằng (độ lệch chuẩn giảm), đổi lại tốn thêm bộ nhớ lưu metadata.
 
-**Kiến trúc/ứng dụng:** Vòng băm với các server (mỗi server có nhiều virtual node) và key
-được đặt lên. Consistent hashing được dùng rộng rãi: phân vùng của Amazon Dynamo, Cassandra,
-Discord, CDN Akamai, load balancer Maglev của Google. Lợi ích: giảm key phải di chuyển, dễ
-mở rộng ngang, giảm vấn đề hotspot key.
+```python
+import bisect, hashlib
+
+class ConsistentHash:
+    def __init__(self, replicas: int = 100):
+        self.replicas = replicas   # số virtual node mỗi server
+        self.ring = {}             # hash -> tên server
+        self.sorted_keys = []
+
+    def _hash(self, key: str) -> int:
+        return int(hashlib.md5(key.encode()).hexdigest(), 16)
+
+    def add(self, server: str):
+        for i in range(self.replicas):
+            h = self._hash(f"{server}#{i}")
+            self.ring[h] = server
+            bisect.insort(self.sorted_keys, h)
+
+    def get(self, key: str) -> str:
+        if not self.ring:
+            return None
+        h = self._hash(key)
+        # đi theo chiều kim đồng hồ tới virtual node kế tiếp
+        idx = bisect.bisect(self.sorted_keys, h) % len(self.sorted_keys)
+        return self.ring[self.sorted_keys[idx]]
+```
+
+```mermaid
+flowchart TD
+    subgraph Ring["Vòng băm"]
+        S1A["S1-vnode"]
+        S2A["S2-vnode"]
+        S3A["S3-vnode"]
+        S1B["S1-vnode"]
+    end
+    K["key: user_42"] -->|"theo chiều kim đồng hồ"| S2A
+    S2A --> PHY["Server vật lý S2"]
+```
+
+**Đánh đổi:** Số virtual node là tham số phải tinh chỉnh — nhiều thì cân bằng tốt nhưng tốn
+bộ nhớ và tra cứu chậm hơn một chút. Consistent hashing được dùng rộng rãi: phân vùng của
+Amazon Dynamo, Apache Cassandra, sharding của Discord, CDN Akamai, và load balancer Maglev
+của Google. Lợi ích: tối thiểu hoá số key phải di chuyển khi co giãn cụm, dễ mở rộng ngang
+và giảm vấn đề hotspot key.
 
 ---
 
 ## Chương 6: Kho lưu trữ Key-Value (Design a Key-Value Store)
 
 **Vấn đề:** Thiết kế kho key-value phân tán hỗ trợ `put(key, value)` và `get(key)`, lưu dữ
-liệu lớn, độ trễ thấp, sẵn sàng cao, mở rộng tự động và độ nhất quán (consistency) điều
-chỉnh được.
+liệu lớn (mỗi cặp key-value nhỏ, dưới 10 KB), độ trễ thấp, tính sẵn sàng cao, tự động mở
+rộng theo lưu lượng, và có độ nhất quán (consistency) điều chỉnh được. Đây là chương lý
+thuyết nền tảng, tổng hợp nhiều kỹ thuật của hệ phân tán.
 
-**Quyết định thiết kế:** Vì một server không đủ, chuyển sang kho phân tán (distributed hash
-table). Áp dụng **định lý CAP** để chọn ưu tiên (thường là hệ AP — sẵn sàng + chịu phân
-vùng, hy sinh nhất quán tức thời). Các thành phần: phân vùng dữ liệu bằng consistent
-hashing; nhân bản (replication) trên N server; nhất quán bằng **quorum** (N, W, R) — nếu
-`W + R > N` đảm bảo strong consistency; giải quyết bất nhất bằng **versioning + vector
-clock**; xử lý lỗi tạm thời bằng **hinted handoff**, lỗi lâu dài bằng đồng bộ **Merkle
-tree**; lưu trữ theo mô hình SSTable/LSM, dùng Bloom filter để tăng tốc đọc.
+**Định lý CAP:** Trong ba thuộc tính Consistency, Availability, Partition tolerance, khi có
+phân vùng mạng (network partition — điều không thể tránh) hệ chỉ chọn được hai. Đa số kho
+key-value quy mô lớn chọn **AP** (sẵn sàng + chịu phân vùng), hy sinh nhất quán tức thời để
+đổi lấy eventual consistency (Dynamo, Cassandra); một số chọn **CP** khi cần strong
+consistency (như hệ ngân hàng).
 
-**Đánh đổi:** Cấu hình N/W/R cân bằng giữa độ trễ và độ nhất quán (R=1 tối ưu đọc nhanh, W=1
-tối ưu ghi nhanh). Eventual consistency (như Dynamo, Cassandra) cho sẵn sàng cao nhưng client
-phải hòa giải (reconcile) các phiên bản.
+**Các thành phần cốt lõi:**
 
-**Kiến trúc:** Coordinator làm proxy giữa client và các node trên vòng băm; write path ghi
-vào commit log → memtable → SSTable; read path kiểm tra memtable/Bloom filter rồi đọc SSTable.
+- **Phân vùng dữ liệu:** consistent hashing (chương 5) để trải key qua các node.
+- **Nhân bản (replication):** ghi mỗi key lên N node kế tiếp trên vòng (khác data center để
+  chống thảm hoạ).
+- **Nhất quán bằng quorum (N, W, R):** N = số bản sao, W = số bản phải xác nhận ghi, R = số
+  bản phải xác nhận đọc. Nếu **W + R > N** thì đảm bảo strong consistency (đọc luôn thấy ghi
+  mới nhất).
+- **Giải bất nhất:** versioning + **vector clock** để phát hiện và hoà giải xung đột.
+- **Xử lý lỗi:** lỗi tạm thời dùng **hinted handoff** (node khác giữ hộ, trả sau khi hồi
+  phục); lỗi lâu dài dùng đồng bộ **Merkle tree** (so cây băm để chỉ đồng bộ phần khác biệt).
+- **Lưu trữ:** mô hình **LSM tree** — ghi vào commit log rồi memtable, flush thành SSTable
+  bất biến; dùng **Bloom filter** để nhanh chóng loại các SSTable chắc chắn không chứa key.
+
+```mermaid
+flowchart TD
+    CL["Máy khách"] --> CO["Coordinator (node bất kỳ)"]
+    CO -->|"ghi tới W bản"| N1["Node A - bản sao 1"]
+    CO --> N2["Node B - bản sao 2"]
+    CO --> N3["Node C - bản sao 3"]
+    subgraph WritePath["Đường ghi trong một node"]
+        WL["Commit log"] --> MT["Memtable (RAM)"]
+        MT -->|"flush"| SS["SSTable (đĩa)"]
+    end
+    subgraph ReadPath["Đường đọc"]
+        BF["Bloom filter"] --> MT2["Memtable"]
+        MT2 --> SS2["SSTable"]
+    end
+```
+
+**Đánh đổi cấu hình N/W/R:**
+
+| Cấu hình | Ý nghĩa |
+|---|---|
+| R = 1, W = N | Đọc rất nhanh, ghi chậm |
+| W = 1, R = N | Ghi rất nhanh, đọc chậm |
+| W + R > N | Strong consistency |
+| W + R ≤ N | Chỉ eventual consistency |
+
+Eventual consistency cho sẵn sàng cao nhưng đẩy gánh nặng hoà giải phiên bản về phía client
+(hoặc lần đọc sau). Coordinator đóng vai proxy giữa client và các node trên vòng băm.
 
 ---
 
 ## Chương 7: Bộ sinh ID duy nhất phân tán (Unique ID Generator in Distributed Systems)
 
-**Vấn đề:** Sinh ID duy nhất trên nhiều máy chủ; ID phải duy nhất, chỉ chứa số, vừa 64-bit,
-sắp xếp được theo thời gian, và đạt trên 10.000 ID/giây.
+**Vấn đề:** Sinh ID duy nhất trên nhiều máy chủ trong hệ phân tán. Yêu cầu: ID duy nhất
+toàn cục, chỉ chứa số, vừa trong 64-bit, tăng dần theo thời gian (sortable by time), và đạt
+trên 10.000 ID/giây. Không dùng được `auto_increment` của một DB đơn vì đó là điểm lỗi đơn
+và không mở rộng.
 
-**Quyết định thiết kế — so sánh các phương án:**
+**So sánh các phương án:**
 
-- **Multi-master replication:** dùng auto_increment tăng theo bước k = số server; khó mở
-  rộng nhiều data center, ID không tăng theo thời gian.
-- **UUID:** 128-bit, sinh độc lập không cần phối hợp; nhưng không vừa 64-bit, không sắp theo
-  thời gian, có thể phi số.
-- **Ticket server:** một server auto_increment tập trung (Flickr); đơn giản, ID là số nhưng
-  là điểm lỗi đơn (SPOF).
-- **Twitter Snowflake (chọn):** chia 64-bit thành sign(1) + timestamp(41) + datacenter ID(5)
-  + machine ID(5) + sequence(12). Sắp theo thời gian, đủ 4096 ID/ms/máy, ~69 năm tuổi thọ.
+| Phương án | Ưu điểm | Nhược điểm |
+|---|---|---|
+| Multi-master replication | Dùng auto_increment bước k | Khó thêm server, ID không sort theo time |
+| UUID (128-bit) | Sinh độc lập, không phối hợp | Không vừa 64-bit, không sort, có thể phi số |
+| Ticket server (Flickr) | ID số, đơn giản | Điểm lỗi đơn (SPOF) |
+| **Snowflake (chọn)** | Đủ mọi yêu cầu, sort theo time | Phụ thuộc đồng bộ đồng hồ |
 
-**Đánh đổi:** Snowflake đáp ứng mọi yêu cầu nhưng phụ thuộc đồng bộ đồng hồ (clock sync — giải
-bằng NTP). Có thể tinh chỉnh độ dài các trường (nhiều bit timestamp hơn cho ứng dụng dài hạn,
-ít concurrency).
+**Twitter Snowflake:** chia 64 bit thành: sign (1 bit, luôn 0) + timestamp (41 bit, mili-giây
+kể từ custom epoch) + datacenter ID (5 bit → 32 DC) + machine ID (5 bit → 32 máy/DC) +
+sequence (12 bit → 4096 ID/ms/máy). 41 bit timestamp cho tuổi thọ ~69 năm.
 
-**Kiến trúc:** Mỗi máy sinh ID độc lập từ cấu trúc bit; datacenter ID và machine ID cố định
-lúc khởi động, timestamp và sequence sinh lúc chạy.
+```python
+import time
+
+class Snowflake:
+    EPOCH = 1288834974657  # custom epoch (ms) của Twitter
+    def __init__(self, datacenter_id: int, machine_id: int):
+        self.dc = datacenter_id & 0x1F      # 5 bit
+        self.machine = machine_id & 0x1F    # 5 bit
+        self.seq = 0
+        self.last_ts = -1
+
+    def _now(self) -> int:
+        return int(time.time() * 1000)
+
+    def next_id(self) -> int:
+        ts = self._now()
+        if ts == self.last_ts:
+            self.seq = (self.seq + 1) & 0xFFF   # 12 bit
+            if self.seq == 0:                   # hết sequence -> chờ ms kế
+                while ts <= self.last_ts:
+                    ts = self._now()
+        else:
+            self.seq = 0
+        self.last_ts = ts
+        return (((ts - self.EPOCH) << 22)
+                | (self.dc << 17)
+                | (self.machine << 12)
+                | self.seq)
+```
+
+```mermaid
+flowchart LR
+    subgraph ID["64-bit ID"]
+        A["sign<br/>1 bit"] --- B["timestamp<br/>41 bit"] --- C["datacenter<br/>5 bit"] --- D["machine<br/>5 bit"] --- E["sequence<br/>12 bit"]
+    end
+```
+
+**Đánh đổi:** Snowflake đáp ứng mọi yêu cầu nhưng phụ thuộc đồng bộ đồng hồ (clock sync) —
+nếu đồng hồ nhảy lùi (NTP điều chỉnh) có thể sinh ID trùng hoặc không tăng; giải bằng cách
+chờ hoặc dùng NTP cẩn thận. Có thể tinh chỉnh độ dài trường: nhiều bit timestamp hơn cho ứng
+dụng tuổi thọ dài, ít bit sequence nếu concurrency thấp. Mỗi máy sinh ID độc lập, không cần
+phối hợp qua mạng — đó là ưu thế lớn về hiệu năng và độ sẵn sàng.
 
 ---
 
 ## Chương 8: URL Shortener (Design a URL Shortener)
 
-**Vấn đề:** Thiết kế dịch vụ rút gọn URL kiểu TinyURL: rút gọn URL dài và chuyển hướng
-(redirect) URL ngắn về URL gốc; quy mô ~100 triệu URL/ngày, URL ngắn dùng ký tự [0-9a-zA-Z].
+**Vấn đề:** Thiết kế dịch vụ rút gọn URL kiểu TinyURL/bit.ly: nhận URL dài trả về URL ngắn,
+và chuyển hướng (redirect) URL ngắn về URL gốc. Quy mô ~100 triệu URL mới/ngày (≈ 1160
+ghi/giây), tỉ lệ đọc:ghi khoảng 10:1, URL ngắn dùng ký tự [0-9, a-z, A-Z] (base 62).
 
-**Quyết định thiết kế:** Hai API chính — `POST` tạo shortURL, `GET` chuyển hướng. Cho việc
-sinh hash có hai hướng: (1) **hash + giải va chạm** (hash rồi lấy 7 ký tự đầu, kiểm tra
-va chạm, dùng Bloom filter tăng tốc); (2) **base-62 conversion** (chọn) — sinh ID số duy nhất
-bằng bộ sinh ID (chương 7) rồi đổi sang base 62. Redirect dùng HTTP 301 (cache lâu, giảm tải
-server) hoặc 302 (theo dõi click tốt hơn).
+**Ước lượng độ dài hashValue:** Với 100 triệu URL/ngày trong 10 năm ≈ 365 tỉ bản ghi. Cần
+62^n ≥ 365 tỉ → n = 7 (62^7 ≈ 3.5 nghìn tỉ) là đủ. Vậy URL ngắn dài 7 ký tự.
 
-**Đánh đổi:** Base-62 cho độ dài URL thay đổi theo ID, dễ đoán tuần tự nhưng không cần truy
-vấn kiểm tra va chạm; hash cho độ dài cố định nhưng phải xử lý va chạm và tốn truy vấn DB.
-Redirect 301 tối ưu tải nhưng khó thống kê; 302 ngược lại.
+**Hai hướng sinh URL ngắn:**
 
-**Kiến trúc:** Client → Load Balancer → Web servers → (Cache <shortURL, longURL> cho đọc
-nhanh vì đọc nhiều hơn ghi) → DB. Luồng rút gọn: kiểm tra longURL đã tồn tại → sinh ID →
-base-62 → lưu (ID, shortURL, longURL). Tổng kết bàn thêm về rate limiter, mở rộng DB, analytics.
+| Hướng | Cách làm | Ưu điểm | Nhược điểm |
+|---|---|---|---|
+| Hash + giải va chạm | Băm URL, lấy 7 ký tự đầu | Độ dài cố định | Phải kiểm tra va chạm, tốn truy vấn DB |
+| Base-62 conversion (chọn) | Sinh ID số duy nhất rồi đổi base 62 | Không có va chạm, không cần kiểm tra | ID dễ đoán tuần tự, độ dài thay đổi |
+
+Base-62 dựa vào bộ sinh ID (chương 7): mỗi URL nhận một ID số duy nhất, đổi sang chuỗi base
+62 làm URL ngắn.
+
+```python
+CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+def to_base62(num: int) -> str:
+    if num == 0:
+        return CHARS[0]
+    out = []
+    while num:
+        num, rem = divmod(num, 62)
+        out.append(CHARS[rem])
+    return "".join(reversed(out))
+
+def to_base10(short: str) -> int:
+    num = 0
+    for ch in short:
+        num = num * 62 + CHARS.index(ch)
+    return num
+
+# ví dụ: id 2009215674938 -> "zn9edcu"
+```
+
+```mermaid
+flowchart TD
+    C["Máy khách"] --> LB["Bộ cân bằng tải"]
+    LB --> WS["Web server"]
+    WS -->|"POST tạo URL"| IDG["Bộ sinh ID"]
+    IDG --> B62["Đổi base-62"]
+    B62 --> DB["DB: id, shortURL, longURL"]
+    C -->|"GET shortURL"| WS
+    WS --> CA["Cache shortURL to longURL"]
+    CA -->|"hit"| RD["HTTP 301/302 redirect"]
+    CA -->|"miss"| DB
+```
+
+**Đánh đổi redirect:** HTTP **301** (permanent) được trình duyệt cache lâu → giảm tải server
+nhưng khó thống kê click; HTTP **302** (temporary) luôn hỏi lại server → theo dõi analytics
+tốt hơn nhưng tải cao hơn. Vì đọc nhiều hơn ghi rất nhiều, đặt cache `<shortURL, longURL>`
+phía trước DB để phục vụ redirect nhanh. Phần tổng kết bàn thêm về rate limiter (chống lạm
+dụng), sharding DB, phân tích analytics và tính sẵn sàng.
 
 ---
 
 ## Chương 9: Web Crawler (Design a Web Crawler)
 
-**Vấn đề:** Thiết kế web crawler thu thập nội dung web (cho lập chỉ mục tìm kiếm), quy mô ~1
-tỷ trang/tháng, chỉ HTML, có xử lý trang mới/cập nhật, lưu tối đa 5 năm. Cần khả năng mở
-rộng, lịch sự (politeness), mở rộng chức năng và bền vững (robustness).
+**Vấn đề:** Thiết kế web crawler thu thập nội dung web phục vụ lập chỉ mục tìm kiếm (cũng
+dùng cho khai phá dữ liệu, giám sát bản quyền, phát hiện spam). Quy mô ~1 tỉ trang/tháng,
+chỉ HTML, có xử lý trang mới và trang cập nhật, lưu tối đa 5 năm. Bốn tiêu chí then chốt:
+khả năng mở rộng (scalability), lịch sự (politeness), khả năng mở rộng chức năng
+(extensibility) và bền vững (robustness).
 
-**Quyết định thiết kế:** Thuật toán nền: tải trang từ danh sách URL → trích link → thêm URL
-mới → lặp lại (BFS). Thành phần: seed URLs → **URL Frontier** (hàng đợi quản lý ưu tiên
-bằng front queues và lịch sự bằng back queues) → HTML Downloader → DNS Resolver → Content
-Parser → "Content Seen?" (khử trùng lặp bằng hash/checksum) → Content Storage → URL Extractor
-→ "URL Filter" → "URL Seen?" → quay lại Frontier.
+**Thuật toán nền:** BFS trên đồ thị web — bắt đầu từ seed URLs, tải trang, trích link, thêm
+URL mới vào hàng đợi và lặp lại. Nhưng BFS ngây thơ có hai vấn đề: (1) tải dồn dập vào một
+host gây "impolite"; (2) không có ưu tiên (mọi URL được đối xử như nhau).
 
-**Đánh đổi/kỹ thuật:** Lịch sự bằng cách mỗi host chỉ một luồng tải, có delay giữa các lần
-tải. Ưu tiên URL theo PageRank/traffic/tần suất cập nhật. Freshness: recrawl theo lịch sử cập
-nhật. Lưu Frontier theo mô hình lai (phần lớn trên đĩa, đệm trên bộ nhớ). Tối ưu hiệu năng:
-crawl phân tán, cache DNS, đặt server gần host (locality), timeout ngắn. Bền vững: consistent
-hashing, lưu trạng thái crawl, xử lý ngoại lệ. Tránh bẫy nhện (spider trap), nội dung trùng
-lặp, dữ liệu nhiễu; tôn trọng robots.txt.
+**Các thành phần:**
+
+- **URL Frontier:** hàng đợi thông minh với **front queues** (quản lý ưu tiên) và **back
+  queues** (đảm bảo lịch sự — mỗi host một hàng, có delay giữa các lần tải).
+- **HTML Downloader** + **DNS Resolver** (cache DNS để tránh nghẽn).
+- **Content Parser** → **"Content Seen?"** (khử trùng lặp nội dung bằng hash/checksum).
+- **Content Storage** → **URL Extractor** → **"URL Filter"** → **"URL Seen?"** → quay lại
+  Frontier.
+
+```mermaid
+flowchart TD
+    SEED["Seed URLs"] --> FR["URL Frontier<br/>front queues + back queues"]
+    FR --> DL["HTML Downloader"]
+    DNS["DNS Resolver (cache)"] --> DL
+    DL --> PA["Content Parser"]
+    PA --> CS{"Content Seen?"}
+    CS -->|"mới"| ST["Content Storage"]
+    CS -->|"trùng"| DROP1["Bỏ qua"]
+    ST --> EX["URL Extractor"]
+    EX --> UF["URL Filter"]
+    UF --> US{"URL Seen?"}
+    US -->|"chưa"| FR
+    US -->|"rồi"| DROP2["Bỏ qua"]
+```
+
+**Kỹ thuật và đánh đổi:** *Lịch sự* — mỗi host chỉ một luồng tải, có khoảng chờ giữa các
+request, tôn trọng `robots.txt`. *Ưu tiên* — xếp URL theo PageRank, lưu lượng, tần suất cập
+nhật. *Freshness* — recrawl theo lịch sử thay đổi của trang. *Lưu trữ Frontier* theo mô hình
+lai: phần lớn trên đĩa (vì hàng trăm triệu URL), đệm một phần trên RAM. *Hiệu năng* — crawl
+phân tán, cache DNS, đặt server gần host (locality), timeout ngắn. *Bền vững* — consistent
+hashing để phân phối downloader, lưu trạng thái crawl để phục hồi, xử lý ngoại lệ tao nhã.
+Cần tránh **bẫy nhện (spider trap)** — URL sinh vô hạn — bằng giới hạn độ dài/độ sâu, lọc
+nội dung trùng lặp và dữ liệu nhiễu (quảng cáo, spam).
 
 ---
 
 ## Chương 10: Hệ thống thông báo (Design a Notification System)
 
-**Vấn đề:** Thiết kế hệ thống gửi thông báo đa kênh — push notification (iOS/Android), SMS,
-email — ở quy mô lớn, đáng tin cậy, tôn trọng cài đặt người dùng.
+**Vấn đề:** Thiết kế hệ thống gửi thông báo đa kênh ở quy mô lớn — push notification
+(iOS qua APNs, Android qua FCM), SMS (Twilio, Nexmo) và email (SendGrid, Mailchimp). Yêu
+cầu: đáng tin cậy (không mất thông báo quan trọng), co giãn, tôn trọng cài đặt opt-out của
+người dùng, và có khả năng chống spam.
 
-**Quyết định thiết kế:** Thu thập thông tin thiết bị (device token) khi người dùng cài app,
-lưu vào DB. Luồng: các dịch vụ (services) → **Notification servers** (xác thực, rate limiting,
-lấy device token, đưa thông báo vào hàng đợi) → **message queue** cho từng kênh (tách rời,
-đệm) → **workers** kéo từ queue → dịch vụ bên thứ ba (APNs, FCM, Twilio/Nexmo cho SMS,
-SendGrid/Mailchimp cho email) → thiết bị người dùng.
+**Thu thập thông tin thiết bị:** Khi người dùng cài app hoặc đăng ký, hệ thống lưu **device
+token** (cho push), số điện thoại (SMS), địa chỉ email vào DB, gắn với user_id.
 
-**Đánh đổi:** Message queue giúp tách rời và co giãn độc lập nhưng khó đảm bảo "exactly-once"
-delivery — hệ thống chấp nhận "at-least-once" và khử trùng lặp bằng dedupe. Cần cân bằng độ
-tin cậy (retry) với nguy cơ gửi trùng.
+**Luồng và các thành phần (bản cải tiến):** Các dịch vụ sinh sự kiện → **Notification
+servers** (xác thực, rate limiting, lấy device token/thông tin liên hệ, dựng nội dung từ
+template) → đưa vào **message queue riêng cho từng kênh** (tách rời và đệm để mỗi kênh co
+giãn độc lập) → **workers** kéo từ queue → gọi dịch vụ bên thứ ba tương ứng → thiết bị người
+dùng.
 
-**Cải tiến/kiến trúc chi tiết:** Thêm cơ chế **retry** (thất bại thì đưa lại queue, quá số
-lần thì cảnh báo dev); bảo mật bằng appKey/appSecret; **notification template** cho nhất quán;
-bảng cài đặt để tôn trọng opt-out của người dùng; **rate limiting** giới hạn tần suất; giám
-sát số thông báo tồn đọng trong queue (nếu lớn thì thêm worker); events tracking (open rate,
-click rate) tích hợp analytics.
+```mermaid
+flowchart TD
+    SVC["Các dịch vụ<br/>(sinh sự kiện)"] --> NS["Notification servers<br/>xác thực, rate limit, template"]
+    DB["DB: user, device token,<br/>settings opt-out"] --> NS
+    NS --> Q1["Queue Push"]
+    NS --> Q2["Queue SMS"]
+    NS --> Q3["Queue Email"]
+    Q1 --> W1["Workers Push"] --> APNs["APNs / FCM"]
+    Q2 --> W2["Workers SMS"] --> TW["Twilio / Nexmo"]
+    Q3 --> W3["Workers Email"] --> SG["SendGrid / Mailchimp"]
+    APNs --> DEV["Thiết bị người dùng"]
+    TW --> DEV
+    SG --> DEV
+```
+
+**Đánh đổi độ tin cậy:** Message queue giúp tách rời và co giãn độc lập, nhưng khó đảm bảo
+**exactly-once** delivery. Hệ thống chấp nhận **at-least-once** và khử trùng lặp (dedupe)
+bằng cách gắn event ID và kiểm tra trước khi gửi. Cần cân bằng giữa retry (tăng độ tin cậy)
+và nguy cơ gửi trùng.
+
+**Các cải tiến quan trọng:**
+
+- **Retry:** thất bại thì đưa lại queue; quá số lần cho phép thì cảnh báo dev.
+- **Bảo mật:** dùng appKey/appSecret cho API gửi thông báo.
+- **Notification template:** tái sử dụng khuôn mẫu để nhất quán và giảm lỗi.
+- **Bảng cài đặt (settings):** tôn trọng opt-out theo từng loại/kênh của người dùng.
+- **Rate limiting:** giới hạn tần suất thông báo tới mỗi người tránh làm phiền.
+- **Giám sát:** theo dõi số thông báo tồn đọng trong queue — nếu lớn thì thêm worker; đo
+  open rate, click rate qua analytics.
 
 ---
 
 ## Chương 11: News Feed (Design a News Feed System)
 
 **Vấn đề:** Thiết kế bảng tin (news feed) kiểu Facebook/Instagram/Twitter — người dùng đăng
-bài và xem bài của bạn bè sắp theo thứ tự thời gian đảo ngược; ~10 triệu DAU, mỗi người tối
-đa 5000 bạn, hỗ trợ ảnh/video.
+bài và xem dòng bài của bạn bè/người theo dõi, sắp theo thứ tự thời gian đảo ngược
+(reverse chronological). Quy mô ~10 triệu DAU, mỗi người tối đa 5000 bạn, hỗ trợ ảnh/video.
 
-**Quyết định thiết kế:** Chia làm hai luồng:
+**Hai luồng chính:**
 
-- **Feed publishing:** User → Load Balancer → Web servers (xác thực, rate limiting) → Post
-  service (lưu DB + cache) → **Fanout service** (đẩy bài vào feed của bạn bè) → Notification
-  service.
-- **Newsfeed building:** User → Web servers → Newsfeed service (đọc từ Newsfeed cache lưu
-  các post ID) → hydrate nội dung từ cache.
+- **Feed publishing (đăng bài):** User → Load Balancer → Web servers (xác thực, rate
+  limiting) → Post service (lưu DB + cache) → **Fanout service** (đẩy bài vào feed của bạn
+  bè) → Notification service.
+- **Newsfeed building (dựng feed):** User → Web servers → Newsfeed service (đọc danh sách
+  post ID từ Newsfeed cache) → hydrate nội dung đầy đủ từ các cache khác.
+
+```mermaid
+flowchart TD
+    U1["Người đăng bài"] --> LB["Bộ cân bằng tải"]
+    LB --> PS["Post service"]
+    PS --> PDB["Post DB + cache"]
+    PS --> FO["Fanout service"]
+    FO --> GR["Graph DB<br/>lấy danh sách bạn bè"]
+    FO --> NFC["Newsfeed cache<br/>post IDs / mỗi user"]
+    U2["Người đọc feed"] --> NFS["Newsfeed service"]
+    NFS --> NFC
+    NFC --> HY["Hydrate nội dung<br/>từ content/user cache"]
+    HY --> U2
+```
 
 **Đánh đổi — hai mô hình fanout:**
 
-- **Fanout on write (push):** tính sẵn feed lúc ghi; đọc feed rất nhanh, cập nhật realtime;
-  nhưng tốn kém với người nhiều bạn (hotkey problem) và lãng phí với user không hoạt động.
-- **Fanout on read (pull):** tính feed lúc đọc; tránh lãng phí, tốt cho người nhiều bạn;
-  nhưng đọc chậm.
-- **Giải pháp lai:** đa số dùng push; với người nổi tiếng (nhiều follower) dùng pull.
+| Mô hình | Cách làm | Ưu điểm | Nhược điểm |
+|---|---|---|---|
+| Fanout on write (push) | Tính sẵn feed lúc ghi | Đọc feed cực nhanh, realtime | Tốn với người nhiều bạn (hotkey); lãng phí với user không hoạt động |
+| Fanout on read (pull) | Tính feed lúc đọc | Không lãng phí, tốt cho người nhiều bạn | Đọc chậm |
+| **Lai (hybrid)** | Push cho đa số, pull cho người nổi tiếng | Cân bằng tốt | Phức tạp hơn |
 
-**Kiến trúc:** Dùng cache nhiều tầng (news feed, content, social graph, action, counters).
-Bàn thêm về mở rộng DB, dedupe, sắp xếp feed.
+Đa số user dùng **push** để đọc nhanh; với **người nổi tiếng** (hàng triệu follower) dùng
+**pull** để tránh cơn bão ghi khi họ đăng bài. Hệ dùng nhiều tầng cache: news feed, content
+(hot/normal), social graph, action (đã like/reply?), counters (like/reply/follower). Phần
+sâu bàn thêm về mở rộng DB, dedupe bài trùng, và thuật toán xếp hạng feed.
 
 ---
 
 ## Chương 12: Hệ thống chat (Design a Chat System)
 
 **Vấn đề:** Thiết kế ứng dụng chat hỗ trợ chat 1-1 và nhóm nhỏ, chỉ báo trực tuyến (online
-presence), gửi nhận realtime độ trễ thấp, đồng bộ trên nhiều thiết bị.
+presence), gửi/nhận realtime độ trễ thấp, đồng bộ tin nhắn trên nhiều thiết bị và hỗ trợ
+push notification khi offline.
 
-**Quyết định thiết kế:** Client dùng HTTP để gửi tin (client khởi tạo), nhưng nhận tin realtime
-qua **WebSocket** (kết nối bền, hai chiều). Dịch vụ tách thành: stateless services (đăng nhập,
-đăng ký, hồ sơ qua API servers + KV store), **stateful chat service** (giữ WebSocket), và
-third-party integration (push notification). Lưu tin nhắn trong **key-value store** (HBase như
-Messenger, Cassandra như Discord) vì lượng dữ liệu khổng lồ và cần truy cập ngẫu nhiên nhanh.
+**Cơ chế truyền tin — điểm mấu chốt:** Client gửi tin bằng HTTP thông thường (client chủ
+động khởi tạo), nhưng để *nhận* tin realtime cần kênh mà server chủ động đẩy được. Sau khi
+loại polling và long polling, chọn **WebSocket** — kết nối bền, hai chiều, khởi tạo từ client
+nhưng cho phép cả hai bên gửi bất kỳ lúc nào.
 
-**Message ID:** phải duy nhất và sắp theo thời gian — dùng Snowflake (toàn cục) hoặc bộ sinh
-ID cục bộ trong từng kênh/nhóm.
+**Phân loại dịch vụ:** (1) *Stateless services* — đăng nhập, đăng ký, hồ sơ, service
+discovery, qua API servers + KV store; (2) *Stateful chat service* — giữ kết nối WebSocket
+bền với client, mỗi client bám một chat server; (3) *Third-party integration* — push
+notification. Tin nhắn lưu trong **key-value store** (HBase như Messenger, Cassandra như
+Discord) vì lượng dữ liệu khổng lồ, ghi nhiều và cần truy cập ngẫu nhiên nhanh; dữ liệu
+người dùng/bạn bè vẫn để RDBMS.
 
-**Đánh đổi:** Chat nhóm nhỏ sao chép tin vào "inbox" (message sync queue) của mỗi thành viên —
-đơn giản nhưng chỉ hợp nhóm nhỏ (WeChat giới hạn 500); nhóm lớn không thể sao chép cho từng
-người. Online presence dùng heartbeat để tránh đổi trạng thái liên tục khi mạng chập chờn.
+**Message ID:** phải duy nhất và sắp được theo thời gian — dùng Snowflake toàn cục hoặc bộ
+sinh ID cục bộ trong từng kênh/nhóm (đủ vì chỉ cần sort trong phạm vi một cuộc trò chuyện).
 
-**Kiến trúc:** Service discovery (Zookeeper) chọn chat server tốt nhất; luồng 1-1: chat server
-lấy message ID → message sync queue → KV store → nếu người nhận online thì đẩy qua chat server
-của họ, offline thì gửi push notification. Presence servers dùng mô hình publish-subscribe cho
-fanout trạng thái.
+```mermaid
+flowchart TD
+    A["Người gửi"] -->|"HTTP gửi tin"| CS1["Chat server A (WebSocket)"]
+    CS1 --> IDG["Bộ sinh message ID"]
+    CS1 --> SQ["Message sync queue"]
+    SQ --> KV["KV store lưu tin nhắn"]
+    KV --> CHK{"Người nhận online?"}
+    CHK -->|"online"| CS2["Chat server B (WebSocket)"]
+    CS2 --> B["Người nhận"]
+    CHK -->|"offline"| PUSH["Push notification"]
+    SD["Service discovery - Zookeeper"] -.->|"chọn chat server"| CS1
+```
+
+**Đánh đổi:** Chat nhóm nhỏ sao chép tin vào "inbox" (message sync queue) của từng thành
+viên — đơn giản nhưng chỉ hợp nhóm nhỏ (WeChat giới hạn 500 người); nhóm cực lớn không thể
+sao chép cho từng người. **Online presence** dùng **heartbeat** định kỳ: nếu quá thời gian
+không nhận heartbeat mới coi là offline — tránh trạng thái nhấp nháy khi mạng chập chờn.
+Presence servers dùng mô hình **publish-subscribe** để fanout thay đổi trạng thái tới bạn bè.
 
 ---
 
 ## Chương 13: Gợi ý tìm kiếm tự động (Design a Search Autocomplete System)
 
-**Vấn đề:** Thiết kế hệ thống gợi ý (autocomplete/typeahead) trả về top 5 truy vấn phổ biến
-nhất theo tiền tố (prefix) người dùng gõ; độ trễ cực thấp, quy mô lớn.
+**Vấn đề:** Thiết kế hệ thống gợi ý (autocomplete / typeahead / search-as-you-type) trả về
+top 5 truy vấn phổ biến nhất theo tiền tố (prefix) người dùng đang gõ. Yêu cầu: độ trễ cực
+thấp (gợi ý xuất hiện tức thì theo từng phím), quy mô lớn, và gợi ý phản ánh mức độ phổ biến.
 
-**Quyết định thiết kế:** Chia hai phần — **thu thập dữ liệu (data gathering)** tổng hợp tần
-suất truy vấn từ analytics log, và **truy vấn (query)** trả gợi ý. Cấu trúc lõi là **trie**
-(cây tiền tố); để đạt tốc độ, lưu sẵn top-k truy vấn tại mỗi nút trie (thay vì duyệt toàn bộ
-cây con). Trie được worker dựng offline định kỳ (ví dụ hằng tuần) từ dữ liệu tổng hợp, lưu vào
-Trie DB (document store như MongoDB, hoặc key-value store) và cache (Trie Cache).
+**Hai phần lớn:** (1) **Thu thập dữ liệu (data gathering)** — tổng hợp tần suất truy vấn từ
+analytics log; (2) **Truy vấn (query)** — trả gợi ý nhanh cho tiền tố.
 
-**Đánh đổi:** Lưu top-k tại mỗi nút tăng tốc đọc nhưng tốn bộ nhớ và cập nhật đắt (đổi một nút
-phải cập nhật tổ tiên) — nên dựng lại toàn bộ trie định kỳ thay vì cập nhật từng nút. Data
-sampling (chỉ log 1/N request) để giảm tải. Không hỗ trợ realtime/trending trong thiết kế cơ bản.
+**Cấu trúc lõi — trie (cây tiền tố):** mỗi nút là một ký tự, đường từ gốc tới nút tạo thành
+tiền tố. Để tránh phải duyệt toàn bộ cây con mỗi lần (chậm), **lưu sẵn (cache) top-k truy
+vấn phổ biến nhất ngay tại mỗi nút** — khi có tiền tố, chỉ cần đi tới nút tương ứng và đọc
+danh sách top-k đã tính sẵn.
 
-**Kiến trúc:** Client → Load Balancer → API servers → Trie Cache (miss thì nạp lại từ Trie DB).
-Tối ưu: AJAX request, browser caching (Google cache 1 giờ). Mở rộng lưu trữ bằng sharding theo
-tiền tố với shard map manager để cân bằng phân phối lệch (nhiều từ bắt đầu 'c' hơn 'x').
+```mermaid
+flowchart TD
+    C["Máy khách<br/>(AJAX theo mỗi phím)"] --> LB["Bộ cân bằng tải"]
+    LB --> API["API servers"]
+    API --> TC["Trie Cache"]
+    TC -->|"miss"| TDB["Trie DB<br/>(document/KV store)"]
+    subgraph Offline["Dựng offline định kỳ"]
+        LOG["Analytics log"] --> AGG["Aggregation<br/>(đếm tần suất)"]
+        AGG --> WK["Workers dựng Trie"]
+        WK --> TDB
+    end
+```
+
+Sơ đồ trie minh hoạ (tiền tố "be" → gợi ý phổ biến):
+
+```mermaid
+flowchart TD
+    R["gốc"] --> B["b"]
+    B --> BE["e"]
+    BE --> BE1["'best' (35)"]
+    BE --> BE2["'bet' (29)"]
+    BE --> BE3["'beer' (20)"]
+```
+
+**Đánh đổi:** Lưu top-k tại mỗi nút tăng tốc đọc rất nhiều nhưng tốn bộ nhớ và khiến cập
+nhật đắt (đổi một truy vấn phải cập nhật mọi nút tổ tiên). Vì thế thay vì cập nhật realtime,
+worker **dựng lại toàn bộ trie định kỳ** (ví dụ hằng tuần) từ dữ liệu tổng hợp rồi nạp vào
+Trie DB và Trie Cache. Dùng **data sampling** (chỉ log 1/N request) để giảm tải khi lưu
+lượng khổng lồ. Thiết kế cơ bản không hỗ trợ trending/realtime. Tối ưu phía client: AJAX
+request, browser caching (Google cache khoảng 1 giờ). Mở rộng lưu trữ bằng **sharding theo
+tiền tố** với shard map manager để cân bằng phân phối lệch (từ bắt đầu bằng 'c' nhiều hơn
+'x' rất nhiều).
 
 ---
 
 ## Chương 14: Thiết kế YouTube (Design YouTube)
 
-**Vấn đề:** Thiết kế nền tảng chia sẻ video (áp dụng cả cho Netflix/Hulu): tải lên (upload) và
-phát trực tuyến (streaming) video mượt, quy mô hàng tỷ người dùng, đa thiết bị, chi phí hợp lý.
+**Vấn đề:** Thiết kế nền tảng chia sẻ video (áp dụng được cho Netflix/Hulu): tải lên
+(upload) và phát trực tuyến (streaming) video mượt mà, quy mô hàng tỉ người dùng và hàng
+triệu video, đa thiết bị, độ trễ thấp, độ tin cậy cao và chi phí hợp lý.
 
-**Quyết định thiết kế:** Tận dụng dịch vụ đám mây (CDN, blob storage như S3) thay vì tự xây tất
-cả. Hai luồng chính:
+**Nguyên tắc "build on the shoulders of giants":** tận dụng dịch vụ đám mây có sẵn (CDN,
+blob storage như Amazon S3) thay vì tự xây tất cả — vừa nhanh vừa rẻ ở giai đoạn đầu.
 
-- **Upload:** video lên original storage → **transcoding servers** chuyển mã (encode) sang
-  nhiều định dạng/độ phân giải/bitrate → transcoded storage → phân phối lên **CDN**; song song
-  cập nhật metadata (tên, kích thước, URL...) vào metadata DB/cache qua completion queue.
+**Hai luồng chính:**
+
+- **Upload:** video gốc lên original storage → **transcoding servers** chuyển mã (encode)
+  sang nhiều định dạng/độ phân giải/bitrate → transcoded storage → phân phối lên **CDN**;
+  song song, metadata (tên, mô tả, kích thước, URL) cập nhật vào metadata DB/cache qua
+  completion queue.
 - **Streaming:** phát trực tiếp từ **CDN** (edge server gần người xem nhất) qua giao thức
-  streaming (MPEG-DASH, HLS...), tải dần từng phần thay vì tải toàn bộ.
+  streaming (MPEG-DASH, HLS, Apple/Microsoft Smooth Streaming), tải dần từng đoạn thay vì
+  tải toàn bộ file.
 
-**Video transcoding:** dùng mô hình **DAG (directed acyclic graph)** để định nghĩa pipeline
-xử lý linh hoạt (inspection, encoding, thumbnail, watermark) và song song hóa. Kiến trúc
-transcoding gồm preprocessor (chia video theo GOP), DAG scheduler, resource manager (task/worker/
-running queue + task scheduler), task workers, temporary storage.
+**Video transcoding bằng DAG:** dùng mô hình **DAG (directed acyclic graph)** để định nghĩa
+pipeline xử lý linh hoạt và song song hoá các bước: inspection, video/audio encoding,
+thumbnail, watermark. Kiến trúc transcoding gồm preprocessor (chia video theo GOP — group
+of pictures), DAG scheduler, resource manager (task queue / worker queue / running queue +
+task scheduler), task workers và temporary storage.
 
-**Đánh đổi:** Adaptive bitrate streaming đổi chất lượng theo băng thông cho trải nghiệm mượt.
-Tối ưu chi phí: chỉ đẩy video phổ biến lên CDN, video ít xem phục vụ từ server; phân tầng lưu
-trữ. Xử lý lỗi ở từng tầng, upload nối tiếp (resumable).
+```mermaid
+flowchart TD
+    U["Người tải lên"] --> OS["Original storage"]
+    OS --> TS["Transcoding servers<br/>(pipeline DAG)"]
+    TS --> TStore["Transcoded storage"]
+    TStore --> CDN["CDN (edge)"]
+    TS --> CQ["Completion queue"]
+    CQ --> MDB["Metadata DB + cache"]
+    V["Người xem"] -->|"streaming HLS/DASH"| CDN
+    V --> API["API servers"]
+    API --> MDB
+```
+
+**Đánh đổi:** **Adaptive bitrate streaming** đổi chất lượng theo băng thông thực tế để trải
+nghiệm mượt (không giật). Tối ưu chi phí: chỉ đẩy video *phổ biến* lên CDN (chiếm phần lớn
+lượt xem), video ít xem phục vụ trực tiếp từ storage server; phân tầng lưu trữ theo tần suất
+truy cập (hot/cold). Upload nối tiếp (resumable) để không phải làm lại từ đầu khi mạng gián
+đoạn. Xử lý lỗi ở từng tầng để một video hỏng không kéo sập pipeline.
 
 ---
 
 ## Chương 15: Thiết kế Google Drive (Design Google Drive)
 
 **Vấn đề:** Thiết kế dịch vụ lưu trữ và đồng bộ file (Google Drive/Dropbox): upload/download,
-đồng bộ nhiều thiết bị, lịch sử phiên bản (revision), chia sẻ, thông báo thay đổi; tối ưu băng
-thông và đảm bảo nhất quán.
+đồng bộ trên nhiều thiết bị, lịch sử phiên bản (revision history), chia sẻ file, và thông
+báo khi có thay đổi. Yêu cầu then chốt: tối ưu băng thông, độ tin cậy cao (không mất dữ
+liệu) và **nhất quán mạnh (strong consistency)** cho metadata.
 
-**Quyết định thiết kế:** Chuyển từ single server sang: sharding metadata theo user_id, lưu file
-trên **Amazon S3** (nhân bản same-region và cross-region chống mất dữ liệu), thêm load balancer,
-tách web/metadata DB/file storage. Điểm cốt lõi là **block servers**: file được chia thành các
-block nhỏ (Dropbox dùng tối đa 4MB), mỗi block được nén (compression) và mã hóa (encryption)
-trước khi lên cloud. Dùng **delta sync** — chỉ đồng bộ block bị thay đổi thay vì cả file — để
-tiết kiệm băng thông.
+**Tiến hoá kiến trúc:** từ single server → sharding metadata theo `user_id`, lưu file trên
+**Amazon S3** (nhân bản same-region và cross-region chống mất dữ liệu và giảm độ trễ), thêm
+load balancer, tách riêng web servers / metadata DB / file storage.
 
-**Đánh đổi:** Hệ yêu cầu **strong consistency** cho metadata (không chấp nhận file hiển thị khác
-nhau giữa các client) → chọn cơ sở dữ liệu quan hệ (hỗ trợ ACID sẵn) và vô hiệu hóa cache khi
-ghi, thay vì eventual consistency. Xung đột đồng bộ (sync conflict) xử lý theo nguyên tắc "phiên
-bản xử lý trước thắng", phiên bản sau nhận conflict để người dùng merge/override.
+**Điểm cốt lõi — block servers và delta sync:** file được chia thành các **block** nhỏ
+(Dropbox dùng tối đa 4 MB/block); mỗi block được **nén (compression)** và **mã hoá
+(encryption)** trước khi lên cloud. Dùng **delta sync** — chỉ đồng bộ những block *thay đổi*
+thay vì cả file — giúp tiết kiệm băng thông đáng kể khi file lớn chỉ sửa một phần nhỏ.
 
-**Kiến trúc:** Client ↔ (Block servers → cloud storage/S3, cold storage cho dữ liệu ít dùng);
-API servers (xác thực, quản lý metadata); metadata DB + cache; **notification service**
-(publish-subscribe báo client kéo thay đổi); offline backup queue cho client offline. Schema
-metadata gồm bảng User, Device, Namespace, File, File_version (read-only giữ lịch sử), Block.
+```mermaid
+flowchart TD
+    C1["Client A"] --> BS["Block servers<br/>chia block, nén, mã hoá"]
+    BS --> S3["Cloud storage (S3)<br/>+ cross-region replica"]
+    BS --> CS["Cold storage<br/>(dữ liệu ít dùng)"]
+    C1 --> API["API servers<br/>xác thực, metadata"]
+    API --> MDB["Metadata DB (SQL) + cache"]
+    API --> NS["Notification service<br/>(publish-subscribe)"]
+    NS -->|"báo có thay đổi"| C2["Client B"]
+    C2 -->|"kéo thay đổi (delta)"| BS
+    OQ["Offline backup queue"] -.-> C2
+```
+
+**Đánh đổi nhất quán:** Hệ chọn **strong consistency** cho metadata (không chấp nhận file
+hiển thị khác nhau giữa các client) → dùng **cơ sở dữ liệu quan hệ** (hỗ trợ ACID sẵn) và
+**vô hiệu hoá cache khi ghi** (thay vì eventual consistency), đánh đổi một phần hiệu năng
+đọc để đảm bảo đúng đắn. **Xung đột đồng bộ (sync conflict)** xử lý theo nguyên tắc "phiên
+bản được xử lý trước thắng"; phiên bản đến sau nhận thông báo conflict để người dùng tự
+merge hoặc override.
+
+**Schema metadata** gồm các bảng: User, Device, Namespace, File, File_version (read-only để
+giữ lịch sử phiên bản), Block. **Notification service** dùng mô hình publish-subscribe báo
+client kéo thay đổi; **offline backup queue** giữ thay đổi cho client đang offline để đồng
+bộ khi trực tuyến lại.
 
 ---
 
 ## Chương 16: Học tiếp (The Learning Continues)
 
-**Nội dung:** Chương cuối không phải một bài thiết kế mà là định hướng học tập tiếp tục. Thiết
-kế hệ thống là kỹ năng rèn luyện lâu dài; cách hiệu quả nhất là nghiên cứu kiến trúc thực tế của
-các công ty lớn và đọc kỹ thuật của các hệ thống nổi tiếng.
+**Nội dung:** Chương cuối không phải một bài thiết kế mà là định hướng học tập tiếp tục.
+Thiết kế hệ thống là kỹ năng rèn luyện lâu dài; không thể "học thuộc" mà phải tích luỹ qua
+đọc, thực hành và phản tư về trade-off. Cách hiệu quả nhất là nghiên cứu kiến trúc thực tế
+của các công ty lớn và các paper kinh điển.
 
 **Gợi ý của tác giả:**
 
 - Đọc **engineering blog** của các công ty lớn (Facebook, Twitter, Netflix, Amazon, Google,
-  Uber, Airbnb, Dropbox...) để học cách họ giải quyết vấn đề thực tế.
-- Tìm hiểu sâu các kiến trúc và công nghệ nền tảng: cân bằng tải, cơ sở dữ liệu (SQL/NoSQL),
-  caching, sharding, replication, hệ thống phân tán, xử lý dòng dữ liệu (stream processing),
-  đồng thuận (consensus), microservices, message queue.
-- Đọc các paper kinh điển được trích dẫn xuyên suốt sách: Dynamo, Bigtable, Cassandra, GFS,
-  MapReduce, Kafka...
+  Uber, Airbnb, Dropbox, LinkedIn...) để học cách họ giải quyết vấn đề ở quy mô thật.
+- Tìm hiểu sâu các nền tảng cốt lõi: cân bằng tải, cơ sở dữ liệu (SQL/NoSQL), caching,
+  sharding, replication, hệ phân tán, xử lý dòng dữ liệu (stream processing), đồng thuận
+  (consensus — Paxos/Raft), microservices, message queue.
+- Đọc các paper được trích dẫn xuyên suốt sách: Dynamo, Bigtable, Cassandra, GFS, MapReduce,
+  Kafka, Chubby, Spanner...
 
-**Thông điệp chính:** Không có thiết kế "đúng" duy nhất; điều quan trọng là hiểu **trade-off**,
-biết đặt câu hỏi, và liên tục thực hành. Kiến thức nền vững cùng khung tư duy 4 bước (chương 3)
-là hành trang để giải quyết mọi câu hỏi thiết kế hệ thống mới.
+```mermaid
+mindmap
+  root(("Học tiếp<br/>System Design"))
+    Nền tảng
+      Load balancing
+      Caching &amp; CDN
+      Sharding &amp; Replication
+      Message queue
+    Phân tán
+      CAP &amp; consistency
+      Consensus (Raft/Paxos)
+      Consistent hashing
+    Thực hành
+      Engineering blogs
+      Paper kinh điển
+      Mô phỏng phỏng vấn
+```
+
+**Thông điệp chính:** Không có thiết kế "đúng" duy nhất; giá trị nằm ở việc hiểu **trade-off**,
+biết đặt câu hỏi làm rõ, và liên tục thực hành. Kiến thức nền vững cùng khung tư duy 4 bước
+(chương 3) là hành trang để tiếp cận bất kỳ câu hỏi thiết kế hệ thống mới nào.

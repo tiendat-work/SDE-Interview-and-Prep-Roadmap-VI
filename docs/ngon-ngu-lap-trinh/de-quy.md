@@ -77,6 +77,37 @@ def giai_thua_lap(n):
 4. Vì sao Fibonacci đệ quy ngây thơ chậm? Cách khắc phục (memoization)?
 5. Điều gì gây stack overflow trong đệ quy?
 
+## Sơ đồ cây gọi đệ quy Fibonacci
+
+Cây gọi đệ quy cho `fib(5)` cho thấy nhiều lời gọi bị lặp lại (ví dụ `fib(2)` được tính 3 lần) — đây là lý do đệ quy thuần có độ phức tạp mũ và nên dùng ghi nhớ (memoization).
+
+```mermaid
+graph TD
+    F5["fib(5)"]
+    F4["fib(4)"]
+    F3a["fib(3)"]
+    F3b["fib(3)"]
+    F2a["fib(2)"]
+    F2b["fib(2)"]
+    F2c["fib(2)"]
+    F1a["fib(1)"]
+    F1b["fib(1)"]
+    F1c["fib(1)"]
+    F0a["fib(0)"]
+    F0b["fib(0)"]
+    F5 --> F4
+    F5 --> F3a
+    F4 --> F3b
+    F4 --> F2a
+    F3a --> F2b
+    F3a --> F1a
+    F3b --> F2c
+    F3b --> F1b
+    F2a --> F1c
+    F2a --> F0a
+    F2b --> F0b
+```
+
 ## Tham khảo
 
 - *Introduction to Algorithms* (CLRS) — chương chia để trị

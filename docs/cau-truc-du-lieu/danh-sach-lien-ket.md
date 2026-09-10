@@ -4,6 +4,16 @@
 
 Danh sách liên kết (linked list) là một cấu trúc dữ liệu tuyến tính trong đó các phần tử **không** được lưu ở các vị trí bộ nhớ liền kề. Thay vào đó, mỗi phần tử — gọi là nút (node) — chứa hai phần: dữ liệu và một tham chiếu (con trỏ) tới nút kế tiếp trong dãy. Nhờ cách liên kết này, việc chèn và xóa phần tử trở nên rất hiệu quả mà không cần dịch chuyển các phần tử khác như mảng.
 
+Mỗi nút trỏ tới nút kế tiếp; nút cuối trỏ tới NULL:
+
+```mermaid
+graph LR
+    H["Đầu (Head)"] --> A["Dữ liệu: 10 | next"]
+    A --> B["Dữ liệu: 20 | next"]
+    B --> C["Dữ liệu: 30 | next"]
+    C --> N["NULL"]
+```
+
 ## Khi nào dùng / Vì sao quan trọng
 
 Dùng danh sách liên kết khi:

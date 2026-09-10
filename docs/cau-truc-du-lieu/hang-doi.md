@@ -4,6 +4,18 @@
 
 Hàng đợi (queue) là một cấu trúc dữ liệu tuyến tính tuân theo nguyên tắc **FIFO (First In, First Out)** — phần tử vào trước sẽ được lấy ra trước, giống như hàng người xếp hàng mua vé. Phần tử được thêm vào ở một đầu gọi là **đuôi (rear/back)** và lấy ra ở đầu kia gọi là **đầu (front)**.
 
+Nguyên tắc FIFO: thêm ở đuôi, lấy ra ở đầu.
+
+```mermaid
+graph LR
+    IN["Enqueue (thêm vào đuôi)"] --> R["Đuôi"]
+    R --> E3["phần tử 3"]
+    E3 --> E2["phần tử 2"]
+    E2 --> E1["phần tử 1"]
+    E1 --> F["Đầu"]
+    F --> OUT["Dequeue (lấy từ đầu)"]
+```
+
 ## Khi nào dùng / Vì sao quan trọng
 
 Dùng hàng đợi khi cần xử lý dữ liệu **theo đúng thứ tự đến**:

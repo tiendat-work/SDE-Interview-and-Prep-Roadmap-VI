@@ -74,6 +74,29 @@ class GioHang:
 gio = GioHang(VanChuyenNhanh())
 ```
 
+Sơ đồ lớp (class diagram) minh hoạ mẫu Strategy ở ví dụ trên:
+
+```mermaid
+classDiagram
+    class ChienLuocVanChuyen {
+        <<interface>>
+        +tinh_phi(don_hang) float
+    }
+    class VanChuyenNhanh {
+        +tinh_phi(don_hang) float
+    }
+    class VanChuyenTietKiem {
+        +tinh_phi(don_hang) float
+    }
+    class GioHang {
+        -chien_luoc
+        +tong_phi(don_hang) float
+    }
+    ChienLuocVanChuyen <|.. VanChuyenNhanh
+    ChienLuocVanChuyen <|.. VanChuyenTietKiem
+    GioHang o-- ChienLuocVanChuyen
+```
+
 ## So sánh nhanh các mẫu dễ nhầm lẫn
 
 Nhiều mẫu có cấu trúc tương tự nhưng khác **ý định (intent)** — đây là điểm phỏng vấn hay hỏi:

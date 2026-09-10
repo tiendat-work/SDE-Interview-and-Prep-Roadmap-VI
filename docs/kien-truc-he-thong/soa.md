@@ -34,6 +34,18 @@ SOA truyền thống thường dựa vào một **trục dịch vụ doanh nghi�
 [Ứng dụng C] ---/                              \--- [Dịch vụ Kho hàng]
 ```
 
+Sơ đồ dưới đây minh hoạ vai trò trung tâm của ESB trong việc định tuyến giữa các ứng dụng và dịch vụ:
+
+```mermaid
+flowchart LR
+    A["Ứng dụng A"] --> ESB{"ESB - Trục dịch vụ doanh nghiệp"}
+    B["Ứng dụng B"] --> ESB
+    C["Ứng dụng C"] --> ESB
+    ESB --> TT["Dịch vụ Thanh toán"]
+    ESB --> KH["Dịch vụ Khách hàng"]
+    ESB --> KHO["Dịch vụ Kho hàng"]
+```
+
 - **Nhà cung cấp dịch vụ (Service Provider)**: Triển khai và đăng ký dịch vụ.
 - **Sổ đăng ký dịch vụ (Service Registry)**: Nơi lưu thông tin và địa chỉ dịch vụ (ví dụ: UDDI).
 - **Bên tiêu thụ dịch vụ (Service Consumer)**: Tìm dịch vụ trong registry và gọi nó.

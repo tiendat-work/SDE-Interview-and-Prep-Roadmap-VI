@@ -4,6 +4,19 @@
 
 Bảng băm (hash table, còn gọi hash map) là một cấu trúc dữ liệu ánh xạ **khóa (key)** tới **giá trị (value)** cho phép tra cứu, chèn và xóa với thời gian **trung bình O(1)**. Cốt lõi là một **hàm băm (hash function)** chuyển khóa thành một chỉ số trong mảng chứa dữ liệu (gọi là *bucket* — ô chứa). Đây là cấu trúc đứng sau `dict` của Python, `HashMap` của Java, đối tượng của JavaScript.
 
+Hàm băm ánh xạ khóa vào các bucket; hai khóa trùng ô tạo va chạm (giải quyết bằng chuỗi móc nối):
+
+```mermaid
+graph LR
+    K1["Khóa: An"] --> H{"Hàm băm"}
+    K2["Khóa: Bình"] --> H
+    K3["Khóa: Cường"] --> H
+    H --> B0["Bucket 0"]
+    H --> B1["Bucket 1: An"]
+    H --> B2["Bucket 2: Bình → Cường"]
+    H --> B3["Bucket 3"]
+```
+
 ## Khi nào dùng / Vì sao quan trọng
 
 Dùng bảng băm khi cần **tra cứu theo khóa cực nhanh**:

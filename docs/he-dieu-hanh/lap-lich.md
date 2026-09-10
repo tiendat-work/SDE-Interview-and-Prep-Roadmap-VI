@@ -10,6 +10,22 @@ CPU là tài nguyên khan hiếm; nhiều tác vụ tranh nhau. Chọn thuật t
 - **Thời gian chờ (waiting time):** tổng thời gian nằm trong ready queue.
 - **Thời gian hoàn thành / quay vòng (turnaround time):** từ lúc đến đến lúc xong.
 - **Thời gian phản hồi (response time):** từ lúc đến đến lần đầu được chạy.
+
+Ví dụ biểu đồ Gantt cho lập lịch Round Robin (3 tiến trình, mỗi lượt 2 đơn vị):
+
+```mermaid
+gantt
+    title Lập lịch Round Robin (lượng tử = 2)
+    dateFormat X
+    axisFormat %s
+    section CPU
+    P1 :0, 2
+    P2 :2, 4
+    P3 :4, 6
+    P1 :6, 8
+    P2 :8, 9
+    P3 :9, 11
+```
 - **Thông lượng (throughput):** số tiến trình hoàn thành mỗi đơn vị thời gian.
 - **Hiệu suất CPU (utilization)** và **độ công bằng (fairness)**.
 

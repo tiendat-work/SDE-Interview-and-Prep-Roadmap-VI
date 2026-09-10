@@ -116,5 +116,37 @@ Chỉ mục dễ bị "vô hiệu hoá" một cách vô tình:
 4. Quy tắc tiền tố trái của chỉ mục ghép hoạt động ra sao?
 5. Cardinality ảnh hưởng thế nào tới hiệu quả chỉ mục? Vì sao bitmap hợp cột low-cardinality?
 
+## Sơ đồ cấu trúc B+ Tree
+
+B+ tree lưu toàn bộ khoá dữ liệu ở các nút lá; nút trong chỉ chứa khoá định hướng. Các nút lá được liên kết với nhau tạo thành danh sách liên kết, giúp quét khoảng (range scan) hiệu quả.
+
+```mermaid
+graph TD
+    R["[30 | 60]"]
+    A["[10 | 20]"]
+    B["[40 | 50]"]
+    C["[70 | 80]"]
+    L1["Lá: 10,20,25"]
+    L2["Lá: 30,35"]
+    L3["Lá: 40,50,55"]
+    L4["Lá: 60,65"]
+    L5["Lá: 70,80,90"]
+    R --> A
+    R --> B
+    R --> C
+    A --> L1
+    A --> L2
+    B --> L3
+    B --> L4
+    C --> L5
+    L1 -.->|"liên kết lá"| L2
+    L2 -.-> L3
+    L3 -.-> L4
+    L4 -.-> L5
+```
+
+- Chiều cao thấp (fan-out lớn) → số lần đọc đĩa ít, tìm kiếm O(log n).
+- Liên kết giữa các lá → truy vấn khoảng và quét tuần tự nhanh.
+
 ## Tham khảo
 - Xem thêm: [SQL](sql.md), [Giao dịch](giao-dich.md), [Cẩm nang phỏng vấn CSDL](cam-nang-phong-van-csdl.md)

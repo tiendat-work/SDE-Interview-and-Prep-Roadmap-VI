@@ -70,6 +70,28 @@ if (p) {
 4. RAII và smart pointer giúp gì trong C++?
 5. Vì sao biến cục bộ mất đi khi hàm kết thúc nhưng đối tượng trả về vẫn sống?
 
+## Sơ đồ Stack và Heap
+
+Bộ nhớ tiến trình chia thành nhiều vùng; hai vùng quan trọng nhất là ngăn xếp (stack) và vùng nhớ động (heap), lớn dần về phía nhau.
+
+```mermaid
+graph TD
+    subgraph "Bộ nhớ tiến trình"
+        S["Stack<br/>(biến cục bộ, khung hàm)<br/>cấp phát/thu hồi tự động, LIFO"]
+        GAP["... vùng trống ..."]
+        H["Heap<br/>(cấp phát động: malloc/new)<br/>quản lý thủ công hoặc bằng GC"]
+        DATA["Data / BSS<br/>(biến toàn cục, tĩnh)"]
+        TEXT["Text<br/>(mã máy chương trình)"]
+    end
+    S --> GAP
+    GAP --> H
+    H --> DATA
+    DATA --> TEXT
+```
+
+- **Stack:** nhanh, kích thước nhỏ, tự giải phóng khi hàm kết thúc; tràn stack gây `stack overflow`.
+- **Heap:** linh hoạt, lớn, sống lâu; quản lý sai gây rò rỉ bộ nhớ (memory leak).
+
 ## Tham khảo
 
 - *Computer Systems: A Programmer's Perspective* (Bryant & O'Hallaron)

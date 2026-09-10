@@ -11,6 +11,16 @@ Ba yêu cầu của một lời giải vùng găng đúng:
 2. **Progress:** nếu không luồng nào trong vùng găng, luồng muốn vào không bị trì hoãn vô cớ.
 3. **Bounded waiting:** thời gian chờ có giới hạn, không bị bỏ đói (starvation).
 
+Mô hình Producer–Consumer (nhà sản xuất – người tiêu dùng) qua vùng đệm chung:
+
+```mermaid
+graph LR
+    P["Producer (sản xuất)"] -->|"đưa dữ liệu vào"| B["Vùng đệm chung (Buffer)"]
+    B -->|"lấy dữ liệu ra"| C["Consumer (tiêu dùng)"]
+    S1["Semaphore: ô trống"] -.->|"điều phối"| P
+    S2["Semaphore: ô đầy"] -.->|"điều phối"| C
+```
+
 ## Cách hoạt động
 
 ### Mutex (khoá loại trừ lẫn nhau)

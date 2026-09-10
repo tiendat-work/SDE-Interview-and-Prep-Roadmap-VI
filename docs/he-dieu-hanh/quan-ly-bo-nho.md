@@ -3,6 +3,29 @@
 ## Khái niệm
 **Quản lý bộ nhớ (memory management)** là chức năng của hệ điều hành cấp phát, thu hồi và ánh xạ bộ nhớ cho các tiến trình, đồng thời tạo ảo giác mỗi tiến trình có một không gian địa chỉ liên tục và riêng biệt lớn hơn RAM vật lý. Hai trụ cột là **phân trang (paging)** và **bộ nhớ ảo (virtual memory)**.
 
+Phân trang ánh xạ trang ảo sang khung vật lý qua bảng trang:
+
+```mermaid
+graph LR
+    subgraph VA["Bộ nhớ ảo"]
+        V0["Trang ảo 0"]
+        V1["Trang ảo 1"]
+        V2["Trang ảo 2"]
+    end
+    PT{"Bảng trang"}
+    subgraph PA["Bộ nhớ vật lý (RAM)"]
+        F5["Khung 5"]
+        F2["Khung 2"]
+        D["Đĩa (swap)"]
+    end
+    V0 --> PT
+    V1 --> PT
+    V2 --> PT
+    PT --> F5
+    PT --> F2
+    PT --> D
+```
+
 ## Khi nào dùng / Vì sao quan trọng
 RAM hữu hạn nhưng chương trình ngày càng lớn và chạy đồng thời nhiều. Quản lý bộ nhớ tốt cho phép: cách ly tiến trình (bảo mật), chạy chương trình lớn hơn RAM, chia sẻ vùng nhớ chung (thư viện dùng chung), và tận dụng đĩa làm phần mở rộng của RAM.
 

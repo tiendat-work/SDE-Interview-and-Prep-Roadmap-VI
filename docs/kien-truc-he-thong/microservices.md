@@ -2,6 +2,21 @@
 
 Kiến trúc microservices (microservices architecture) là một phương pháp thiết kế trong đó một ứng dụng được xây dựng dưới dạng một tập hợp các dịch vụ liên kết lỏng lẻo (loosely coupled). Mỗi dịch vụ là tự chủ (autonomous), chịu trách nhiệm cho một chức năng nghiệp vụ (business function) cụ thể, và có thể được phát triển, triển khai và mở rộng một cách độc lập.
 
+Sơ đồ dưới đây minh hoạ API Gateway làm điểm vào duy nhất, định tuyến yêu cầu tới các microservice độc lập, mỗi dịch vụ có cơ sở dữ liệu riêng:
+
+```mermaid
+flowchart TB
+    C["Client (web, mobile)"] --> GW{"API Gateway"}
+    GW --> S1["Dịch vụ Người dùng"]
+    GW --> S2["Dịch vụ Đơn hàng"]
+    GW --> S3["Dịch vụ Thanh toán"]
+    S1 --> DB1[("DB Người dùng")]
+    S2 --> DB2[("DB Đơn hàng")]
+    S3 --> DB3[("DB Thanh toán")]
+    S2 -.->|"Sự kiện bất đồng bộ"| MQ["Message Broker"]
+    MQ -.-> S3
+```
+
 ### Mục lục
 
 1. [Các đặc điểm chính](#cac-ac-iem-chinh)

@@ -24,6 +24,16 @@
                                         \                --> [Consumer C: Phân tích]
 ```
 
+Sơ đồ dưới đây minh hoạ một producer phát sự kiện qua event broker tới nhiều consumer độc lập:
+
+```mermaid
+flowchart LR
+    P["Producer (nguồn sự kiện)"] -->|"Phát sự kiện"| BUS{"Event Broker (Kafka)"}
+    BUS --> A["Consumer A: Kho"]
+    BUS --> B["Consumer B: Email"]
+    BUS --> C["Consumer C: Phân tích"]
+```
+
 ## Các mô hình xử lý sự kiện
 
 - **Đơn sự kiện (Simple Event Processing)**: Mỗi sự kiện kích hoạt một hành động trực tiếp.
@@ -51,6 +61,16 @@ CQRS thường kết hợp với Event Sourcing: lệnh sinh sự kiện, sự k
                                           cập nhật read model
                                                     v
 [Query]   <-- [Read Model (tối ưu cho đọc)] <-------
+```
+
+Sơ đồ dưới đây minh hoạ luồng tách ghi/đọc trong CQRS kết hợp Event Sourcing:
+
+```mermaid
+flowchart LR
+    CMD["Lệnh (Command)"] --> WM["Mô hình ghi"]
+    WM -->|"Phát sự kiện"| ES[("Event Store")]
+    ES -->|"Cập nhật"| RM["Mô hình đọc (tối ưu cho đọc)"]
+    Q["Truy vấn (Query)"] --> RM
 ```
 
 ## Triển khai với Kafka

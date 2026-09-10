@@ -139,5 +139,33 @@ VALUES (OLD.id, OLD.luong, NEW.luong);
 4. Window function khác GROUP BY như thế nào?
 5. `UNION` và `UNION ALL` khác nhau ra sao?
 
+## Sơ đồ quan hệ (ERD)
+
+Ví dụ mô hình quan hệ giữa ba bảng: phòng ban, nhân viên và dự án. Nhãn dùng tên không dấu cho an toàn khi hiển thị.
+
+```mermaid
+erDiagram
+    PHONG_BAN ||--o{ NHAN_VIEN : "co"
+    NHAN_VIEN }o--o{ DU_AN : "tham_gia"
+    PHONG_BAN {
+        int id PK
+        string ten
+    }
+    NHAN_VIEN {
+        int id PK
+        string ho_ten
+        int phong_id FK
+        decimal luong
+    }
+    DU_AN {
+        int id PK
+        string ten
+        date ngay_bat_dau
+    }
+```
+
+- Một phòng ban có nhiều nhân viên (quan hệ 1–N qua khoá ngoại `phong_id`).
+- Một nhân viên có thể tham gia nhiều dự án và một dự án có nhiều nhân viên (quan hệ N–N, thường cần bảng trung gian).
+
 ## Tham khảo
 - Xem thêm: [Cẩm nang phỏng vấn CSDL](cam-nang-phong-van-csdl.md), [Chỉ mục](chi-muc.md), [Giao dịch](giao-dich.md)

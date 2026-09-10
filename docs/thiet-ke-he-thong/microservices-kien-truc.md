@@ -33,6 +33,17 @@ Ngăn lỗi của một dịch vụ lan truyền dây chuyền (cascading failur
 
 Thường kết hợp với **timeout**, **retry với exponential backoff** và **bulkhead** (cô lập tài nguyên). Ví dụ: Resilience4j, Netflix Hystrix (đã ngừng phát triển).
 
+Sơ đồ trạng thái của circuit breaker:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Closed
+    Closed --> Open: "Lỗi vượt ngưỡng"
+    Open --> HalfOpen: "Hết thời gian chờ"
+    HalfOpen --> Closed: "Yêu cầu thử thành công"
+    HalfOpen --> Open: "Yêu cầu thử vẫn lỗi"
+```
+
 ### Saga Pattern (Giao dịch phân tán)
 Vì giao dịch ACID không trải được nhiều cơ sở dữ liệu độc lập, **saga** chia một giao dịch nghiệp vụ thành chuỗi các giao dịch cục bộ (local transaction), mỗi bước có một **hành động bù (compensating transaction)** để hoàn tác nếu bước sau thất bại. Hai kiểu triển khai tương ứng hai cách phối hợp ở trên:
 - **Choreography-based saga**: mỗi dịch vụ phát/nghe sự kiện để kích hoạt bước kế tiếp hoặc bước bù.
@@ -41,6 +52,25 @@ Vì giao dịch ACID không trải được nhiều cơ sở dữ liệu độc 
 Saga đảm bảo **nhất quán cuối cùng (eventual consistency)** thay vì nhất quán tức thời.
 
 Ví dụ đơn hàng: Đặt hàng → Trừ kho → Thanh toán. Nếu thanh toán lỗi, chạy bù ngược: hoàn kho → huỷ đơn.
+
+Sơ đồ tuần tự saga theo điều phối (orchestration) kèm bước bù khi thanh toán lỗi:
+
+```mermaid
+sequenceDiagram
+    participant O as Orchestrator (Saga)
+    participant Don as Dịch vụ Đơn
+    participant Kho as Dịch vụ Kho
+    participant TT as Dịch vụ Thanh toán
+    O->>Don: 1. Tạo đơn
+    Don->>O: OK
+    O->>Kho: 2. Trừ kho
+    Kho->>O: OK
+    O->>TT: 3. Thanh toán
+    TT->>O: LỖI
+    Note over O: Chạy bù ngược
+    O->>Kho: Bù: hoàn kho
+    O->>Don: Bù: huỷ đơn
+```
 
 ### Chiến lược bộ nhớ đệm (Caching Strategies)
 Bộ nhớ đệm giảm độ trễ và tải cho dịch vụ/CSDL backend. Các mẫu chính:

@@ -32,6 +32,24 @@ Không nên buộc client phụ thuộc vào các phương thức mà nó không
 **D — Dependency Inversion Principle (DIP — Nguyên lý đảo ngược phụ thuộc)**
 Mô-đun cấp cao không nên phụ thuộc vào mô-đun cấp thấp; cả hai nên phụ thuộc vào trừu tượng (abstraction). Ví dụ: `OrderService` phụ thuộc vào giao diện `PaymentGateway` chứ không phụ thuộc trực tiếp lớp `StripePayment` cụ thể.
 
+Sơ đồ lớp minh hoạ DIP: cả `OrderService` (cấp cao) và `StripePayment` (cấp thấp) đều phụ thuộc vào trừu tượng `PaymentGateway`:
+
+```mermaid
+classDiagram
+    class PaymentGateway {
+        <<interface>>
+        +thanh_toan(so_tien)
+    }
+    class OrderService {
+        +dat_hang(so_tien)
+    }
+    class StripePayment {
+        +thanh_toan(so_tien)
+    }
+    OrderService --> PaymentGateway
+    PaymentGateway <|.. StripePayment
+```
+
 ## Ví dụ
 ```python
 # Vi phạm SRP: một lớp làm quá nhiều việc

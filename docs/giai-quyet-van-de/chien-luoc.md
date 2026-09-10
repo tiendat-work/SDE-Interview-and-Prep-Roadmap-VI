@@ -96,6 +96,24 @@ Quy trình biến bài từ "quét mọi cặp `O(n²)`" thành "một lượt `
 3. Kể tên vài mẫu bài toán (pattern) phổ biến và dấu hiệu nhận biết chúng.
 4. Làm sao xác định đủ các trường hợp biên cần kiểm thử?
 
+## Sơ đồ quy trình giải bài
+
+Quy trình giải quyết vấn đề theo bốn bước của Pólya, có vòng lặp kiểm tra và cải tiến.
+
+```mermaid
+flowchart TD
+    START([Bắt đầu]) --> A["Hiểu đề bài<br/>(đầu vào, đầu ra, ràng buộc)"]
+    A --> B["Lập kế hoạch<br/>(chọn thuật toán, cấu trúc dữ liệu)"]
+    B --> C["Thực thi<br/>(viết mã, xử lý biên)"]
+    C --> D{"Kiểm tra<br/>đúng và đủ nhanh?"}
+    D -->|"Sai / chậm"| E["Nhìn lại & cải tiến"]
+    E --> B
+    D -->|"Đạt"| END([Hoàn thành])
+```
+
+- Luôn làm rõ đề và ví dụ trước khi viết mã.
+- Nếu chưa đạt (sai hoặc quá chậm), quay lại bước lập kế hoạch để tối ưu.
+
 ## Tham khảo
 
 - [Kỹ thuật lập trình](ky-thuat-coding.md)

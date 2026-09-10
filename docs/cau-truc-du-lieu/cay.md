@@ -4,6 +4,18 @@
 
 Cây (tree) là một cấu trúc dữ liệu **phi tuyến tính (non-linear)** gồm các nút (node) được tổ chức theo quan hệ cha–con, tạo thành thứ bậc. Một cây có đúng một **gốc (root)**; mỗi nút có thể có nhiều **con (children)** nhưng chỉ một **cha (parent)**; nút không có con gọi là **lá (leaf)**. Không có chu trình — giữa hai nút bất kỳ chỉ có một đường đi duy nhất.
 
+Ví dụ một cây nhị phân với gốc là 5:
+
+```mermaid
+graph TD
+    A((5)) --> B((3))
+    A --> C((7))
+    B --> D((2))
+    B --> E((4))
+    C --> F((6))
+    C --> G((8))
+```
+
 ## Khi nào dùng / Vì sao quan trọng
 
 Cây biểu diễn dữ liệu phân cấp và cho phép tìm kiếm/chèn/xóa hiệu quả:

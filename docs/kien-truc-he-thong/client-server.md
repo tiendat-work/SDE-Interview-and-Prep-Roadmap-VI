@@ -29,6 +29,16 @@ Luồng giao tiếp cơ bản theo mô hình **yêu cầu - phản hồi (reques
 [Client]  <--- (3) Trả response ---  [Server]
 ```
 
+Sơ đồ dưới đây minh hoạ luồng yêu cầu - phản hồi giữa máy khách và máy chủ:
+
+```mermaid
+flowchart LR
+    C["Máy khách"] -->|"(1) Gửi yêu cầu HTTP"| S["Máy chủ"]
+    S -->|"(2) Truy vấn"| DB[("Cơ sở dữ liệu")]
+    DB -->|"Dữ liệu"| S
+    S -->|"(3) Trả phản hồi"| C
+```
+
 1. Client mở kết nối tới server (thường qua TCP/IP).
 2. Client gửi yêu cầu theo một giao thức (protocol) đã thống nhất.
 3. Server xử lý yêu cầu, có thể truy vấn cơ sở dữ liệu hoặc gọi các dịch vụ khác.
@@ -41,6 +51,14 @@ Luồng giao tiếp cơ bản theo mô hình **yêu cầu - phản hồi (reques
 | 2 tầng (2-tier) | Client giao tiếp trực tiếp với server chứa cả logic và dữ liệu. |
 | 3 tầng (3-tier) | Tách thành tầng trình bày (presentation), tầng logic (application), và tầng dữ liệu (data). |
 | N tầng (N-tier) | Nhiều tầng trung gian: cân bằng tải, cache, hàng đợi... |
+
+Mô hình 3 tầng phân tách rõ trách nhiệm giữa trình bày, logic và dữ liệu:
+
+```mermaid
+flowchart TB
+    P["Tầng trình bày (giao diện)"] --> A["Tầng logic ứng dụng"]
+    A --> D["Tầng dữ liệu (cơ sở dữ liệu)"]
+```
 
 ### Các giao thức giao tiếp (communication protocols)
 

@@ -29,6 +29,21 @@ Content-Length: 128
 <html>...</html>                <- body
 ```
 
+Sơ đồ tuần tự vòng đời một yêu cầu/phản hồi HTTP (qua HTTPS):
+
+```mermaid
+sequenceDiagram
+    participant B as Trình duyệt
+    participant S as Máy chủ web
+    B->>S: Mở kết nối TCP + bắt tay TLS (nếu HTTPS)
+    B->>S: GET /index.html HTTP/1.1
+    Note right of B: Kèm header: Host, Accept, Cookie...
+    S->>S: Xử lý yêu cầu, dựng phản hồi
+    S->>B: HTTP/1.1 200 OK + body
+    Note left of S: Kèm header: Content-Type, Set-Cookie...
+    B->>B: Kết xuất (render) trang cho người dùng
+```
+
 ### Các phương thức (HTTP Methods)
 | Phương thức | Ý nghĩa | An toàn (Safe) | Idempotent |
 |-------------|---------|----------------|------------|

@@ -110,5 +110,24 @@ Thuật ngữ do Andreas Reuter và Theo Härder đặt năm 1983, hệ thống 
 4. So sánh ACID và BASE — khi nào chọn cái nào?
 5. Durability đạt được ra sao khi hệ thống có thể sập bất cứ lúc nào?
 
+## Sơ đồ bốn tính chất ACID
+
+```mermaid
+graph TD
+    ACID["Giao dịch ACID"]
+    A["Atomicity<br/>(Nguyên tử)"]
+    C["Consistency<br/>(Nhất quán)"]
+    I["Isolation<br/>(Cô lập)"]
+    D["Durability<br/>(Bền vững)"]
+    ACID --> A
+    ACID --> C
+    ACID --> I
+    ACID --> D
+    A --> A1["Tất cả hoặc không gì cả"]
+    C --> C1["Luôn tuân thủ ràng buộc"]
+    I --> I1["Các giao dịch không lẫn nhau"]
+    D --> D1["Đã commit là còn mãi"]
+```
+
 ## Tham khảo
 - Xem thêm: [Giao dịch & mức cô lập](giao-dich.md), [NoSQL](nosql.md), [SQL](sql.md)

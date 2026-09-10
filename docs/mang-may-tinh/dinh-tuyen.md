@@ -17,6 +17,18 @@ Mạng được mô hình hoá thành đồ thị (graph): nút (node) là route
 (edge) là liên kết với trọng số (cost) thể hiện độ trễ, băng thông hay số
 chặng (hop).
 
+Sơ đồ dưới là một đồ thị mạng đơn giản; nhãn trên mỗi cạnh là chi phí. Từ A
+tới D, Dijkstra chọn đường A→B→C→D (tổng chi phí 4) thay vì A→C→D (5):
+
+```mermaid
+graph LR
+    A(("A")) ---|"1"| B(("B"))
+    A ---|"4"| C(("C"))
+    B ---|"2"| C
+    B ---|"5"| D(("D"))
+    C ---|"1"| D
+```
+
 ### Dijkstra
 Tìm đường đi ngắn nhất từ một nguồn tới mọi đích với trọng số **không âm**.
 - Duy trì tập nút đã "chốt" khoảng cách ngắn nhất; mỗi bước chọn nút chưa
