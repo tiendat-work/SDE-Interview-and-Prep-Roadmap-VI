@@ -38,42 +38,110 @@ Tối ưu hoá là quá trình cải thiện chương trình để chạy **nhan
 
 ## Ví dụ
 
-```python
-# CHẬM: kiểm tra trùng bằng vòng lặp lồng -> O(n^2)
-def has_duplicate_slow(nums):
-    for i in range(len(nums)):
-        for j in range(i + 1, len(nums)):
-            if nums[i] == nums[j]:
+=== "JavaScript"
+    ```js
+    // CHẬM: kiểm tra trùng bằng vòng lặp lồng -> O(n^2)
+    function hasDuplicateSlow(nums) {
+      for (let i = 0; i < nums.length; i++)
+        for (let j = i + 1; j < nums.length; j++)
+          if (nums[i] === nums[j]) return true;
+      return false;
+    }
+
+    // NHANH: đánh đổi không gian lấy thời gian bằng Set -> O(n) time, O(n) space
+    function hasDuplicateFast(nums) {
+      const seen = new Set();
+      for (const x of nums) {
+        if (seen.has(x)) return true;   // kiểm tra thành viên O(1) trung bình
+        seen.add(x);
+      }
+      return false;
+    }
+
+    // Tiền xử lý prefix sum: truy vấn tổng đoạn [l, r] trong O(1)
+    function buildPrefix(nums) {
+      const prefix = [0];
+      for (const x of nums) prefix.push(prefix[prefix.length - 1] + x);
+      return prefix;
+    }
+    function rangeSum(prefix, l, r) {
+      return prefix[r + 1] - prefix[l];   // mỗi truy vấn O(1)
+    }
+    ```
+=== "Python"
+    ```python
+    # CHẬM: kiểm tra trùng bằng vòng lặp lồng -> O(n^2)
+    def has_duplicate_slow(nums):
+        for i in range(len(nums)):
+            for j in range(i + 1, len(nums)):
+                if nums[i] == nums[j]:
+                    return True
+        return False
+
+    # NHANH: đánh đổi không gian lấy thời gian bằng set -> O(n) thời gian, O(n) bộ nhớ
+    def has_duplicate_fast(nums):
+        seen = set()
+        for x in nums:
+            if x in seen:        # kiểm tra thành viên O(1) trung bình
                 return True
-    return False
+            seen.add(x)
+        return False
 
-# NHANH: đánh đổi không gian lấy thời gian bằng set -> O(n) thời gian, O(n) bộ nhớ
-def has_duplicate_fast(nums):
-    seen = set()
-    for x in nums:
-        if x in seen:        # kiểm tra thành viên O(1) trung bình
-            return True
-        seen.add(x)
-    return False
-```
+    # Tiền xử lý prefix sum: truy vấn tổng đoạn [l, r] trong O(1)
+    def build_prefix(nums):
+        prefix = [0]
+        for x in nums:
+            prefix.append(prefix[-1] + x)   # tính trước một lần O(n)
+        return prefix
 
-```python
-# Tiền xử lý prefix sum: truy vấn tổng đoạn [l, r] trong O(1)
-def build_prefix(nums):
-    prefix = [0]
-    for x in nums:
-        prefix.append(prefix[-1] + x)   # tính trước một lần O(n)
-    return prefix
-
-def range_sum(prefix, l, r):
-    return prefix[r + 1] - prefix[l]    # mỗi truy vấn O(1) thay vì O(n)
-```
+    def range_sum(prefix, l, r):
+        return prefix[r + 1] - prefix[l]    # mỗi truy vấn O(1) thay vì O(n)
+    ```
 
 ```python
 # Profiling nhanh bằng cProfile
 import cProfile
 cProfile.run("has_duplicate_slow(list(range(2000)))")  # xem hàm nào tốn thời gian
 ```
+
+## Thử ngay: memoization so với đệ quy vét cạn
+
+Playground tính Fibonacci bằng hai cách: đệ quy thuần (`O(2ⁿ)` — số lời gọi bùng nổ) và đệ quy có ghi nhớ (`O(n)`). Nó in **số lần gọi hàm** và **thời gian chạy** để bạn thấy đánh đổi thời gian – không gian rõ ràng: chỉ thêm một object nhỏ mà nhanh gấp hàng nghìn lần.
+
+<div class="js-demo" data-title="Memoization vs đệ quy vét cạn (Fibonacci)">
+<textarea class="js-demo-src">
+let naiveCalls = 0;
+function fibNaive(n) {                 // O(2^n): tính lại chồng chất
+  naiveCalls++;
+  if (n < 2) return n;
+  return fibNaive(n - 1) + fibNaive(n - 2);
+}
+
+let memoCalls = 0;
+function fibMemo(n, memo = {}) {       // O(n): ghi nhớ kết quả
+  memoCalls++;
+  if (n < 2) return n;
+  if (memo[n] !== undefined) return memo[n];
+  return memo[n] = fibMemo(n - 1, memo) + fibMemo(n - 2, memo);
+}
+
+const N = 30;
+let t0 = performance.now();
+const r1 = fibNaive(N);
+let t1 = performance.now();
+const r2 = fibMemo(N);
+let t2 = performance.now();
+
+print(`fib(${N}) = ${r1}  (cả hai cách cho cùng kết quả: ${r1 === r2})`);
+print('');
+print('Cách        | số lần gọi |   thời gian (ms)');
+print('------------+------------+-----------------');
+print(`Vét cạn     | ${String(naiveCalls).padStart(10)} | ${(t1-t0).toFixed(3).padStart(15)}`);
+print(`Memoization | ${String(memoCalls).padStart(10)} | ${(t2-t1).toFixed(3).padStart(15)}`);
+print('');
+print(`=> Memoization gọi ít hơn ~${Math.round(naiveCalls/memoCalls)} lần.`);
+</textarea>
+</div>
 
 ## Độ phức tạp
 

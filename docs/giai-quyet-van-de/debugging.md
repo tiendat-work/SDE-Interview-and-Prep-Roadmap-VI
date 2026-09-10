@@ -39,6 +39,23 @@ Mạnh hơn print debugging cho lỗi phức tạp.
 - **Ghi nhật ký (logging):** với hệ thống lớn hoặc lỗi khó tái hiện, ghi lại trạng thái theo thời gian giúp truy vết sau này.
 - **Bất biến (invariants) & assertion:** thêm `assert` để phát hiện sớm khi một giả định bị vi phạm, thay vì để lỗi lan xa khỏi nguyên nhân gốc.
 
+**Các loại lỗi hay gặp và cách nhận diện**
+
+- **Off-by-one:** sai `<` với `<=`, sai chỉ số đầu/cuối vòng lặp. Kiểm bằng ca nhỏ (mảng 1–2 phần tử).
+- **Null / undefined:** truy cập thuộc tính của giá trị rỗng. Thêm kiểm tra hoặc giá trị mặc định.
+- **Sao chép nông (shallow copy):** sửa một danh sách vô tình sửa danh sách khác vì chúng cùng tham chiếu. Sao chép sâu khi cần.
+- **Chuyển kiểu ngầm (type coercion):** `"2" + 2` ra `"22"` trong JS. In `typeof` để soi.
+- **Trạng thái chia sẻ / tác dụng phụ (side effect):** hàm sửa biến toàn cục làm kết quả phụ thuộc thứ tự gọi.
+- **Điều kiện tương tranh (race condition):** trong code bất đồng bộ/đa luồng, thứ tự thực thi không ổn định. Dùng logging kèm mốc thời gian.
+- **Heisenbug:** lỗi biến mất khi thêm print/debugger — thường do timing hoặc bộ nhớ chưa khởi tạo.
+
+**Mẹo gỡ lỗi hiệu quả**
+
+- **Đọc thông báo lỗi từ dưới lên:** dòng cuối stack trace thường là nơi lỗi phát sinh, dòng trên là chuỗi lời gọi dẫn tới.
+- **Thu hẹp bằng nhị phân:** chú thích nửa code, xem lỗi còn không, để khoanh vùng nhanh.
+- **Không sửa hai thứ cùng lúc:** thay đổi từng cái một rồi kiểm, nếu không sẽ không biết cái nào có tác dụng.
+- **Ghi lại giả thuyết:** viết ra "tôi nghĩ lỗi do X" rồi kiểm chứng — tránh chạy vòng vo.
+
 ## Ví dụ
 
 ```python
@@ -70,6 +87,74 @@ def buggy(nums):
         result.append(x * 2)
     return result
 ```
+
+**Cùng lỗi off-by-one trong JavaScript:**
+
+=== "JavaScript"
+    ```js
+    // Lỗi: bỏ sót phần tử cuối do dùng < thay vì <=
+    function sumTo(n) {
+      let total = 0;
+      for (let i = 1; i < n; i++) total += i;  // BUG: thiếu i = n
+      return total;
+    }
+    // sumTo(5) -> 10 (mong đợi 15)
+
+    // Print debugging để soi từng vòng
+    function sumToDebug(n) {
+      let total = 0;
+      for (let i = 1; i <= n; i++) {           // đã sửa: <=
+        total += i;
+        console.log(`i=${i}, total=${total}`);
+      }
+      return total;
+    }
+    ```
+=== "Python"
+    ```python
+    # Lỗi: bỏ sót phần tử cuối
+    def sum_to(n):
+        total = 0
+        for i in range(1, n):    # BUG: range(1, n) dừng ở n-1
+            total += i
+        return total
+    # sum_to(5) -> 10 (mong đợi 15)
+
+    def sum_to_debug(n):
+        total = 0
+        for i in range(1, n + 1):   # đã sửa: n + 1
+            total += i
+            print(f"i={i}, total={total}")
+        return total
+    ```
+
+## Thử ngay: bắt lỗi off-by-one
+
+Playground chạy song song phiên bản **có lỗi** và phiên bản **đã sửa**, in trạng thái từng vòng lặp để bạn thấy chính xác chỗ thiếu phần tử cuối — cách print debugging phơi bày một off-by-one điển hình.
+
+<div class="js-demo" data-title="Print debugging: off-by-one">
+<textarea class="js-demo-src">
+function sumBuggy(n) {
+  let total = 0, log = [];
+  for (let i = 1; i < n; i++) { total += i; log.push(`i=${i}→${total}`); }
+  return { total, log };
+}
+function sumFixed(n) {
+  let total = 0, log = [];
+  for (let i = 1; i <= n; i++) { total += i; log.push(`i=${i}→${total}`); }
+  return { total, log };
+}
+
+const n = 5;
+const b = sumBuggy(n), f = sumFixed(n);
+print(`Kỳ vọng tổng 1..${n} = ${n*(n+1)/2}`);
+print('');
+print('CÓ LỖI (i < n):', b.log.join('  '), '=> total =', b.total);
+print('ĐÃ SỬA (i <= n):', f.log.join('  '), '=> total =', f.total);
+print('');
+print('Nhìn log: bản lỗi dừng ở i=4, thiếu i=5 nên hụt 5 đơn vị.');
+</textarea>
+</div>
 
 ## Ưu / nhược điểm
 

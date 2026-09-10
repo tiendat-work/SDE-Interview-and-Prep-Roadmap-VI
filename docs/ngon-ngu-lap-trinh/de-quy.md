@@ -24,58 +24,112 @@ Hai hay nhiều hàm gọi lẫn nhau (A gọi B, B gọi A), ví dụ kiểm tr
 
 Mọi đệ quy đều có thể viết lại bằng vòng lặp (dùng ngăn xếp tường minh) và ngược lại. Đệ quy gọn, dễ đọc cho bài toán đệ quy tự nhiên; lặp thường nhanh hơn và không tốn khung ngăn xếp.
 
-## Ví dụ
+## Ví dụ: giai thừa (thường, đuôi, lặp)
 
-```python
-# Đệ quy thường: giai thừa
-def giai_thua(n):
-    if n <= 1:            # base case
-        return 1
-    return n * giai_thua(n - 1)   # còn phép nhân sau lời gọi -> KHÔNG tail
+=== "JavaScript"
+    ```js
+    // Đệ quy thường: còn phép nhân SAU lời gọi -> không phải tail
+    function giaiThua(n) {
+      if (n <= 1) return 1;              // base case
+      return n * giaiThua(n - 1);
+    }
 
-# Đệ quy đuôi: tích lũy kết quả qua tham số, lời gọi là bước CUỐI
-def giai_thua_duoi(n, acc=1):
-    if n <= 1:
-        return acc
-    return giai_thua_duoi(n - 1, acc * n)  # tail call
+    // Đệ quy đuôi: tích lũy qua tham số, lời gọi là bước CUỐI
+    function giaiThuaDuoi(n, acc = 1) {
+      if (n <= 1) return acc;
+      return giaiThuaDuoi(n - 1, acc * n);  // tail call
+    }
 
-print(giai_thua(5), giai_thua_duoi(5))  # 120 120
-```
+    // Phiên bản LẶP (không tốn ngăn xếp)
+    function giaiThuaLap(n) {
+      let kq = 1;
+      for (let i = 2; i <= n; i++) kq *= i;
+      return kq;
+    }
+    console.log(giaiThua(5), giaiThuaDuoi(5), giaiThuaLap(5));  // 120 120 120
+    ```
 
-```python
-# Đệ quy tương hỗ: chẵn/lẻ định nghĩa qua nhau
-def la_chan(n): return True if n == 0 else la_le(n - 1)
-def la_le(n):   return False if n == 0 else la_chan(n - 1)
-print(la_chan(4), la_le(4))  # True False
+=== "Python"
+    ```python
+    # Đệ quy thường: giai thừa
+    def giai_thua(n):
+        if n <= 1:            # base case
+            return 1
+        return n * giai_thua(n - 1)   # còn phép nhân sau lời gọi -> KHÔNG tail
 
-# Phiên bản LẶP tương đương với giai thừa (không tốn ngăn xếp)
-def giai_thua_lap(n):
-    kq = 1
-    for i in range(2, n + 1):
-        kq *= i
-    return kq
-```
+    # Đệ quy đuôi: tích lũy kết quả qua tham số, lời gọi là bước CUỐI
+    def giai_thua_duoi(n, acc=1):
+        if n <= 1:
+            return acc
+        return giai_thua_duoi(n - 1, acc * n)  # tail call
 
-## Độ phức tạp (nếu có)
+    # Phiên bản LẶP tương đương (không tốn ngăn xếp)
+    def giai_thua_lap(n):
+        kq = 1
+        for i in range(2, n + 1):
+            kq *= i
+        return kq
+
+    print(giai_thua(5), giai_thua_duoi(5), giai_thua_lap(5))  # 120 120 120
+    ```
+
+## Ví dụ: đệ quy tương hỗ
+
+=== "JavaScript"
+    ```js
+    const laChan = n => n === 0 ? true  : laLe(n - 1);
+    const laLe   = n => n === 0 ? false : laChan(n - 1);
+    console.log(laChan(4), laLe(4));  // true false
+    ```
+
+=== "Python"
+    ```python
+    def la_chan(n): return True if n == 0 else la_le(n - 1)
+    def la_le(n):   return False if n == 0 else la_chan(n - 1)
+    print(la_chan(4), la_le(4))  # True False
+    ```
+
+## Playground: giai thừa & cây gọi Fibonacci
+
+Chạy thử để in **cây gọi** đệ quy — thấy rõ `fib` tính lại nhiều lần cùng một giá trị (nguồn gốc độ phức tạp mũ).
+
+<div class="js-demo" data-title="Giai thừa & cây gọi Fibonacci">
+<textarea class="js-demo-src">
+// Giai thừa in từng bước lồng nhau
+function giaiThua(n, depth = 0) {
+  const indent = "  ".repeat(depth);
+  if (n <= 1) { print(indent + `giaiThua(${n}) = 1  [base case]`); return 1; }
+  const kq = n * giaiThua(n - 1, depth + 1);
+  print(indent + `giaiThua(${n}) = ${n} * giaiThua(${n - 1}) = ${kq}`);
+  return kq;
+}
+print("=== Cây gọi giaiThua(5) ===");
+giaiThua(5);
+print("");
+
+// Fibonacci: in cây gọi để thấy các lời gọi bị lặp lại
+let soLanGoi = 0;
+function fib(n, depth = 0) {
+  soLanGoi++;
+  print("  ".repeat(depth) + `fib(${n})`);
+  if (n < 2) return n;
+  return fib(n - 1, depth + 1) + fib(n - 2, depth + 1);
+}
+print("=== Cây gọi fib(5) ===");
+const kq = fib(5);
+print("");
+print(`fib(5) = ${kq}, tổng số lời gọi = ${soLanGoi} (nhiều nhánh lặp lại!)`);
+</textarea>
+</div>
+
+## Độ phức tạp
 
 | Ví dụ | Thời gian | Bộ nhớ (ngăn xếp) |
 |-------|-----------|-------------------|
 | Giai thừa đệ quy | O(n) | O(n) |
 | Giai thừa lặp | O(n) | O(1) |
 | Fibonacci đệ quy ngây thơ | O(2ⁿ) | O(n) |
-
-## Ưu / nhược điểm
-
-- **Ưu:** Code ngắn, sát định nghĩa toán học; tự nhiên cho cây, đồ thị, chia để trị.
-- **Nhược:** Tốn bộ nhớ ngăn xếp; nguy cơ stack overflow; có thể chậm và tính lặp lại (Fibonacci ngây thơ) nếu không ghi nhớ (memoization).
-
-## Câu hỏi phỏng vấn thường gặp
-
-1. Đệ quy cần những thành phần bắt buộc nào?
-2. Tail recursion là gì? Vì sao Python không hưởng lợi từ nó?
-3. Khi nào nên chọn đệ quy thay vì lặp và ngược lại?
-4. Vì sao Fibonacci đệ quy ngây thơ chậm? Cách khắc phục (memoization)?
-5. Điều gì gây stack overflow trong đệ quy?
+| Fibonacci + memoization | O(n) | O(n) |
 
 ## Sơ đồ cây gọi đệ quy Fibonacci
 
@@ -107,6 +161,19 @@ graph TD
     F2a --> F0a
     F2b --> F0b
 ```
+
+## Ưu / nhược điểm
+
+- **Ưu:** Code ngắn, sát định nghĩa toán học; tự nhiên cho cây, đồ thị, chia để trị.
+- **Nhược:** Tốn bộ nhớ ngăn xếp; nguy cơ stack overflow; có thể chậm và tính lặp lại (Fibonacci ngây thơ) nếu không ghi nhớ (memoization).
+
+## Câu hỏi phỏng vấn thường gặp
+
+1. Đệ quy cần những thành phần bắt buộc nào?
+2. Tail recursion là gì? Vì sao Python không hưởng lợi từ nó?
+3. Khi nào nên chọn đệ quy thay vì lặp và ngược lại?
+4. Vì sao Fibonacci đệ quy ngây thơ chậm? Cách khắc phục (memoization)?
+5. Điều gì gây stack overflow trong đệ quy?
 
 ## Tham khảo
 

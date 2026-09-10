@@ -38,34 +38,152 @@ Phần lớn bài phỏng vấn coding là biến thể của một số mẫu c
 
 **Băm (Hashing)** — dùng bảng băm (hash map / set) để tra cứu, đếm, nhóm phần tử trong `O(1)` trung bình. Cốt lõi của rất nhiều lời giải tối ưu.
 
+**Duyệt đồ thị (Graph traversal – BFS/DFS)** — duyệt theo chiều rộng (BFS, dùng hàng đợi) tìm đường ngắn nhất trên đồ thị không trọng số; duyệt theo chiều sâu (DFS, dùng đệ quy/ngăn xếp) dò liên thông, phát hiện chu trình, sắp thứ tự tô-pô.
+
+**Sắp xếp tô-pô (Topological sort)** — sắp thứ tự các đỉnh của đồ thị có hướng không chu trình (DAG) sao cho mọi cạnh đi từ trước ra sau. Dùng cho lịch phụ thuộc công việc, biên dịch, khoá học tiên quyết.
+
+**Union-Find (Disjoint Set Union)** — quản lý các tập hợp rời nhau với `find` và `union` gần `O(1)` (nhờ nén đường và hợp theo hạng). Dùng cho đếm thành phần liên thông, Kruskal MST, phát hiện chu trình đồ thị vô hướng.
+
+**Cây tiền tố (Trie)** — cây lưu chuỗi theo ký tự, tra cứu tiền tố `O(độ dài chuỗi)`. Dùng cho gợi ý tự động (autocomplete), kiểm tra từ điển, tìm tiền tố chung.
+
+**Đống / hàng đợi ưu tiên (Heap / Priority Queue)** — luôn lấy ra phần tử nhỏ/lớn nhất trong `O(log n)`. Dùng cho "k phần tử lớn nhất", Dijkstra, trộn k danh sách đã sắp.
+
+**Tổng tiền tố & mảng hiệu (Prefix sum / Difference array)** — tiền xử lý một lần để trả lời truy vấn tổng đoạn hoặc cập nhật đoạn trong `O(1)`.
+
+**Tìm kiếm nhị phân trên đáp án (Binary search on answer)** — khi đáp án đơn điệu (monotonic), nhị phân trên chính giá trị đáp án thay vì trên mảng. Dùng cho "giá trị nhỏ nhất khả thi", "tốc độ tối thiểu"...
+
+**Thuật toán dòng quét (Sweep line) & khoảng (Intervals)** — sắp các mốc theo trục rồi quét qua, xử lý bài giao/gộp khoảng, đặt lịch phòng họp.
+
+**Nhánh cận (Branch and bound)** — như quay lui nhưng cắt tỉa (pruning) các nhánh không thể tốt hơn lời giải hiện có; tăng tốc bài tối ưu tổ hợp.
+
 ## Ví dụ
 
-```python
-# Chia để trị: tìm kiếm nhị phân
-def binary_search(nums, target):
-    lo, hi = 0, len(nums) - 1
-    while lo <= hi:
-        mid = (lo + hi) // 2         # chia đôi không gian
-        if nums[mid] == target:
-            return mid
-        elif nums[mid] < target:
-            lo = mid + 1             # loại nửa trái
-        else:
-            hi = mid - 1             # loại nửa phải
-    return -1
+=== "JavaScript"
+    ```js
+    // Chia để trị: tìm kiếm nhị phân
+    function binarySearch(nums, target) {
+      let lo = 0, hi = nums.length - 1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;      // chia đôi không gian
+        if (nums[mid] === target) return mid;
+        else if (nums[mid] < target) lo = mid + 1;  // loại nửa trái
+        else hi = mid - 1;                            // loại nửa phải
+      }
+      return -1;
+    }
 
-# DP: Fibonacci với memoization
-def fib(n, memo={}):
-    if n < 2:
-        return n                     # base case
-    if n not in memo:
-        memo[n] = fib(n - 1, memo) + fib(n - 2, memo)
-    return memo[n]
+    // DP: Fibonacci với memoization
+    function fib(n, memo = {}) {
+      if (n < 2) return n;                // base case
+      if (memo[n] === undefined)
+        memo[n] = fib(n - 1, memo) + fib(n - 2, memo);
+      return memo[n];
+    }
 
-# Bit: kiểm tra n có phải lũy thừa của 2
-def is_power_of_two(n):
-    return n > 0 and (n & (n - 1)) == 0
-```
+    // Bit: kiểm tra n có phải lũy thừa của 2
+    function isPowerOfTwo(n) {
+      return n > 0 && (n & (n - 1)) === 0;
+    }
+    ```
+=== "Python"
+    ```python
+    # Chia để trị: tìm kiếm nhị phân
+    def binary_search(nums, target):
+        lo, hi = 0, len(nums) - 1
+        while lo <= hi:
+            mid = (lo + hi) // 2         # chia đôi không gian
+            if nums[mid] == target:
+                return mid
+            elif nums[mid] < target:
+                lo = mid + 1             # loại nửa trái
+            else:
+                hi = mid - 1             # loại nửa phải
+        return -1
+
+    # DP: Fibonacci với memoization
+    def fib(n, memo={}):
+        if n < 2:
+            return n                     # base case
+        if n not in memo:
+            memo[n] = fib(n - 1, memo) + fib(n - 2, memo)
+        return memo[n]
+
+    # Bit: kiểm tra n có phải lũy thừa của 2
+    def is_power_of_two(n):
+        return n > 0 and (n & (n - 1)) == 0
+    ```
+
+**Ví dụ quay lui (backtracking) — sinh mọi hoán vị:**
+
+=== "JavaScript"
+    ```js
+    function permutations(arr) {
+      const res = [];
+      const used = new Array(arr.length).fill(false);
+      const path = [];
+      function backtrack() {
+        if (path.length === arr.length) { res.push([...path]); return; }
+        for (let i = 0; i < arr.length; i++) {
+          if (used[i]) continue;      // đã dùng thì bỏ qua
+          used[i] = true; path.push(arr[i]);   // chọn
+          backtrack();                          // đệ quy
+          used[i] = false; path.pop();          // lùi lại (undo)
+        }
+      }
+      backtrack();
+      return res;
+    }
+    ```
+=== "Python"
+    ```python
+    def permutations(arr):
+        res, used, path = [], [False] * len(arr), []
+        def backtrack():
+            if len(path) == len(arr):
+                res.append(path[:]); return
+            for i in range(len(arr)):
+                if used[i]:
+                    continue          # đã dùng thì bỏ qua
+                used[i] = True; path.append(arr[i])   # chọn
+                backtrack()                            # đệ quy
+                used[i] = False; path.pop()            # lùi lại (undo)
+        backtrack()
+        return res
+    ```
+
+## Thử ngay: quay lui sinh hoán vị
+
+Playground minh hoạ **khung quay lui kinh điển** — chọn / đệ quy / lùi lại. Nó in ra toàn bộ hoán vị của một danh sách và đếm số lời gọi đệ quy để bạn thấy cây tìm kiếm lớn cỡ nào (`n!` lá).
+
+<div class="js-demo" data-title="Backtracking: sinh mọi hoán vị">
+<textarea class="js-demo-src">
+function permutations(arr) {
+  const res = [];
+  const used = new Array(arr.length).fill(false);
+  const path = [];
+  let calls = 0;
+  function backtrack(depth) {
+    calls++;
+    if (path.length === arr.length) { res.push(path.join('')); return; }
+    for (let i = 0; i < arr.length; i++) {
+      if (used[i]) continue;
+      used[i] = true; path.push(arr[i]);   // chọn
+      backtrack(depth + 1);                // đệ quy sâu hơn
+      used[i] = false; path.pop();         // lùi lại
+    }
+  }
+  backtrack(0);
+  return { res, calls };
+}
+
+const input = ['A', 'B', 'C'];
+const { res, calls } = permutations(input);
+print('Đầu vào:', input.join(''));
+print('Số hoán vị:', res.length, '(= ' + input.length + '! )');
+print('Các hoán vị:', res.join(', '));
+print('Số lời gọi đệ quy:', calls);
+</textarea>
+</div>
 
 ## Bảng chọn kỹ thuật nhanh
 
@@ -78,6 +196,14 @@ def is_power_of_two(n):
 | Chu trình / phần tử giữa danh sách liên kết | Con trỏ nhanh-chậm |
 | Đếm/tra cứu/nhóm nhanh | Băm (hash map) |
 | Chọn tối ưu từng bước | Tham lam |
+| Đường ngắn nhất đồ thị không trọng số | BFS |
+| Liên thông / chu trình / duyệt sâu | DFS, Union-Find |
+| Thứ tự phụ thuộc (tiên quyết) | Sắp xếp tô-pô |
+| "k phần tử lớn/nhỏ nhất", trộn k danh sách | Heap (hàng đợi ưu tiên) |
+| Truy vấn tổng đoạn nhiều lần | Tổng tiền tố (prefix sum) |
+| "Giá trị nhỏ nhất/lớn nhất khả thi" đơn điệu | Nhị phân trên đáp án |
+| Gộp/giao khoảng, lịch phòng họp | Dòng quét (sweep line) |
+| Tra cứu tiền tố / autocomplete | Cây tiền tố (Trie) |
 
 ## Ưu / nhược điểm
 

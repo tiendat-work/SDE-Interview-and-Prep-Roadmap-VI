@@ -87,20 +87,64 @@ def isPalindrome(s):
 
 Cho mảng số nguyên `nums` **đã sắp tăng dần** và một giá trị `target`, trả về chỉ số của hai số có tổng bằng `target`.
 
-```python
-def twoSum(nums, target):
-    left = 0
-    right = len(nums) - 1
-    while left < right:
-        sum = nums[left] + nums[right]
-        if sum == target:
-            return [left, right]
-        elif sum > target:
-            right -= 1   # tổng quá lớn -> giảm bằng cách lùi con trỏ phải
-        else:
-            left += 1    # tổng quá nhỏ -> tăng bằng cách tiến con trỏ trái
-    return [-1, -1]
-```
+!!! tip "Thử ngay (chạy được)"
+    Bấm **▶ Chạy** để hai con trỏ quét mảng đã sắp tìm cặp có tổng bằng `target`, in từng bước. Sửa `nums`/`target` rồi chạy lại.
+
+<div class="js-demo" data-title="Two Sum trên mảng đã sắp — in cặp (JavaScript)">
+<textarea class="js-demo-src">
+function twoSumSorted(nums, target) {
+  let left = 0, right = nums.length - 1;
+  while (left < right) {
+    const sum = nums[left] + nums[right];
+    print(`left=${left}(${nums[left]}), right=${right}(${nums[right]}), tổng=${sum}`);
+    if (sum === target) {
+      print(`=> Tìm thấy cặp: nums[${left}]=${nums[left]} + nums[${right}]=${nums[right]} = ${target}`);
+      return [left, right];
+    } else if (sum > target) {
+      right--;   // tổng quá lớn -> lùi con trỏ phải
+    } else {
+      left++;    // tổng quá nhỏ -> tiến con trỏ trái
+    }
+  }
+  print('Không tìm thấy cặp nào.');
+  return [-1, -1];
+}
+
+const nums = [2, 3, 5, 8, 11, 15];
+const target = 13;
+print('Kết quả (chỉ số):', `[${twoSumSorted(nums, target)}]`);
+</textarea>
+</div>
+
+=== "JavaScript"
+    ```js
+    function twoSum(nums, target) {
+      let left = 0, right = nums.length - 1;
+      while (left < right) {
+        const sum = nums[left] + nums[right];
+        if (sum === target) return [left, right];
+        else if (sum > target) right--;   // tổng quá lớn -> lùi con trỏ phải
+        else left++;                      // tổng quá nhỏ -> tiến con trỏ trái
+      }
+      return [-1, -1];
+    }
+    ```
+
+=== "Python"
+    ```python
+    def twoSum(nums, target):
+        left = 0
+        right = len(nums) - 1
+        while left < right:
+            sum = nums[left] + nums[right]
+            if sum == target:
+                return [left, right]
+            elif sum > target:
+                right -= 1   # tổng quá lớn -> giảm bằng cách lùi con trỏ phải
+            else:
+                left += 1    # tổng quá nhỏ -> tăng bằng cách tiến con trỏ trái
+        return [-1, -1]
+    ```
 
 **Ví dụ 4 — Trộn hai mảng đã sắp (merge two sorted arrays)**
 

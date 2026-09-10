@@ -135,6 +135,72 @@ g = {1: [2, 3], 2: [4], 3: [4], 4: []}
 print(bfs(g, 1))  # [1, 2, 3, 4]
 ```
 
+### Thao tác hàng đợi & deque (đa ngôn ngữ)
+
+=== "JavaScript"
+    ```js
+    // Hàng đợi FIFO bằng mảng (shift là O(n) — chỉ để minh họa)
+    const q = [];
+    q.push(1);            // enqueue vào đuôi
+    q.push(2);
+    const front = q[0];   // xem đầu = 1
+    const x = q.shift();  // dequeue từ đầu = 1
+
+    // Deque: thêm/xóa ở cả hai đầu
+    const dq = [];
+    dq.push(2);           // thêm đuôi
+    dq.unshift(1);        // thêm đầu  -> [1, 2]
+    dq.pop();             // xóa đuôi
+    dq.shift();           // xóa đầu
+    ```
+=== "Python"
+    ```python
+    from collections import deque
+
+    # Hàng đợi FIFO
+    q = deque()
+    q.append(1)           # enqueue vào đuôi
+    q.append(2)
+    front = q[0]          # xem đầu = 1
+    x = q.popleft()       # dequeue từ đầu = 1
+
+    # Deque: thêm/xóa ở cả hai đầu (đều O(1))
+    dq = deque()
+    dq.append(2)          # thêm đuôi
+    dq.appendleft(1)      # thêm đầu -> deque([1, 2])
+    dq.pop()              # xóa đuôi
+    dq.popleft()          # xóa đầu
+    ```
+
+### Thử ngay: hàng đợi FIFO & deque hai đầu
+
+!!! tip "Thử ngay (chạy được)"
+    Đoạn dưới mô phỏng hàng đợi FIFO rồi deque (thêm/xóa hai đầu), in từng bước để thấy thứ tự ra/vào.
+
+<div class="js-demo" data-title="Hàng đợi & Deque — enqueue/dequeue (in từng bước)">
+<textarea class="js-demo-src">
+// Phần 1: Hàng đợi FIFO
+const q = [];
+for (const v of [10, 20, 30]) {
+  q.push(v);
+  print(`enqueue(${v}) -> hàng đợi = ${JSON.stringify(q)}`);
+}
+while (q.length) {
+  const x = q.shift();  // lấy từ đầu (FIFO)
+  print(`dequeue() -> ${x} (còn lại ${JSON.stringify(q)})`);
+}
+
+print('\n--- Deque hai đầu ---');
+// Phần 2: Deque — thêm/xóa ở cả hai đầu
+const dq = [];
+dq.push(2);      print(`push(2) [thêm đuôi]   -> ${JSON.stringify(dq)}`);
+dq.unshift(1);   print(`unshift(1) [thêm đầu] -> ${JSON.stringify(dq)}`);
+dq.push(3);      print(`push(3) [thêm đuôi]   -> ${JSON.stringify(dq)}`);
+print(`pop() [xóa đuôi]   -> ${dq.pop()} (còn ${JSON.stringify(dq)})`);
+print(`shift() [xóa đầu]  -> ${dq.shift()} (còn ${JSON.stringify(dq)})`);
+</textarea>
+</div>
+
 ## Độ phức tạp
 
 | Thao tác | Hàng đợi thường | Hàng đợi ưu tiên (heap) |

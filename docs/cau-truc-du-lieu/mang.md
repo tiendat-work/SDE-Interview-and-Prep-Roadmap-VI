@@ -93,6 +93,89 @@ let filtered = arr.filter(x => x > 2);     // Lọc phần tử > 2
 let sum = arr.reduce((acc, v) => acc + v, 0); // Tính tổng
 ```
 
+### Thao tác chính (đa ngôn ngữ)
+
+Bảng dưới đây gom các thao tác cốt lõi (chèn, xóa, duyệt) ở cả hai ngôn ngữ để bạn đối chiếu cú pháp.
+
+=== "JavaScript"
+    ```js
+    let arr = [10, 20, 30];
+
+    // Chèn
+    arr.push(40);        // cuối:  [10, 20, 30, 40]
+    arr.unshift(5);      // đầu:   [5, 10, 20, 30, 40]
+    arr.splice(2, 0, 99);// vị trí 2: [5, 10, 99, 20, 30, 40]
+
+    // Xóa
+    arr.pop();           // cuối
+    arr.shift();         // đầu
+    arr.splice(1, 1);    // xóa 1 phần tử tại chỉ số 1
+
+    // Duyệt
+    for (let i = 0; i < arr.length; i++) console.log(i, arr[i]);
+    arr.forEach((v, i) => console.log(i, v));
+    ```
+=== "Python"
+    ```python
+    arr = [10, 20, 30]
+
+    # Chèn
+    arr.append(40)        # cuối:  [10, 20, 30, 40]
+    arr.insert(0, 5)      # đầu:   [5, 10, 20, 30, 40]
+    arr.insert(2, 99)     # vị trí 2: [5, 10, 99, 20, 30, 40]
+
+    # Xóa
+    arr.pop()             # cuối
+    arr.pop(0)            # đầu
+    del arr[1]            # xóa phần tử tại chỉ số 1
+
+    # Duyệt
+    for i in range(len(arr)):
+        print(i, arr[i])
+    for i, v in enumerate(arr):
+        print(i, v)
+    ```
+
+### Thử ngay: chèn / xóa / duyệt trên mảng
+
+!!! tip "Thử ngay (chạy được)"
+    Bấm **▶ Chạy** để xem từng bước chèn, xóa, dịch chuyển phần tử. Bạn có thể sửa mảng hoặc vị trí rồi chạy lại.
+
+<div class="js-demo" data-title="Thao tác mảng — chèn/xóa/duyệt (in từng bước)">
+<textarea class="js-demo-src">
+// Mô phỏng thao tác mảng và in ra từng bước
+let arr = [10, 20, 30, 40];
+print('Mảng ban đầu:', JSON.stringify(arr));
+
+// Chèn 99 vào chỉ số 2 — các phần tử từ chỉ số 2 dịch sang phải
+function insertAt(a, index, value) {
+  for (let i = a.length; i > index; i--) {
+    a[i] = a[i - 1];               // dịch phần tử sang phải
+    print(`  dịch phần tử ${a[i]} từ vị trí ${i - 1} -> ${i}`);
+  }
+  a[index] = value;
+  print(`Chèn ${value} tại chỉ số ${index}: ${JSON.stringify(a)}`);
+}
+insertAt(arr, 2, 99);
+
+// Xóa phần tử tại chỉ số 1 — các phần tử phía sau dịch sang trái
+function deleteAt(a, index) {
+  const removed = a[index];
+  for (let i = index; i < a.length - 1; i++) {
+    a[i] = a[i + 1];               // dịch phần tử sang trái
+    print(`  dịch phần tử ${a[i]} từ vị trí ${i + 1} -> ${i}`);
+  }
+  a.length = a.length - 1;         // thu nhỏ mảng
+  print(`Xóa phần tử ${removed} tại chỉ số ${index}: ${JSON.stringify(a)}`);
+}
+deleteAt(arr, 1);
+
+// Duyệt mảng
+print('Duyệt toàn mảng:');
+for (let i = 0; i < arr.length; i++) print(`  arr[${i}] = ${arr[i]}`);
+</textarea>
+</div>
+
 ### Mảng nhiều chiều (multidimensional array)
 
 Mảng nhiều chiều là mảng của các mảng, dùng để biểu diễn ma trận hoặc dữ liệu nhiều chiều.

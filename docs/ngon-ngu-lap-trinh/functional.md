@@ -8,9 +8,7 @@ Lập trình hàm (functional programming) là mô hình xây dựng chương tr
 
 Hợp với xử lý dữ liệu dạng luồng (map/filter/reduce), tính toán song song (không trạng thái chia sẻ nên ít race condition) và code dễ kiểm thử. Nhiều ngôn ngữ chủ đạo (Python, JavaScript, Java) đã hấp thu các ý tưởng này.
 
-## Cách hoạt động
-
-### Các khái niệm cốt lõi
+## Các khái niệm cốt lõi
 
 - **Hàm thuần khiết (pure function):** Cùng đầu vào luôn cho cùng đầu ra và không gây tác dụng phụ. Dễ hiểu, dễ test, dễ cache.
 - **Tính trong suốt tham chiếu (referential transparency):** Một biểu thức có thể được thay bằng giá trị của nó mà không đổi ý nghĩa chương trình — hệ quả của hàm thuần khiết.
@@ -19,36 +17,90 @@ Hợp với xử lý dữ liệu dạng luồng (map/filter/reduce), tính toán
 - **Bao đóng (closure):** Hàm "ghi nhớ" và truy cập được các biến ở phạm vi nơi nó được định nghĩa, ngay cả sau khi phạm vi đó kết thúc.
 - **Tính bất biến (immutability):** Dữ liệu không đổi sau khi tạo; thay vì sửa, ta tạo bản mới.
 
-## Ví dụ
+## Ví dụ: pure function, higher-order, closure
 
-```python
-# Hàm thuần khiết: không tác dụng phụ, cùng input -> cùng output
-def binh_phuong(x):
-    return x * x
+=== "JavaScript"
+    ```js
+    // Hàm thuần khiết: không tác dụng phụ, cùng input -> cùng output
+    const binhPhuong = x => x * x;
 
-# Hàm bậc cao + lambda
-so = [1, 2, 3, 4]
-chan_binh_phuong = list(map(lambda x: x * x,
-                            filter(lambda x: x % 2 == 0, so)))
-print(chan_binh_phuong)  # [4, 16]
+    // Hàm bậc cao + lambda: map/filter là higher-order function
+    const so = [1, 2, 3, 4];
+    const chanBinhPhuong = so.filter(x => x % 2 === 0).map(binhPhuong);
+    console.log(chanBinhPhuong);  // [4, 16]
 
-# Bao đóng (closure): 'he_so' được nhớ trong hàm trả về
-def tao_nhan(he_so):
-    def nhan(x):
-        return x * he_so   # dùng biến từ phạm vi ngoài
-    return nhan
+    // Bao đóng (closure): 'heSo' được nhớ trong hàm trả về
+    function taoNhan(heSo) {
+      return x => x * heSo;   // dùng biến từ phạm vi ngoài
+    }
+    const gapDoi = taoNhan(2);
+    const gapBa = taoNhan(3);
+    console.log(gapDoi(10), gapBa(10));  // 20 30
 
-gap_doi = tao_nhan(2)
-gap_ba = tao_nhan(3)
-print(gap_doi(10), gap_ba(10))  # 20 30
-```
+    // reduce gộp danh sách thành một giá trị
+    const tong = [1, 2, 3, 4].reduce((acc, x) => acc + x, 0);
+    console.log(tong);  // 10
+    ```
 
-```python
-from functools import reduce
-# reduce gộp danh sách thành một giá trị bằng hàm hai ngôi
-tong = reduce(lambda acc, x: acc + x, [1, 2, 3, 4], 0)
-print(tong)  # 10
-```
+=== "Python"
+    ```python
+    from functools import reduce
+
+    # Hàm thuần khiết: không tác dụng phụ, cùng input -> cùng output
+    def binh_phuong(x):
+        return x * x
+
+    # Hàm bậc cao + lambda
+    so = [1, 2, 3, 4]
+    chan_binh_phuong = list(map(binh_phuong,
+                                filter(lambda x: x % 2 == 0, so)))
+    print(chan_binh_phuong)  # [4, 16]
+
+    # Bao đóng (closure): 'he_so' được nhớ trong hàm trả về
+    def tao_nhan(he_so):
+        def nhan(x):
+            return x * he_so   # dùng biến từ phạm vi ngoài
+        return nhan
+
+    gap_doi = tao_nhan(2)
+    gap_ba = tao_nhan(3)
+    print(gap_doi(10), gap_ba(10))  # 20 30
+
+    # reduce gộp danh sách thành một giá trị bằng hàm hai ngôi
+    tong = reduce(lambda acc, x: acc + x, [1, 2, 3, 4], 0)
+    print(tong)  # 10
+    ```
+
+## Playground: map / filter / reduce & closure
+
+Chạy thử pipeline biến đổi dữ liệu và một bộ đếm dùng closure để giữ trạng thái riêng.
+
+<div class="js-demo" data-title="map/filter/reduce & closure">
+<textarea class="js-demo-src">
+const so = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+// Pipeline hàm bậc cao: lọc chẵn -> bình phương -> tính tổng
+const chan = so.filter(x => x % 2 === 0);
+const binhPhuong = chan.map(x => x * x);
+const tong = binhPhuong.reduce((a, b) => a + b, 0);
+
+print("Ban đầu:   ", so.join(", "));
+print("filter chẵn:", chan.join(", "));
+print("map bình phương:", binhPhuong.join(", "));
+print("reduce tổng:", tong);
+print("");
+
+// Closure: mỗi bộ đếm giữ biến 'count' riêng, không chia sẻ
+function taoBoDem() {
+  let count = 0;               // biến bị "đóng" trong closure
+  return () => ++count;
+}
+const demA = taoBoDem();
+const demB = taoBoDem();
+print("demA:", demA(), demA(), demA());  // 1 2 3
+print("demB:", demB());                  // 1 (độc lập với demA)
+</textarea>
+</div>
 
 ## Ưu / nhược điểm
 

@@ -79,18 +79,66 @@ def max_sum_k(a, k):
 
 **Ví dụ 2 — Chuỗi con dài nhất không lặp ký tự (LeetCode 3, cửa sổ thay đổi)**
 
-```python
-def length_of_longest_substring(s):
-    last = {}          # lưu chỉ số xuất hiện gần nhất của mỗi ký tự
-    l = 0
-    best = 0
-    for r in range(len(s)):
-        if s[r] in last and last[s[r]] >= l:   # ký tự lặp bên trong cửa sổ
-            l = last[s[r]] + 1                 # nhảy l qua vị trí bị trùng
-        last[s[r]] = r
-        best = max(best, r - l + 1)
-    return best
-```
+!!! tip "Thử ngay (chạy được)"
+    Bấm **▶ Chạy** để cửa sổ trượt tìm chuỗi con dài nhất không lặp ký tự, in từng bước và kết quả. Sửa `s` rồi chạy lại.
+
+<div class="js-demo" data-title="Chuỗi con dài nhất không lặp ký tự (JavaScript)">
+<textarea class="js-demo-src">
+function lengthOfLongestSubstring(s) {
+  const last = {};   // chỉ số xuất hiện gần nhất của mỗi ký tự
+  let l = 0, best = 0, bestStr = '';
+  for (let r = 0; r < s.length; r++) {
+    const c = s[r];
+    if (last[c] !== undefined && last[c] >= l) {
+      l = last[c] + 1;   // nhảy l qua vị trí bị trùng
+    }
+    last[c] = r;
+    const curLen = r - l + 1;
+    if (curLen > best) {
+      best = curLen;
+      bestStr = s.slice(l, r + 1);
+    }
+    print(`r=${r} ('${c}'), cửa sổ=[${l}..${r}] "${s.slice(l, r + 1)}" dài ${curLen}`);
+  }
+  print(`=> Dài nhất: "${bestStr}" (độ dài ${best})`);
+  return best;
+}
+
+const s = 'abcabcbb';
+print('Kết quả:', lengthOfLongestSubstring(s));
+</textarea>
+</div>
+
+=== "JavaScript"
+    ```js
+    function lengthOfLongestSubstring(s) {
+      const last = {};            // chỉ số xuất hiện gần nhất của mỗi ký tự
+      let l = 0, best = 0;
+      for (let r = 0; r < s.length; r++) {
+        const c = s[r];
+        if (last[c] !== undefined && last[c] >= l) {
+          l = last[c] + 1;        // nhảy l qua vị trí bị trùng
+        }
+        last[c] = r;
+        best = Math.max(best, r - l + 1);
+      }
+      return best;
+    }
+    ```
+
+=== "Python"
+    ```python
+    def length_of_longest_substring(s):
+        last = {}          # lưu chỉ số xuất hiện gần nhất của mỗi ký tự
+        l = 0
+        best = 0
+        for r in range(len(s)):
+            if s[r] in last and last[s[r]] >= l:   # ký tự lặp bên trong cửa sổ
+                l = last[s[r]] + 1                 # nhảy l qua vị trí bị trùng
+            last[s[r]] = r
+            best = max(best, r - l + 1)
+        return best
+    ```
 
 **Ví dụ 3 — Mảng con ngắn nhất có tổng ≥ target (số dương, LeetCode 209)**
 

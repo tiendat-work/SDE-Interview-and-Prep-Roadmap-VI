@@ -59,21 +59,82 @@ Code được đọc nhiều hơn được viết. Trong phỏng vấn và công
 
 ## Ví dụ
 
-```python
-# CHƯA TỐT: tên mơ hồ, lặp logic, không xử lý biên
-def f(l):
-    s = 0
-    for i in l:
-        s = s + i
-    return s / len(l)      # lỗi chia cho 0 nếu l rỗng
+**Trước / sau khi cải thiện** — cùng một hàm tính trung bình cộng:
 
-# TỐT HƠN: tên rõ, xử lý biên, tái dùng hàm chuẩn
-def average(numbers):
-    """Trả về trung bình cộng; None nếu danh sách rỗng."""
-    if not numbers:                    # xử lý trường hợp biên
-        return None
-    return sum(numbers) / len(numbers) # tái dùng sum() thay vì viết lại
-```
+=== "JavaScript"
+    ```js
+    // CHƯA TỐT: tên mơ hồ, không xử lý biên (chia cho 0)
+    function f(l) {
+      let s = 0;
+      for (const i of l) s = s + i;
+      return s / l.length;      // NaN nếu l rỗng
+    }
+
+    // TỐT HƠN: tên rõ, xử lý biên, tái dùng hàm chuẩn
+    function average(numbers) {
+      if (numbers.length === 0) return null;   // xử lý trường hợp biên
+      const sum = numbers.reduce((a, b) => a + b, 0);  // tái dùng reduce
+      return sum / numbers.length;
+    }
+    ```
+=== "Python"
+    ```python
+    # CHƯA TỐT: tên mơ hồ, lặp logic, không xử lý biên
+    def f(l):
+        s = 0
+        for i in l:
+            s = s + i
+        return s / len(l)      # lỗi chia cho 0 nếu l rỗng
+
+    # TỐT HƠN: tên rõ, xử lý biên, tái dùng hàm chuẩn
+    def average(numbers):
+        """Trả về trung bình cộng; None nếu danh sách rỗng."""
+        if not numbers:                    # xử lý trường hợp biên
+            return None
+        return sum(numbers) / len(numbers) # tái dùng sum() thay vì viết lại
+    ```
+
+**Early return làm phẳng lồng sâu** — cùng một logic phân loại:
+
+=== "JavaScript"
+    ```js
+    // CHƯA TỐT: lồng sâu, khó đọc
+    function grade(score) {
+      if (score >= 0) {
+        if (score <= 100) {
+          if (score >= 50) return 'Đạt';
+          else return 'Trượt';
+        } else return 'Không hợp lệ';
+      } else return 'Không hợp lệ';
+    }
+
+    // TỐT HƠN: kiểm tra biên trước, thoát sớm
+    function gradeClean(score) {
+      if (score < 0 || score > 100) return 'Không hợp lệ';  // early return
+      return score >= 50 ? 'Đạt' : 'Trượt';
+    }
+    ```
+=== "Python"
+    ```python
+    # CHƯA TỐT: lồng sâu, khó đọc
+    def grade(score):
+        if score >= 0:
+            if score <= 100:
+                if score >= 50:
+                    return "Đạt"
+                else:
+                    return "Trượt"
+            else:
+                return "Không hợp lệ"
+        else:
+            return "Không hợp lệ"
+
+    # TỐT HƠN: kiểm tra biên trước, thoát sớm
+    def grade_clean(score):
+        if score < 0 or score > 100:      # early return
+            return "Không hợp lệ"
+        return "Đạt" if score >= 50 else "Trượt"
+    ```
 
 ```python
 # Ví dụ unit test đi kèm
@@ -82,6 +143,31 @@ def test_average():
     assert average([]) is None        # ca biên
     assert average([5]) == 5
 ```
+
+## Thử ngay: DRY và xử lý biên
+
+Playground chạy cả hàm "chưa tốt" và "tốt hơn" trên vài đầu vào (gồm cả danh sách rỗng) để bạn thấy tác động của việc xử lý biên. Hàm `f` cho `NaN`, còn `average` trả `null` an toàn.
+
+<div class="js-demo" data-title="So sánh: xử lý biên & DRY">
+<textarea class="js-demo-src">
+function f(l) {                       // chưa xử lý biên
+  let s = 0;
+  for (const i of l) s = s + i;
+  return s / l.length;
+}
+function average(numbers) {           // đã xử lý biên + DRY
+  if (numbers.length === 0) return null;
+  return numbers.reduce((a, b) => a + b, 0) / numbers.length;
+}
+
+const cases = [[2, 4, 6], [5], []];
+for (const c of cases) {
+  print(`Đầu vào ${JSON.stringify(c)}:  f = ${f(c)},  average = ${average(c)}`);
+}
+print('');
+print('=> f([]) cho NaN (lỗi ngầm), average([]) cho null (an toàn, rõ ý).');
+</textarea>
+</div>
 
 ## Ưu / nhược điểm
 

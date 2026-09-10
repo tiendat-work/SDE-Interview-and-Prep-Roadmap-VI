@@ -40,43 +40,128 @@ Tìm chuỗi con liền kề dài nhất là palindrome. Cách "nở từ tâm (
 
 ## Ví dụ
 
+!!! tip "Thử ngay (chạy được)"
+    Bấm **▶ Chạy** để KMP tìm mọi vị trí xuất hiện của `pattern` trong `text` và in ra. Sửa `text`/`pattern` rồi chạy lại.
+
+<div class="js-demo" data-title="KMP — tìm mẫu, in vị trí (JavaScript)">
+<textarea class="js-demo-src">
+function buildLps(p) {
+  const lps = new Array(p.length).fill(0);
+  let len = 0, i = 1;
+  while (i < p.length) {
+    if (p[i] === p[len]) { lps[i++] = ++len; }
+    else if (len > 0) { len = lps[len - 1]; }
+    else { lps[i++] = 0; }
+  }
+  return lps;
+}
+
+function kmpSearch(text, pattern) {
+  const lps = buildLps(pattern);
+  print('Mảng LPS của mẫu:', `[${lps}]`);
+  const res = [];
+  let i = 0, j = 0;
+  while (i < text.length) {
+    if (text[i] === pattern[j]) {
+      i++; j++;
+      if (j === pattern.length) {
+        print(`Khớp tại vị trí ${i - j}`);
+        res.push(i - j);
+        j = lps[j - 1];
+      }
+    } else if (j > 0) {
+      j = lps[j - 1];   // nhảy nhờ LPS, không lùi i
+    } else {
+      i++;
+    }
+  }
+  return res;
+}
+
+const text = 'ababcababcabc';
+const pattern = 'abc';
+print('Kết quả:', `[${kmpSearch(text, pattern)}]`);
+</textarea>
+</div>
+
 **KMP — dựng mảng LPS và tìm mẫu**
 
-```python
-def build_lps(pattern):
-    lps = [0] * len(pattern)    # lps[i] = độ dài tiền tố cũng là hậu tố dài nhất
-    length = 0
-    i = 1
-    while i < len(pattern):
-        if pattern[i] == pattern[length]:
-            length += 1
-            lps[i] = length
-            i += 1
-        elif length > 0:
-            length = lps[length - 1]    # lùi về vị trí biên trước đó
-        else:
-            lps[i] = 0
-            i += 1
-    return lps
+=== "JavaScript"
+    ```js
+    function buildLps(pattern) {
+      const lps = new Array(pattern.length).fill(0);   // lps[i] = tiền tố cũng là hậu tố dài nhất
+      let len = 0, i = 1;
+      while (i < pattern.length) {
+        if (pattern[i] === pattern[len]) {
+          lps[i++] = ++len;
+        } else if (len > 0) {
+          len = lps[len - 1];                          // lùi về vị trí biên trước đó
+        } else {
+          lps[i++] = 0;
+        }
+      }
+      return lps;
+    }
 
-def kmp_search(text, pattern):
-    lps = build_lps(pattern)
-    res = []
-    i = j = 0        # i chạy trên text, j chạy trên pattern
-    while i < len(text):
-        if text[i] == pattern[j]:
-            i += 1; j += 1
-            if j == len(pattern):       # khớp toàn bộ mẫu
-                res.append(i - j)
-                j = lps[j - 1]          # tiếp tục tìm lần khớp kế
-        elif j > 0:
-            j = lps[j - 1]              # nhảy nhờ LPS, không lùi i
-        else:
-            i += 1
-    return res
+    function kmpSearch(text, pattern) {
+      const lps = buildLps(pattern);
+      const res = [];
+      let i = 0, j = 0;                                 // i chạy trên text, j trên pattern
+      while (i < text.length) {
+        if (text[i] === pattern[j]) {
+          i++; j++;
+          if (j === pattern.length) {                  // khớp toàn bộ mẫu
+            res.push(i - j);
+            j = lps[j - 1];                            // tiếp tục tìm lần khớp kế
+          }
+        } else if (j > 0) {
+          j = lps[j - 1];                              // nhảy nhờ LPS, không lùi i
+        } else {
+          i++;
+        }
+      }
+      return res;
+    }
 
-print(kmp_search("ababcababcabc", "abc"))   # [2, 7, 10]
-```
+    console.log(kmpSearch("ababcababcabc", "abc"));   // [2, 7, 10]
+    ```
+
+=== "Python"
+    ```python
+    def build_lps(pattern):
+        lps = [0] * len(pattern)    # lps[i] = độ dài tiền tố cũng là hậu tố dài nhất
+        length = 0
+        i = 1
+        while i < len(pattern):
+            if pattern[i] == pattern[length]:
+                length += 1
+                lps[i] = length
+                i += 1
+            elif length > 0:
+                length = lps[length - 1]    # lùi về vị trí biên trước đó
+            else:
+                lps[i] = 0
+                i += 1
+        return lps
+
+    def kmp_search(text, pattern):
+        lps = build_lps(pattern)
+        res = []
+        i = j = 0        # i chạy trên text, j chạy trên pattern
+        while i < len(text):
+            if text[i] == pattern[j]:
+                i += 1; j += 1
+                if j == len(pattern):       # khớp toàn bộ mẫu
+                    res.append(i - j)
+                    j = lps[j - 1]          # tiếp tục tìm lần khớp kế
+            elif j > 0:
+                j = lps[j - 1]              # nhảy nhờ LPS, không lùi i
+            else:
+                i += 1
+        return res
+
+    print(kmp_search("ababcababcabc", "abc"))   # [2, 7, 10]
+    ```
 
 **Rabin–Karp — băm cuộn**
 

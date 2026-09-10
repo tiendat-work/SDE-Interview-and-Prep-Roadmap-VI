@@ -158,6 +158,99 @@ def find_length_of_ll():
 print(find_length_of_ll())
 ```
 
+### Định nghĩa nút & đảo ngược (đa ngôn ngữ)
+
+Đảo ngược danh sách liên kết là câu hỏi phỏng vấn kinh điển: duyệt một lượt, tại mỗi nút "bẻ" con trỏ `next` trỏ ngược về nút trước.
+
+=== "JavaScript"
+    ```js
+    class ListNode {
+      constructor(data) {
+        this.data = data;   // dữ liệu
+        this.next = null;   // con trỏ tới nút kế tiếp
+      }
+    }
+
+    // Đảo ngược danh sách đơn — O(n) thời gian, O(1) bộ nhớ
+    function reverse(head) {
+      let prev = null, curr = head;
+      while (curr) {
+        const nextNode = curr.next; // lưu nút kế tiếp
+        curr.next = prev;           // bẻ con trỏ về sau
+        prev = curr;                // tiến prev
+        curr = nextNode;            // tiến curr
+      }
+      return prev;                  // head mới
+    }
+    ```
+=== "Python"
+    ```python
+    class ListNode:
+        def __init__(self, data):
+            self.data = data   # dữ liệu
+            self.next = None   # con trỏ tới nút kế tiếp
+
+    # Đảo ngược danh sách đơn — O(n) thời gian, O(1) bộ nhớ
+    def reverse(head):
+        prev, curr = None, head
+        while curr:
+            next_node = curr.next  # lưu nút kế tiếp
+            curr.next = prev       # bẻ con trỏ về sau
+            prev = curr            # tiến prev
+            curr = next_node       # tiến curr
+        return prev                # head mới
+    ```
+
+### Thử ngay: xây danh sách & đảo ngược
+
+!!! tip "Thử ngay (chạy được)"
+    Đoạn dưới xây danh sách từ một mảng, in ra, rồi đảo ngược và in từng bước bẻ con trỏ.
+
+<div class="js-demo" data-title="Danh sách liên kết — xây & đảo ngược (in từng bước)">
+<textarea class="js-demo-src">
+// Nút của danh sách liên kết đơn
+class ListNode {
+  constructor(data) { this.data = data; this.next = null; }
+}
+
+// Xây danh sách từ mảng, trả về head
+function build(values) {
+  let head = null, tail = null;
+  for (const v of values) {
+    const node = new ListNode(v);
+    if (!head) { head = tail = node; }
+    else { tail.next = node; tail = node; }
+  }
+  return head;
+}
+
+// Chuyển danh sách thành chuỗi "1 -> 2 -> 3 -> null"
+function toStr(head) {
+  const parts = [];
+  let curr = head;
+  while (curr) { parts.push(curr.data); curr = curr.next; }
+  parts.push('null');
+  return parts.join(' -> ');
+}
+
+let head = build([10, 20, 30, 40]);
+print('Ban đầu: ', toStr(head));
+
+// Đảo ngược có in từng bước
+let prev = null, curr = head, buoc = 0;
+while (curr) {
+  buoc++;
+  const nextNode = curr.next;
+  curr.next = prev;
+  print(`Bước ${buoc}: bẻ nút ${curr.data} trỏ về ${prev ? prev.data : 'null'}`);
+  prev = curr;
+  curr = nextNode;
+}
+head = prev;
+print('Sau khi đảo: ', toStr(head));
+</textarea>
+</div>
+
 ## Độ phức tạp
 
 | Thao tác | Thời gian | Ghi chú |

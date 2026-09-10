@@ -14,9 +14,17 @@ Phân tích độ phức tạp là cách **ước lượng lượng tài nguyên
 
 **Ba ký hiệu tiệm cận chính**
 
-- **Big O — `O(f(n))`:** chặn **trên** (upper bound) — mô tả trường hợp xấu nhất (worst case). "Chạy không chậm hơn `f(n)`". Đây là ký hiệu dùng nhiều nhất.
-- **Big Omega — `Ω(f(n))`:** chặn **dưới** (lower bound) — trường hợp tốt nhất. "Chạy không nhanh hơn `f(n)`".
-- **Big Theta — `Θ(f(n))`:** chặn **chặt** (tight bound) — khi chặn trên và chặn dưới trùng bậc. "Tăng trưởng đúng bằng `f(n)`".
+- **Big O — `O(f(n))`:** chặn **trên** (upper bound). Về mặt toán học: `T(n) = O(f(n))` nếu tồn tại hằng số `c > 0` và `n₀` sao cho `T(n) ≤ c·f(n)` với mọi `n ≥ n₀`. Nói cách khác, kể từ một kích thước đủ lớn, `f(n)` (nhân một hằng số) luôn "phủ" được thời gian chạy. Đây là ký hiệu dùng nhiều nhất vì ta thường quan tâm **trường hợp xấu nhất (worst case)** — cam kết "chạy không chậm hơn".
+- **Big Omega — `Ω(f(n))`:** chặn **dưới** (lower bound). `T(n) = Ω(f(n))` nếu `T(n) ≥ c·f(n)` với mọi `n ≥ n₀`. Mô tả **trường hợp tốt nhất (best case)** hoặc giới hạn dưới không thể phá vỡ của một lớp bài toán (ví dụ sắp xếp so sánh không thể nhanh hơn `Ω(n log n)`). Cam kết "chạy không nhanh hơn".
+- **Big Theta — `Θ(f(n))`:** chặn **chặt** (tight bound) — khi `T(n) = O(f(n))` **và** `T(n) = Ω(f(n))` cùng một lúc. Tồn tại `c₁, c₂` sao cho `c₁·f(n) ≤ T(n) ≤ c₂·f(n)`. Đây là mô tả chính xác nhất: "tăng trưởng đúng bằng `f(n)`".
+
+**Phân biệt trực quan bằng ví dụ:** hàm `binary_search` chạy nhanh nhất khi trúng ngay giữa (`Ω(1)`), chậm nhất khi phải chia tới cùng (`O(log n)`); ta thường viết gọn "tìm kiếm nhị phân là `O(log n)`". Còn vòng lặp cộng `n` phần tử luôn chạy đúng `n` bước bất kể dữ liệu, nên nó là `Θ(n)` — chặn trên và chặn dưới trùng nhau.
+
+**Ba trường hợp phân tích thường gặp**
+
+- **Trường hợp tốt nhất (best case):** đầu vào thuận lợi nhất. Ví dụ tìm kiếm tuyến tính gặp mục tiêu ngay phần tử đầu → `O(1)`.
+- **Trường hợp trung bình (average case):** kỳ vọng trên phân phối đầu vào ngẫu nhiên. Quicksort trung bình `O(n log n)`.
+- **Trường hợp xấu nhất (worst case):** đầu vào bất lợi nhất — đây là bảo đảm an toàn ta hay dùng để đánh giá.
 
 **Quy tắc rút gọn**
 
@@ -43,30 +51,87 @@ Phân tích độ phức tạp là cách **ước lượng lượng tài nguyên
 
 ## Ví dụ
 
-```python
-# O(n) - một vòng lặp
-def total(nums):
-    s = 0
-    for x in nums:        # chạy n lần
-        s += x
-    return s
+=== "JavaScript"
+    ```js
+    // O(n) - một vòng lặp
+    function total(nums) {
+      let s = 0;
+      for (const x of nums) s += x;   // chạy n lần
+      return s;
+    }
 
-# O(n^2) - hai vòng lồng nhau
-def has_dup_pair(nums):
-    for i in range(len(nums)):        # n lần
-        for j in range(i + 1, len(nums)):  # tới n lần
-            if nums[i] == nums[j]:
-                return True
-    return False
+    // O(n^2) - hai vòng lồng nhau
+    function hasDupPair(nums) {
+      for (let i = 0; i < nums.length; i++)          // n lần
+        for (let j = i + 1; j < nums.length; j++)    // tới n lần
+          if (nums[i] === nums[j]) return true;
+      return false;
+    }
 
-# O(log n) - chia đôi mỗi vòng
-def count_halvings(n):
-    steps = 0
-    while n > 1:
-        n //= 2           # số lần lặp ~ log2(n)
-        steps += 1
-    return steps
-```
+    // O(log n) - chia đôi mỗi vòng
+    function countHalvings(n) {
+      let steps = 0;
+      while (n > 1) { n = Math.floor(n / 2); steps++; }  // ~ log2(n) lần
+      return steps;
+    }
+    ```
+=== "Python"
+    ```python
+    # O(n) - một vòng lặp
+    def total(nums):
+        s = 0
+        for x in nums:        # chạy n lần
+            s += x
+        return s
+
+    # O(n^2) - hai vòng lồng nhau
+    def has_dup_pair(nums):
+        for i in range(len(nums)):        # n lần
+            for j in range(i + 1, len(nums)):  # tới n lần
+                if nums[i] == nums[j]:
+                    return True
+        return False
+
+    # O(log n) - chia đôi mỗi vòng
+    def count_halvings(n):
+        steps = 0
+        while n > 1:
+            n //= 2           # số lần lặp ~ log2(n)
+            steps += 1
+        return steps
+    ```
+
+## Thử ngay: đo số phép toán O(n) so với O(n²)
+
+Playground dưới đây **đếm số phép so sánh thực tế** của thuật toán tuyến tính (`O(n)`) và thuật toán vòng lồng (`O(n²)`) với nhiều kích thước `n`. Hãy chú ý cột O(n²) tăng vọt trong khi O(n) tăng đều — đúng như lý thuyết tiệm cận dự đoán.
+
+<div class="js-demo" data-title="Đếm số phép toán: O(n) vs O(n²)">
+<textarea class="js-demo-src">
+// Đếm số phép so sánh khi tìm phần tử trùng bằng 2 cách
+function countLinear(n) {   // O(n): dùng Set
+  let ops = 0;
+  const seen = new Set();
+  for (let i = 0; i < n; i++) { ops++; seen.add(i); }
+  return ops;
+}
+function countQuadratic(n) {  // O(n^2): vòng lồng
+  let ops = 0;
+  for (let i = 0; i < n; i++)
+    for (let j = i + 1; j < n; j++) ops++;   // mỗi cặp là 1 phép
+  return ops;
+}
+
+print('   n |     O(n) |    O(n^2) | tỉ lệ n^2/n');
+print('-----+----------+-----------+------------');
+for (const n of [10, 50, 100, 500, 1000]) {
+  const a = countLinear(n), b = countQuadratic(n);
+  const pad = (x, w) => String(x).padStart(w);
+  print(`${pad(n,4)} | ${pad(a,8)} | ${pad(b,9)} | ${pad((b/a).toFixed(1),10)}`);
+}
+print('');
+print('Kết luận: O(n) tăng tuyến tính, O(n^2) tăng theo bình phương.');
+</textarea>
+</div>
 
 ## Bảng độ phức tạp các thao tác phổ biến
 

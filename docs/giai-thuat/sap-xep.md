@@ -69,57 +69,148 @@ Chọn thuật toán ở ô bên dưới để xem quá trình sắp xếp chạ
 
 **Merge Sort — sắp xếp trộn**
 
-```python
-def merge_sort(arr):
-    if len(arr) <= 1:           # mảng 0 hoặc 1 phần tử đã sắp sẵn
-        return arr
-    mid = len(arr) // 2         # chia đôi mảng
-    left = merge_sort(arr[:mid])    # sắp xếp đệ quy nửa trái
-    right = merge_sort(arr[mid:])   # sắp xếp đệ quy nửa phải
-    return merge(left, right)   # trộn hai nửa đã sắp
+=== "JavaScript"
+    ```js
+    function mergeSort(arr) {
+      if (arr.length <= 1) return arr;          // 0 hoặc 1 phần tử đã sắp sẵn
+      const mid = arr.length >> 1;              // chia đôi mảng
+      const left = mergeSort(arr.slice(0, mid));   // đệ quy nửa trái
+      const right = mergeSort(arr.slice(mid));     // đệ quy nửa phải
+      return merge(left, right);                // trộn hai nửa đã sắp
+    }
 
-def merge(left, right):
-    result = []
-    i = j = 0
-    # so sánh song song, luôn lấy phần tử nhỏ hơn
-    while i < len(left) and j < len(right):
-        if left[i] <= right[j]:     # dùng <= để giữ tính ổn định
-            result.append(left[i])
-            i += 1
-        else:
-            result.append(right[j])
-            j += 1
-    result.extend(left[i:])     # chép nốt phần còn lại
-    result.extend(right[j:])
-    return result
+    function merge(left, right) {
+      const result = [];
+      let i = 0, j = 0;
+      while (i < left.length && j < right.length) {
+        // dùng <= để giữ tính ổn định (stable)
+        if (left[i] <= right[j]) result.push(left[i++]);
+        else result.push(right[j++]);
+      }
+      // chép nốt phần còn lại
+      return result.concat(left.slice(i)).concat(right.slice(j));
+    }
 
-print(merge_sort([5, 2, 8, 1, 9, 3]))   # [1, 2, 3, 5, 8, 9]
-```
+    console.log(mergeSort([5, 2, 8, 1, 9, 3]));   // [1, 2, 3, 5, 8, 9]
+    ```
+=== "Python"
+    ```python
+    def merge_sort(arr):
+        if len(arr) <= 1:           # mảng 0 hoặc 1 phần tử đã sắp sẵn
+            return arr
+        mid = len(arr) // 2         # chia đôi mảng
+        left = merge_sort(arr[:mid])    # sắp xếp đệ quy nửa trái
+        right = merge_sort(arr[mid:])   # sắp xếp đệ quy nửa phải
+        return merge(left, right)   # trộn hai nửa đã sắp
+
+    def merge(left, right):
+        result = []
+        i = j = 0
+        # so sánh song song, luôn lấy phần tử nhỏ hơn
+        while i < len(left) and j < len(right):
+            if left[i] <= right[j]:     # dùng <= để giữ tính ổn định
+                result.append(left[i])
+                i += 1
+            else:
+                result.append(right[j])
+                j += 1
+        result.extend(left[i:])     # chép nốt phần còn lại
+        result.extend(right[j:])
+        return result
+
+    print(merge_sort([5, 2, 8, 1, 9, 3]))   # [1, 2, 3, 5, 8, 9]
+    ```
 
 **Quick Sort — sắp xếp nhanh (phân hoạch tại chỗ, kiểu Lomuto)**
 
-```python
-def quick_sort(arr, low=0, high=None):
-    if high is None:
-        high = len(arr) - 1
-    if low < high:
-        p = partition(arr, low, high)   # p là vị trí đúng của chốt
-        quick_sort(arr, low, p - 1)     # đệ quy phần bên trái chốt
-        quick_sort(arr, p + 1, high)    # đệ quy phần bên phải chốt
-    return arr
+=== "JavaScript"
+    ```js
+    function quickSort(arr, low = 0, high = arr.length - 1) {
+      if (low < high) {
+        const p = partition(arr, low, high);   // p là vị trí đúng của chốt
+        quickSort(arr, low, p - 1);            // đệ quy phần bên trái chốt
+        quickSort(arr, p + 1, high);           // đệ quy phần bên phải chốt
+      }
+      return arr;
+    }
 
-def partition(arr, low, high):
-    pivot = arr[high]       # chọn phần tử cuối làm chốt
-    i = low - 1             # ranh giới các phần tử nhỏ hơn chốt
-    for j in range(low, high):
-        if arr[j] <= pivot:
-            i += 1
-            arr[i], arr[j] = arr[j], arr[i]   # đưa phần tử nhỏ về trái
-    arr[i + 1], arr[high] = arr[high], arr[i + 1]   # đặt chốt vào đúng vị trí
-    return i + 1
+    function partition(arr, low, high) {
+      const pivot = arr[high];   // chọn phần tử cuối làm chốt
+      let i = low - 1;           // ranh giới các phần tử nhỏ hơn chốt
+      for (let j = low; j < high; j++) {
+        if (arr[j] <= pivot) {
+          i++;
+          [arr[i], arr[j]] = [arr[j], arr[i]];   // đưa phần tử nhỏ về trái
+        }
+      }
+      [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];   // đặt chốt đúng chỗ
+      return i + 1;
+    }
 
-print(quick_sort([5, 2, 8, 1, 9, 3]))   # [1, 2, 3, 5, 8, 9]
-```
+    console.log(quickSort([5, 2, 8, 1, 9, 3]));   // [1, 2, 3, 5, 8, 9]
+    ```
+=== "Python"
+    ```python
+    def quick_sort(arr, low=0, high=None):
+        if high is None:
+            high = len(arr) - 1
+        if low < high:
+            p = partition(arr, low, high)   # p là vị trí đúng của chốt
+            quick_sort(arr, low, p - 1)     # đệ quy phần bên trái chốt
+            quick_sort(arr, p + 1, high)    # đệ quy phần bên phải chốt
+        return arr
+
+    def partition(arr, low, high):
+        pivot = arr[high]       # chọn phần tử cuối làm chốt
+        i = low - 1             # ranh giới các phần tử nhỏ hơn chốt
+        for j in range(low, high):
+            if arr[j] <= pivot:
+                i += 1
+                arr[i], arr[j] = arr[j], arr[i]   # đưa phần tử nhỏ về trái
+        arr[i + 1], arr[high] = arr[high], arr[i + 1]   # đặt chốt vào đúng vị trí
+        return i + 1
+
+    print(quick_sort([5, 2, 8, 1, 9, 3]))   # [1, 2, 3, 5, 8, 9]
+    ```
+
+## Thử ngay: Quick Sort in từng bước phân hoạch
+
+!!! tip "Chạy được ngay"
+    Bấm **▶ Chạy** để xem quick sort làm việc: mỗi lần phân hoạch (partition) sẽ in ra chốt (pivot), đoạn đang xử lý và trạng thái mảng sau khi đặt chốt về đúng vị trí. Sửa mảng `data` rồi chạy lại để thử dữ liệu khác.
+
+<div class="js-demo" data-title="Quick Sort — in các bước phân hoạch">
+<textarea class="js-demo-src">
+let buoc = 0;
+
+function partition(arr, low, high) {
+  const pivot = arr[high];      // chốt là phần tử cuối đoạn
+  let i = low - 1;
+  for (let j = low; j < high; j++) {
+    if (arr[j] <= pivot) {
+      i++;
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+  [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+  return i + 1;
+}
+
+function quickSort(arr, low, high) {
+  if (low < high) {
+    const p = partition(arr, low, high);
+    buoc++;
+    print(`Bước ${buoc}: chốt=${arr[p]}, đoạn [${low}..${high}] -> [${arr.join(', ')}]`);
+    quickSort(arr, low, p - 1);
+    quickSort(arr, p + 1, high);
+  }
+}
+
+const data = [5, 2, 8, 1, 9, 3, 7, 4];
+print(`Mảng ban đầu: [${data.join(', ')}]`);
+quickSort(data, 0, data.length - 1);
+print(`Kết quả cuối: [${data.join(', ')}]`);
+</textarea>
+</div>
 
 ## Độ phức tạp
 

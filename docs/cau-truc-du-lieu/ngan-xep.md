@@ -138,6 +138,95 @@ def eval_postfix(tokens):
 print(eval_postfix(["2", "3", "+", "4", "*"]))  # (2+3)*4 = 20
 ```
 
+### Thao tác ngăn xếp (đa ngôn ngữ)
+
+=== "JavaScript"
+    ```js
+    // Ngăn xếp bằng mảng
+    const stack = [];
+    stack.push(1);          // đẩy lên đỉnh
+    stack.push(2);
+    const top = stack[stack.length - 1]; // peek = 2
+    const x = stack.pop();  // lấy đỉnh = 2
+
+    // Kiểm tra dấu ngoặc cân bằng
+    function isBalanced(s) {
+      const pairs = { ')': '(', ']': '[', '}': '{' };
+      const st = [];
+      for (const ch of s) {
+        if (ch === '(' || ch === '[' || ch === '{') st.push(ch);
+        else if (ch in pairs) {
+          if (st.pop() !== pairs[ch]) return false;
+        }
+      }
+      return st.length === 0;
+    }
+    ```
+=== "Python"
+    ```python
+    # Ngăn xếp bằng list
+    stack = []
+    stack.append(1)         # đẩy lên đỉnh
+    stack.append(2)
+    top = stack[-1]         # peek = 2
+    x = stack.pop()         # lấy đỉnh = 2
+
+    # Kiểm tra dấu ngoặc cân bằng
+    def is_balanced(s):
+        pairs = {')': '(', ']': '[', '}': '{'}
+        st = []
+        for ch in s:
+            if ch in '([{':
+                st.append(ch)
+            elif ch in ')]}':
+                if not st or st.pop() != pairs[ch]:
+                    return False
+        return not st
+    ```
+
+### Thử ngay: push/pop và kiểm tra ngoặc cân bằng
+
+!!! tip "Thử ngay (chạy được)"
+    Đoạn dưới minh họa push/pop theo LIFO rồi kiểm tra một chuỗi ngoặc, in từng bước xử lý ngăn xếp.
+
+<div class="js-demo" data-title="Ngăn xếp — push/pop & kiểm tra ngoặc (in từng bước)">
+<textarea class="js-demo-src">
+// Phần 1: push/pop minh họa LIFO
+const stack = [];
+for (const v of [1, 2, 3]) {
+  stack.push(v);
+  print(`push(${v}) -> đỉnh = ${JSON.stringify(stack)}`);
+}
+print(`pop() -> ${stack.pop()} (đỉnh còn ${JSON.stringify(stack)})`);
+print(`peek() -> ${stack[stack.length - 1]}`);
+
+// Phần 2: kiểm tra dấu ngoặc cân bằng, in từng bước
+function isBalanced(s) {
+  const pairs = { ')': '(', ']': '[', '}': '{' };
+  const st = [];
+  for (const ch of s) {
+    if (ch === '(' || ch === '[' || ch === '{') {
+      st.push(ch);
+      print(`  gặp '${ch}' -> push, ngăn xếp = [${st.join('')}]`);
+    } else if (ch in pairs) {
+      const top = st.pop();
+      if (top !== pairs[ch]) {
+        print(`  gặp '${ch}' nhưng đỉnh là '${top ?? "rỗng"}' -> KHÔNG cân bằng`);
+        return false;
+      }
+      print(`  gặp '${ch}' khớp '${top}' -> pop, ngăn xếp = [${st.join('')}]`);
+    }
+  }
+  return st.length === 0;
+}
+
+for (const test of ['{[()]}', '{[(])}']) {
+  print(`\nKiểm tra "${test}":`);
+  print(`=> ${isBalanced(test) ? 'CÂN BẰNG' : 'KHÔNG cân bằng'}`);
+}
+</textarea>
+</div>
+
 ## Độ phức tạp
 
 | Thao tác | Thời gian | Bộ nhớ |

@@ -42,6 +42,64 @@ So sánh: đồ thị **dày (dense)** → dùng ma trận; đồ thị **thưa*
 - **DFS (Depth-First Search):** đi sâu theo một nhánh tới cùng rồi mới quay lui. Cài bằng đệ quy hoặc ngăn xếp. Dùng để phát hiện chu trình, sắp xếp topo, tìm thành phần liên thông.
 - **BFS (Breadth-First Search):** duyệt theo từng lớp khoảng cách, dùng hàng đợi. Tìm đường đi ngắn nhất theo **số cạnh** trên đồ thị không trọng số.
 
+Cả hai đều thăm mỗi đỉnh/cạnh đúng một lần → O(V + E) với danh sách kề. Khác biệt cốt lõi nằm ở **cấu trúc tạm**: DFS dùng **ngăn xếp (LIFO)** — luôn khai thác đỉnh mới nhất trước nên lao sâu; BFS dùng **hàng đợi (FIFO)** — thăm hết hàng xóm gần trước nên lan theo lớp. Điểm dễ sai: phải đánh dấu **đã thăm (visited)** ngay khi đưa đỉnh vào cấu trúc (BFS) để tránh thêm trùng, và kiểm tra visited trước khi đệ quy (DFS) để không lặp vô hạn trên đồ thị có chu trình.
+
+## Thử ngay: BFS và DFS trên danh sách kề
+
+!!! tip "Chạy được ngay trong trình duyệt"
+    Bấm **▶ Chạy** để duyệt cùng một đồ thị bằng cả BFS lẫn DFS và in thứ tự thăm đỉnh. Hãy sửa `graph` hoặc đổi đỉnh bắt đầu `start` rồi chạy lại để so sánh hai thứ tự.
+
+<div class="js-demo" data-title="Duyệt đồ thị — BFS & DFS in thứ tự thăm">
+<textarea class="js-demo-src">
+// Đồ thị vô hướng biểu diễn bằng danh sách kề
+const graph = {
+  A: ['B', 'C'],
+  B: ['A', 'D', 'E'],
+  C: ['A', 'F'],
+  D: ['B'],
+  E: ['B', 'F'],
+  F: ['C', 'E'],
+};
+
+function bfs(graph, start) {
+  const visited = new Set([start]);
+  const queue = [start];          // hàng đợi FIFO
+  const order = [];
+  while (queue.length) {
+    const node = queue.shift();   // lấy đỉnh vào sớm nhất
+    order.push(node);
+    for (const nxt of graph[node]) {
+      if (!visited.has(nxt)) {    // đánh dấu ngay khi đưa vào hàng đợi
+        visited.add(nxt);
+        queue.push(nxt);
+      }
+    }
+  }
+  return order;
+}
+
+function dfs(graph, start) {
+  const visited = new Set();
+  const order = [];
+  function visit(node) {          // đệ quy — dùng ngăn xếp lời gọi
+    visited.add(node);
+    order.push(node);
+    for (const nxt of graph[node]) {
+      if (!visited.has(nxt)) visit(nxt);
+    }
+  }
+  visit(start);
+  return order;
+}
+
+const start = 'A';
+print('Đồ thị :', JSON.stringify(graph));
+print('Bắt đầu:', start);
+print('BFS (theo lớp)  :', bfs(graph, start).join(' → '));
+print('DFS (đi sâu)     :', dfs(graph, start).join(' → '));
+</textarea>
+</div>
+
 ### Cây khung nhỏ nhất (Minimum Spanning Tree — MST)
 
 Trên đồ thị liên thông có trọng số, MST là tập cạnh nối tất cả đỉnh với **tổng trọng số nhỏ nhất** và không tạo chu trình. Hai thuật toán kinh điển:
@@ -65,37 +123,72 @@ graph = {
 
 ### DFS (đệ quy)
 
-```python
-def dfs(graph, node, visited=None):
-    if visited is None:
-        visited = set()
-    visited.add(node)
-    print(node, end=" ")
-    for nxt in graph[node]:
-        if nxt not in visited:      # chỉ thăm đỉnh chưa duyệt
-            dfs(graph, nxt, visited)
+=== "JavaScript"
+    ```js
+    function dfs(graph, node, visited = new Set()) {
+      visited.add(node);
+      process.stdout.write(node + " ");
+      for (const nxt of graph[node]) {
+        if (!visited.has(nxt)) dfs(graph, nxt, visited);  // chỉ thăm đỉnh chưa duyệt
+      }
+    }
 
-dfs(graph, 'A')   # ví dụ: A B D C
-```
+    dfs(graph, 'A');   // ví dụ: A B D C
+    ```
+
+=== "Python"
+    ```python
+    def dfs(graph, node, visited=None):
+        if visited is None:
+            visited = set()
+        visited.add(node)
+        print(node, end=" ")
+        for nxt in graph[node]:
+            if nxt not in visited:      # chỉ thăm đỉnh chưa duyệt
+                dfs(graph, nxt, visited)
+
+    dfs(graph, 'A')   # ví dụ: A B D C
+    ```
 
 ### BFS (dùng hàng đợi)
 
-```python
-from collections import deque
+=== "JavaScript"
+    ```js
+    function bfs(graph, start) {
+      const visited = new Set([start]);
+      const q = [start];
+      while (q.length) {
+        const node = q.shift();        // lấy theo FIFO → duyệt theo lớp
+        process.stdout.write(node + " ");
+        for (const nxt of graph[node]) {
+          if (!visited.has(nxt)) {
+            visited.add(nxt);
+            q.push(nxt);
+          }
+        }
+      }
+    }
 
-def bfs(graph, start):
-    visited = {start}
-    q = deque([start])
-    while q:
-        node = q.popleft()          # lấy theo FIFO → duyệt theo lớp
-        print(node, end=" ")
-        for nxt in graph[node]:
-            if nxt not in visited:
-                visited.add(nxt)
-                q.append(nxt)
+    bfs(graph, 'A');   // A B C D
+    ```
 
-bfs(graph, 'A')   # A B C D
-```
+=== "Python"
+    ```python
+    from collections import deque
+
+    def bfs(graph, start):
+        visited = {start}
+        q = deque([start])
+        while q:
+            node = q.popleft()          # lấy theo FIFO → duyệt theo lớp
+            print(node, end=" ")
+            for nxt in graph[node]:
+                if nxt not in visited:
+                    visited.add(nxt)
+                    q.append(nxt)
+
+    bfs(graph, 'A')   # A B C D
+    ```
 
 ### MST bằng thuật toán Kruskal (với Union-Find)
 

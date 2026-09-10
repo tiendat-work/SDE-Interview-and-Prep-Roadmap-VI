@@ -65,70 +65,198 @@ Chia không gian thành ba phần thay vì hai. Thường dùng để tìm cực
 
 **Tìm kiếm tuyến tính**
 
-```python
-def linear_search(arr, target):
-    for i in range(len(arr)):
-        if arr[i] == target:    # gặp mục tiêu
-            return i
-    return -1                   # không tìm thấy
-```
+=== "JavaScript"
+    ```js
+    function linearSearch(arr, target) {
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i] === target) return i;   // gặp mục tiêu
+      }
+      return -1;                            // không tìm thấy
+    }
+    ```
+=== "Python"
+    ```python
+    def linear_search(arr, target):
+        for i in range(len(arr)):
+            if arr[i] == target:    # gặp mục tiêu
+                return i
+        return -1                   # không tìm thấy
+    ```
 
 **Tìm kiếm nhị phân (bản lặp)**
 
-```python
-def binary_search(arr, target):
-    left, right = 0, len(arr) - 1
-    while left <= right:
-        mid = left + (right - left) // 2    # tránh tràn số so với (left+right)//2
-        if arr[mid] == target:
-            return mid                       # tìm thấy
-        elif arr[mid] < target:
-            left = mid + 1                   # mục tiêu ở nửa phải
-        else:
-            right = mid - 1                  # mục tiêu ở nửa trái
-    return -1
+=== "JavaScript"
+    ```js
+    function binarySearch(arr, target) {
+      let left = 0, right = arr.length - 1;
+      while (left <= right) {
+        const mid = left + ((right - left) >> 1);   // tránh tràn số
+        if (arr[mid] === target) return mid;        // tìm thấy
+        else if (arr[mid] < target) left = mid + 1; // mục tiêu ở nửa phải
+        else right = mid - 1;                       // mục tiêu ở nửa trái
+      }
+      return -1;
+    }
 
-print(binary_search([1, 3, 5, 7, 9, 11], 7))   # 3
-```
+    console.log(binarySearch([1, 3, 5, 7, 9, 11], 7));   // 3
+    ```
+=== "Python"
+    ```python
+    def binary_search(arr, target):
+        left, right = 0, len(arr) - 1
+        while left <= right:
+            mid = left + (right - left) // 2    # tránh tràn số so với (left+right)//2
+            if arr[mid] == target:
+                return mid                       # tìm thấy
+            elif arr[mid] < target:
+                left = mid + 1                   # mục tiêu ở nửa phải
+            else:
+                right = mid - 1                  # mục tiêu ở nửa trái
+        return -1
 
-**Tìm biên trái — chỉ số nhỏ nhất thỏa điều kiện (lower bound)**
+    print(binary_search([1, 3, 5, 7, 9, 11], 7))   # 3
+    ```
 
-```python
-def lower_bound(arr, target):
-    # vị trí đầu tiên có arr[i] >= target (chèn giữ thứ tự)
-    left, right = 0, len(arr)   # right = len(arr): khoảng nửa mở [left, right)
-    while left < right:
-        mid = left + (right - left) // 2
-        if arr[mid] < target:
-            left = mid + 1
-        else:
-            right = mid          # giữ lại mid vì có thể là đáp án
-    return left
+**Tìm biên trái/phải — cận dưới (lower bound) và cận trên (upper bound)**
 
-print(lower_bound([1, 2, 2, 2, 5], 2))   # 1
-```
+Với mảng có phần tử lặp, ta thường cần chỉ số **đầu tiên** hoặc **cuối cùng** bằng mục tiêu. `lower_bound` trả về vị trí đầu tiên có `arr[i] >= target`; `upper_bound` trả về vị trí đầu tiên có `arr[i] > target`. Nhờ đó số lần xuất hiện của `target` là `upper_bound - lower_bound`.
+
+=== "JavaScript"
+    ```js
+    // vị trí đầu tiên có arr[i] >= target
+    function lowerBound(arr, target) {
+      let left = 0, right = arr.length;   // khoảng nửa mở [left, right)
+      while (left < right) {
+        const mid = left + ((right - left) >> 1);
+        if (arr[mid] < target) left = mid + 1;
+        else right = mid;                 // giữ mid vì có thể là đáp án
+      }
+      return left;
+    }
+
+    // vị trí đầu tiên có arr[i] > target
+    function upperBound(arr, target) {
+      let left = 0, right = arr.length;
+      while (left < right) {
+        const mid = left + ((right - left) >> 1);
+        if (arr[mid] <= target) left = mid + 1;
+        else right = mid;
+      }
+      return left;
+    }
+
+    console.log(lowerBound([1, 2, 2, 2, 5], 2));   // 1
+    console.log(upperBound([1, 2, 2, 2, 5], 2));   // 4
+    ```
+=== "Python"
+    ```python
+    def lower_bound(arr, target):
+        # vị trí đầu tiên có arr[i] >= target (chèn giữ thứ tự)
+        left, right = 0, len(arr)   # right = len(arr): khoảng nửa mở [left, right)
+        while left < right:
+            mid = left + (right - left) // 2
+            if arr[mid] < target:
+                left = mid + 1
+            else:
+                right = mid          # giữ lại mid vì có thể là đáp án
+        return left
+
+    def upper_bound(arr, target):
+        # vị trí đầu tiên có arr[i] > target
+        left, right = 0, len(arr)
+        while left < right:
+            mid = left + (right - left) // 2
+            if arr[mid] <= target:
+                left = mid + 1
+            else:
+                right = mid
+        return left
+
+    print(lower_bound([1, 2, 2, 2, 5], 2))   # 1
+    print(upper_bound([1, 2, 2, 2, 5], 2))   # 4
+    ```
 
 **Exponential Search**
 
-```python
-def exponential_search(arr, target):
-    if arr[0] == target:
-        return 0
-    i = 1
-    while i < len(arr) and arr[i] <= target:
-        i *= 2                  # nhân đôi tầm nhảy cho tới khi vượt mục tiêu
-    # nhị phân trong khoảng [i//2, min(i, n-1)]
-    lo, hi = i // 2, min(i, len(arr) - 1)
-    while lo <= hi:
-        mid = lo + (hi - lo) // 2
-        if arr[mid] == target:
-            return mid
-        elif arr[mid] < target:
-            lo = mid + 1
-        else:
-            hi = mid - 1
-    return -1
-```
+=== "JavaScript"
+    ```js
+    function exponentialSearch(arr, target) {
+      if (arr[0] === target) return 0;
+      let i = 1;
+      while (i < arr.length && arr[i] <= target) i *= 2;  // nhân đôi tầm nhảy
+      // nhị phân trong khoảng [i/2, min(i, n-1)]
+      let lo = i >> 1, hi = Math.min(i, arr.length - 1);
+      while (lo <= hi) {
+        const mid = lo + ((hi - lo) >> 1);
+        if (arr[mid] === target) return mid;
+        else if (arr[mid] < target) lo = mid + 1;
+        else hi = mid - 1;
+      }
+      return -1;
+    }
+    ```
+=== "Python"
+    ```python
+    def exponential_search(arr, target):
+        if arr[0] == target:
+            return 0
+        i = 1
+        while i < len(arr) and arr[i] <= target:
+            i *= 2                  # nhân đôi tầm nhảy cho tới khi vượt mục tiêu
+        # nhị phân trong khoảng [i//2, min(i, n-1)]
+        lo, hi = i // 2, min(i, len(arr) - 1)
+        while lo <= hi:
+            mid = lo + (hi - lo) // 2
+            if arr[mid] == target:
+                return mid
+            elif arr[mid] < target:
+                lo = mid + 1
+            else:
+                hi = mid - 1
+        return -1
+    ```
+
+## Thử ngay: đếm số lần xuất hiện bằng tìm biên
+
+!!! tip "Chạy được ngay"
+    Đoạn dưới dùng `lowerBound` và `upperBound` để tìm biên trái, biên phải của `target` trong mảng có phần tử lặp, rồi suy ra số lần xuất hiện. Bấm **▶ Chạy**; đổi `arr` hoặc `target` để thử.
+
+<div class="js-demo" data-title="Tìm biên trái/phải — JavaScript">
+<textarea class="js-demo-src">
+function lowerBound(arr, target) {
+  let left = 0, right = arr.length;
+  while (left < right) {
+    const mid = left + ((right - left) >> 1);
+    if (arr[mid] < target) left = mid + 1;
+    else right = mid;
+  }
+  return left;
+}
+
+function upperBound(arr, target) {
+  let left = 0, right = arr.length;
+  while (left < right) {
+    const mid = left + ((right - left) >> 1);
+    if (arr[mid] <= target) left = mid + 1;
+    else right = mid;
+  }
+  return left;
+}
+
+const arr = [1, 2, 2, 2, 4, 4, 7, 9, 9, 9, 9];
+const target = 9;
+const lo = lowerBound(arr, target);
+const hi = upperBound(arr, target);
+print(`Mảng: [${arr.join(', ')}]`);
+print(`target=${target}`);
+print(`Biên trái (lower bound) = ${lo}`);
+print(`Biên phải (upper bound) = ${hi}`);
+const soLan = hi - lo;
+print(soLan > 0
+  ? `Xuất hiện ${soLan} lần, từ chỉ số ${lo} đến ${hi - 1}`
+  : `Không có ${target} trong mảng (vị trí chèn = ${lo})`);
+</textarea>
+</div>
 
 ## Độ phức tạp
 

@@ -29,61 +29,154 @@ Khung chung: sắp xếp/ưu tiên các lựa chọn theo một tiêu chí, rồ
 
 **Activity Selection — chọn nhiều hoạt động không giao nhau nhất**
 
-```python
-def activity_selection(activities):
-    # activities: danh sách (start, finish); sắp theo thời điểm kết thúc
-    activities.sort(key=lambda x: x[1])
-    result = []
-    last_end = float('-inf')
-    for start, finish in activities:
-        if start >= last_end:       # không đè lên hoạt động vừa chọn
-            result.append((start, finish))
-            last_end = finish       # cập nhật mốc kết thúc gần nhất
-    return result
+=== "JavaScript"
+    ```js
+    function activitySelection(activities) {
+      // activities: mảng [start, finish]; sắp theo thời điểm kết thúc
+      activities.sort((a, b) => a[1] - b[1]);
+      const result = [];
+      let lastEnd = -Infinity;
+      for (const [start, finish] of activities) {
+        if (start >= lastEnd) {      // không đè lên hoạt động vừa chọn
+          result.push([start, finish]);
+          lastEnd = finish;          // cập nhật mốc kết thúc gần nhất
+        }
+      }
+      return result;
+    }
 
-print(activity_selection([(1, 3), (2, 5), (4, 7), (1, 8), (5, 9)]))
-# [(1, 3), (4, 7)]  -> hoặc chuỗi tương đương, tối đa 2-3 hoạt động
-```
+    console.log(activitySelection([[1, 3], [2, 5], [4, 7], [1, 8], [5, 9]]));
+    // [[1, 3], [4, 7], [5, 9]]
+    ```
+=== "Python"
+    ```python
+    def activity_selection(activities):
+        # activities: danh sách (start, finish); sắp theo thời điểm kết thúc
+        activities.sort(key=lambda x: x[1])
+        result = []
+        last_end = float('-inf')
+        for start, finish in activities:
+            if start >= last_end:       # không đè lên hoạt động vừa chọn
+                result.append((start, finish))
+                last_end = finish       # cập nhật mốc kết thúc gần nhất
+        return result
+
+    print(activity_selection([(1, 3), (2, 5), (4, 7), (1, 8), (5, 9)]))
+    # [(1, 3), (4, 7), (5, 9)]
+    ```
 
 **Fractional Knapsack — túi phân số**
 
-```python
-def fractional_knapsack(items, W):
-    # items: danh sách (value, weight); sắp giảm dần theo tỉ lệ value/weight
-    items.sort(key=lambda it: it[0] / it[1], reverse=True)
-    total = 0.0
-    for value, weight in items:
-        if W >= weight:
-            total += value         # lấy trọn món
-            W -= weight
-        else:
-            total += value * (W / weight)   # lấy phần lẻ vừa đủ đầy túi
-            break                  # túi đã đầy
-    return total
+=== "JavaScript"
+    ```js
+    function fractionalKnapsack(items, W) {
+      // items: mảng [value, weight]; sắp giảm dần theo tỉ lệ value/weight
+      items.sort((a, b) => b[0] / b[1] - a[0] / a[1]);
+      let total = 0;
+      for (const [value, weight] of items) {
+        if (W >= weight) {
+          total += value;             // lấy trọn món
+          W -= weight;
+        } else {
+          total += value * (W / weight);   // lấy phần lẻ vừa đủ đầy túi
+          break;                      // túi đã đầy
+        }
+      }
+      return total;
+    }
 
-print(fractional_knapsack([(60, 10), (100, 20), (120, 30)], 50))   # 240.0
-```
+    console.log(fractionalKnapsack([[60, 10], [100, 20], [120, 30]], 50));   // 240
+    ```
+=== "Python"
+    ```python
+    def fractional_knapsack(items, W):
+        # items: danh sách (value, weight); sắp giảm dần theo tỉ lệ value/weight
+        items.sort(key=lambda it: it[0] / it[1], reverse=True)
+        total = 0.0
+        for value, weight in items:
+            if W >= weight:
+                total += value         # lấy trọn món
+                W -= weight
+            else:
+                total += value * (W / weight)   # lấy phần lẻ vừa đủ đầy túi
+                break                  # túi đã đầy
+        return total
+
+    print(fractional_knapsack([(60, 10), (100, 20), (120, 30)], 50))   # 240.0
+    ```
 
 **Huffman Coding — xây cây mã tối ưu (dùng heap)**
 
-```python
-import heapq
+=== "JavaScript"
+    ```js
+    function huffman(freqs) {
+      // freqs: mảng [char, weight]; dùng mảng đã sắp làm hàng đợi ưu tiên đơn giản
+      let heap = freqs.map(([ch, w]) => ({ w, ch }));
+      let cost = 0;
+      while (heap.length > 1) {
+        heap.sort((x, y) => x.w - y.w);      // hai nút tần suất nhỏ nhất ở đầu
+        const a = heap.shift();
+        const b = heap.shift();
+        const merged = a.w + b.w;
+        cost += merged;                      // mỗi lần gộp cộng vào tổng chi phí
+        heap.push({ w: merged, ch: null });
+      }
+      return cost;
+    }
 
-def huffman(freqs):
-    # freqs: dict ký tự -> tần suất; trả về tổng chi phí mã hóa
-    heap = [[w, ch] for ch, w in freqs.items()]
-    heapq.heapify(heap)
-    cost = 0
-    while len(heap) > 1:
-        a = heapq.heappop(heap)     # hai nút tần suất nhỏ nhất
-        b = heapq.heappop(heap)
-        merged = a[0] + b[0]
-        cost += merged              # mỗi lần gộp cộng vào tổng chi phí
-        heapq.heappush(heap, [merged, None])
-    return cost
+    console.log(huffman([['a', 5], ['b', 9], ['c', 12], ['d', 13], ['e', 16], ['f', 45]]));
+    ```
+=== "Python"
+    ```python
+    import heapq
 
-print(huffman({'a': 5, 'b': 9, 'c': 12, 'd': 13, 'e': 16, 'f': 45}))
-```
+    def huffman(freqs):
+        # freqs: dict ký tự -> tần suất; trả về tổng chi phí mã hóa
+        heap = [[w, ch] for ch, w in freqs.items()]
+        heapq.heapify(heap)
+        cost = 0
+        while len(heap) > 1:
+            a = heapq.heappop(heap)     # hai nút tần suất nhỏ nhất
+            b = heapq.heappop(heap)
+            merged = a[0] + b[0]
+            cost += merged              # mỗi lần gộp cộng vào tổng chi phí
+            heapq.heappush(heap, [merged, None])
+        return cost
+
+    print(huffman({'a': 5, 'b': 9, 'c': 12, 'd': 13, 'e': 16, 'f': 45}))
+    ```
+
+## Thử ngay: Activity Selection in từng bước chọn
+
+!!! tip "Chạy được ngay"
+    Đoạn dưới sắp các hoạt động theo thời điểm kết thúc, rồi duyệt và in quyết định **chọn** hay **bỏ** từng hoạt động cùng lý do. Bấm **▶ Chạy**; đổi mảng `activities` (mỗi phần tử là `[start, finish]`) để thử.
+
+<div class="js-demo" data-title="Activity Selection — chọn hoạt động kết thúc sớm nhất">
+<textarea class="js-demo-src">
+function activitySelection(activities) {
+  // sắp tăng dần theo thời điểm kết thúc (finish)
+  const sorted = [...activities].sort((a, b) => a[1] - b[1]);
+  print('Sau khi sắp theo thời điểm kết thúc:');
+  print('  ' + sorted.map(a => `[${a[0]},${a[1]}]`).join('  '));
+  const chosen = [];
+  let lastEnd = -Infinity;
+  for (const [s, f] of sorted) {
+    if (s >= lastEnd) {
+      chosen.push([s, f]);
+      print(`CHỌN [${s},${f}] — bắt đầu ${s} >= mốc ${lastEnd === -Infinity ? '-∞' : lastEnd}`);
+      lastEnd = f;
+    } else {
+      print(`BỎ   [${s},${f}] — bắt đầu ${s} < mốc ${lastEnd} (bị chồng lấn)`);
+    }
+  }
+  print(`=> Chọn được tối đa ${chosen.length} hoạt động: ` +
+        chosen.map(a => `[${a[0]},${a[1]}]`).join(', '));
+}
+
+const activities = [[1, 3], [2, 5], [4, 7], [1, 8], [5, 9], [8, 10]];
+activitySelection(activities);
+</textarea>
+</div>
 
 ## Độ phức tạp
 

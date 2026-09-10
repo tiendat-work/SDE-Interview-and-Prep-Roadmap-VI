@@ -8,9 +8,24 @@ Mô hình lập trình (programming paradigm) là một phong cách, một cách
 
 Hiểu các mô hình giúp bạn chọn cách tiếp cận phù hợp với bài toán: xử lý dữ liệu dạng luồng hợp với hàm (functional), mô hình hóa thực thể phức tạp hợp với hướng đối tượng (OOP), còn giao diện người dùng hợp với hướng sự kiện (event-driven). Trong phỏng vấn, đây là kiến thức nền để giải thích vì sao bạn viết code theo một cách nhất định.
 
-## Cách hoạt động
+## Bản đồ các mô hình
 
-Các mô hình được chia thành hai nhánh lớn:
+```mermaid
+graph TD
+    ROOT["Mô hình lập trình"]
+    IMP["Mệnh lệnh<br/>(Imperative)"]
+    DEC["Khai báo<br/>(Declarative)"]
+    ROOT --> IMP
+    ROOT --> DEC
+    IMP --> PROC["Thủ tục<br/>(C, Pascal)"]
+    IMP --> OOP["Hướng đối tượng<br/>(Java, C++)"]
+    DEC --> FUNC["Hàm<br/>(Haskell, Lisp)"]
+    DEC --> LOGIC["Logic<br/>(Prolog)"]
+    DEC --> QUERY["Truy vấn<br/>(SQL)"]
+    ROOT --> EVT["Hướng sự kiện<br/>(GUI, server async)"]
+```
+
+## Cách hoạt động
 
 ### Mệnh lệnh (Imperative)
 
@@ -32,38 +47,92 @@ Mô tả **kết quả mong muốn** mà không nói rõ từng bước thực h
 - **Hướng sự kiện (Event-Driven):** Luồng chương trình được điều khiển bởi sự kiện (click chuột, gói tin mạng) và các hàm xử lý (event handler). Phổ biến trong GUI và server bất đồng bộ.
 - **Hướng khía cạnh (Aspect-Oriented):** Tách các mối quan tâm cắt ngang (cross-cutting concerns) như logging, bảo mật ra khỏi logic nghiệp vụ, rồi "đan" (weave) chúng vào lúc biên dịch/chạy.
 
-## Ví dụ
+## Ví dụ: mệnh lệnh vs khai báo
 
-```python
-# Mệnh lệnh: mô tả TỪNG BƯỚC tính tổng bình phương số chẵn
-def tong_binh_phuong_menh_lenh(so):
-    tong = 0
-    for x in so:
-        if x % 2 == 0:      # lọc số chẵn
-            tong += x * x   # cộng dồn bình phương
-    return tong
+Cùng bài toán "tổng bình phương các số chẵn", hai phong cách khác nhau rõ rệt.
 
-# Khai báo (kiểu hàm): mô tả KẾT QUẢ, không mô tả vòng lặp
-def tong_binh_phuong_ham(so):
-    return sum(x * x for x in so if x % 2 == 0)
+=== "JavaScript"
+    ```js
+    // Mệnh lệnh: mô tả TỪNG BƯỚC bằng vòng lặp
+    function tongMenhLenh(so) {
+      let tong = 0;
+      for (const x of so) {
+        if (x % 2 === 0) tong += x * x;   // lọc chẵn rồi cộng dồn
+      }
+      return tong;
+    }
 
-print(tong_binh_phuong_menh_lenh([1, 2, 3, 4]))  # 20
-print(tong_binh_phuong_ham([1, 2, 3, 4]))        # 20
-```
+    // Khai báo (kiểu hàm): mô tả KẾT QUẢ bằng chuỗi phép biến đổi
+    function tongHam(so) {
+      return so.filter(x => x % 2 === 0)
+               .map(x => x * x)
+               .reduce((a, b) => a + b, 0);
+    }
 
-```python
-# Hướng sự kiện: đăng ký hàm xử lý cho một sự kiện
-xu_ly = {}
-def dang_ky(su_kien, ham):
-    xu_ly.setdefault(su_kien, []).append(ham)
+    console.log(tongMenhLenh([1, 2, 3, 4]));  // 20
+    console.log(tongHam([1, 2, 3, 4]));       // 20
+    ```
 
-def phat_su_kien(su_kien, du_lieu):
-    for ham in xu_ly.get(su_kien, []):
-        ham(du_lieu)
+=== "Python"
+    ```python
+    # Mệnh lệnh: mô tả TỪNG BƯỚC tính tổng bình phương số chẵn
+    def tong_menh_lenh(so):
+        tong = 0
+        for x in so:
+            if x % 2 == 0:      # lọc số chẵn
+                tong += x * x   # cộng dồn bình phương
+        return tong
 
-dang_ky("click", lambda d: print("Đã click tại", d))
-phat_su_kien("click", (10, 20))  # Đã click tại (10, 20)
-```
+    # Khai báo (kiểu hàm): mô tả KẾT QUẢ, không mô tả vòng lặp
+    def tong_ham(so):
+        return sum(x * x for x in so if x % 2 == 0)
+
+    print(tong_menh_lenh([1, 2, 3, 4]))  # 20
+    print(tong_ham([1, 2, 3, 4]))        # 20
+    ```
+
+## Ví dụ: hướng sự kiện
+
+=== "JavaScript"
+    ```js
+    // Hướng sự kiện: đăng ký handler cho một sự kiện
+    const xuLy = {};
+    function dangKy(suKien, ham) {
+      (xuLy[suKien] ||= []).push(ham);
+    }
+    function phatSuKien(suKien, duLieu) {
+      (xuLy[suKien] || []).forEach(ham => ham(duLieu));
+    }
+
+    dangKy("click", d => console.log("Đã click tại", d));
+    phatSuKien("click", [10, 20]);  // Đã click tại [10, 20]
+    ```
+
+=== "Python"
+    ```python
+    # Hướng sự kiện: đăng ký hàm xử lý cho một sự kiện
+    xu_ly = {}
+    def dang_ky(su_kien, ham):
+        xu_ly.setdefault(su_kien, []).append(ham)
+
+    def phat_su_kien(su_kien, du_lieu):
+        for ham in xu_ly.get(su_kien, []):
+            ham(du_lieu)
+
+    dang_ky("click", lambda d: print("Đã click tại", d))
+    phat_su_kien("click", (10, 20))  # Đã click tại (10, 20)
+    ```
+
+## Bảng so sánh các mô hình
+
+| Mô hình | Tư duy cốt lõi | Trạng thái | Điển hình | Hợp với |
+|---------|----------------|------------|-----------|---------|
+| Thủ tục | Chuỗi lệnh, hàm | Biến đổi | C, Pascal | Script, hệ thống |
+| Hướng đối tượng | Đối tượng + hành vi | Đóng gói trong object | Java, C++ | Hệ lớn, mô hình thực thể |
+| Hàm | Kết hợp hàm | Bất biến | Haskell, Lisp | Xử lý dữ liệu, song song |
+| Logic | Sự kiện + luật | Suy diễn | Prolog | AI, hệ chuyên gia |
+| Truy vấn | Mô tả dữ liệu cần | Không | SQL | Cơ sở dữ liệu |
+| Hướng sự kiện | Phản ứng với sự kiện | Qua handler | JS/Node | GUI, server async |
 
 ## Ưu / nhược điểm
 

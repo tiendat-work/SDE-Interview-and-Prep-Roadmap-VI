@@ -37,28 +37,79 @@ Với công thức truy hồi dạng `T(n) = a·T(n/b) + f(n)` — trong đó ch
 - **Closest Pair of Points (cặp điểm gần nhất):** tìm hai điểm gần nhất trong mặt phẳng, `O(n log n)` bằng chia mặt phẳng theo trục.
 - **Kadane (dãy con liên tục tổng lớn nhất):** thường trình bày kiểu quét tuyến tính `O(n)`, nhưng cũng có biến thể chia để trị `O(n log n)`.
 
+!!! tip "Thử ngay (chạy được)"
+    Bấm **▶ Chạy** để xem merge sort in ra từng bước trộn ngay trong trình duyệt. Sửa mảng `a` rồi chạy lại.
+
+<div class="js-demo" data-title="Merge Sort — in từng bước trộn (JavaScript)">
+<textarea class="js-demo-src">
+function mergeSort(arr, depth = 0) {
+  const pad = '  '.repeat(depth);
+  if (arr.length <= 1) return arr;
+  const mid = arr.length >> 1;
+  print(`${pad}chia: [${arr}] -> [${arr.slice(0, mid)}] | [${arr.slice(mid)}]`);
+  const left = mergeSort(arr.slice(0, mid), depth + 1);
+  const right = mergeSort(arr.slice(mid), depth + 1);
+  const merged = [];
+  let i = 0, j = 0;
+  while (i < left.length && j < right.length) {
+    if (left[i] <= right[j]) merged.push(left[i++]);
+    else merged.push(right[j++]);
+  }
+  while (i < left.length) merged.push(left[i++]);
+  while (j < right.length) merged.push(right[j++]);
+  print(`${pad}gộp : [${left}] + [${right}] -> [${merged}]`);
+  return merged;
+}
+
+const a = [5, 2, 9, 1, 7, 3];
+print('Kết quả:', mergeSort(a).join(', '));
+</textarea>
+</div>
+
 ## Ví dụ
 
 **Karatsuba — nhân hai số lớn**
 
-```python
-def karatsuba(x, y):
-    if x < 10 or y < 10:        # trường hợp cơ sở: số một chữ số
-        return x * y
-    n = max(len(str(x)), len(str(y)))
-    half = n // 2
-    high_x, low_x = divmod(x, 10 ** half)   # tách phần cao / thấp của x
-    high_y, low_y = divmod(y, 10 ** half)   # tách phần cao / thấp của y
+=== "JavaScript"
+    ```js
+    function karatsuba(x, y) {
+      if (x < 10 || y < 10) return x * y;   // trường hợp cơ sở: số một chữ số
+      const n = Math.max(String(x).length, String(y).length);
+      const half = Math.floor(n / 2);
+      const p = 10 ** half;
+      const highX = Math.floor(x / p), lowX = x % p;   // tách phần cao / thấp của x
+      const highY = Math.floor(y / p), lowY = y % p;   // tách phần cao / thấp của y
 
-    z0 = karatsuba(low_x, low_y)            # tích phần thấp
-    z2 = karatsuba(high_x, high_y)          # tích phần cao
-    # z1 = (a+b)(c+d) - z2 - z0  -> chỉ cần thêm 1 phép nhân
-    z1 = karatsuba(low_x + high_x, low_y + high_y) - z2 - z0
+      const z0 = karatsuba(lowX, lowY);                // tích phần thấp
+      const z2 = karatsuba(highX, highY);              // tích phần cao
+      // z1 = (a+b)(c+d) - z2 - z0  -> chỉ cần thêm 1 phép nhân
+      const z1 = karatsuba(lowX + highX, lowY + highY) - z2 - z0;
 
-    return z2 * 10 ** (2 * half) + z1 * 10 ** half + z0
+      return z2 * 10 ** (2 * half) + z1 * 10 ** half + z0;
+    }
 
-print(karatsuba(1234, 5678))   # 7006652
-```
+    console.log(karatsuba(1234, 5678));   // 7006652
+    ```
+
+=== "Python"
+    ```python
+    def karatsuba(x, y):
+        if x < 10 or y < 10:        # trường hợp cơ sở: số một chữ số
+            return x * y
+        n = max(len(str(x)), len(str(y)))
+        half = n // 2
+        high_x, low_x = divmod(x, 10 ** half)   # tách phần cao / thấp của x
+        high_y, low_y = divmod(y, 10 ** half)   # tách phần cao / thấp của y
+
+        z0 = karatsuba(low_x, low_y)            # tích phần thấp
+        z2 = karatsuba(high_x, high_y)          # tích phần cao
+        # z1 = (a+b)(c+d) - z2 - z0  -> chỉ cần thêm 1 phép nhân
+        z1 = karatsuba(low_x + high_x, low_y + high_y) - z2 - z0
+
+        return z2 * 10 ** (2 * half) + z1 * 10 ** half + z0
+
+    print(karatsuba(1234, 5678))   # 7006652
+    ```
 
 **Kadane — tổng dãy con liên tục lớn nhất (bản tuyến tính)**
 
