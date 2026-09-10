@@ -37,6 +37,21 @@ graph LR
 
 So sánh: đồ thị **dày (dense)** → dùng ma trận; đồ thị **thưa** → dùng danh sách kề.
 
+Cùng một đồ thị (đỉnh 0,1,2,3) được lưu theo hai cách — ma trận đánh dấu mọi cặp, danh sách chỉ liệt kê hàng xóm thực sự có:
+
+```mermaid
+graph TD
+    subgraph MATRIX["Ma trận kề — M[i][j]=1 nếu có cạnh (tốn O(V²))"]
+        MT["&nbsp;&nbsp;&nbsp;0 1 2 3<br/>0: 0 1 1 0<br/>1: 1 0 0 1<br/>2: 1 0 0 1<br/>3: 0 1 1 0"]
+    end
+    subgraph LIST["Danh sách kề — mỗi đỉnh giữ list hàng xóm (tốn O(V+E))"]
+        L0["0"] --> L0N["[1, 2]"]
+        L1["1"] --> L1N["[0, 3]"]
+        L2["2"] --> L2N["[0, 3]"]
+        L3["3"] --> L3N["[1, 2]"]
+    end
+```
+
 ### Duyệt đồ thị
 
 - **DFS (Depth-First Search):** đi sâu theo một nhánh tới cùng rồi mới quay lui. Cài bằng đệ quy hoặc ngăn xếp. Dùng để phát hiện chu trình, sắp xếp topo, tìm thành phần liên thông.
@@ -106,6 +121,18 @@ Trên đồ thị liên thông có trọng số, MST là tập cạnh nối tấ
 
 - **Kruskal:** sắp cạnh theo trọng số tăng dần, lần lượt thêm cạnh nếu không tạo chu trình (dùng Union-Find). O(E log E).
 - **Prim:** lớn dần từ một đỉnh, mỗi bước thêm cạnh rẻ nhất nối ra ngoài cây (dùng heap). O(E log V).
+
+Ví dụ: đồ thị 4 đỉnh với các cạnh có trọng số; MST chọn 3 cạnh rẻ nhất nối hết đỉnh mà không tạo chu trình (cạnh nét liền được chọn, nét đứt bị loại):
+
+```mermaid
+graph LR
+    subgraph MST["Cây khung nhỏ nhất — tổng trọng số = 1 + 2 + 4 = 7"]
+        M0(("0")) ---|"1"| M1(("1"))
+        M0 ===|"2"| M2(("2"))
+        M2 ===|"4"| M3(("3"))
+        M1 -.->|"3 (bỏ — tạo chu trình)"| M2
+    end
+```
 
 ## Ví dụ
 

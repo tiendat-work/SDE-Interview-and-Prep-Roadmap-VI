@@ -40,6 +40,23 @@ Danh sách liên kết là nền tảng để cài đặt ngăn xếp (stack), h
 2. **Danh sách liên kết kép (doubly linked list):** mỗi nút có hai con trỏ, một trỏ tới nút sau và một trỏ tới nút trước — duyệt được cả hai chiều.
 3. **Danh sách liên kết vòng (circular linked list):** nút cuối trỏ ngược về nút đầu, tạo thành vòng khép kín.
 
+**Danh sách kép** cho phép đi cả hai chiều nhờ con trỏ `prev`; **danh sách vòng** không có `null` ở cuối mà quay lại đầu:
+
+```mermaid
+graph LR
+    subgraph DOI["Danh sách kép (doubly) — đi được hai chiều"]
+        DN["null"] -.-> D1
+        D1["10"] <--> D2["20"]
+        D2 <--> D3["30"]
+        D3 -.-> DN2["null"]
+    end
+    subgraph VONG["Danh sách vòng (circular) — nút cuối quay về đầu"]
+        C1["10"] --> C2["20"]
+        C2 --> C3["30"]
+        C3 --> C1
+    end
+```
+
 ### Các thao tác cơ bản
 
 - **Duyệt (traversal):** bắt đầu từ head, đi theo con trỏ `next` cho tới khi gặp `None` (hoặc quay lại head với danh sách vòng).
@@ -161,6 +178,36 @@ print(find_length_of_ll())
 ### Định nghĩa nút & đảo ngược (đa ngôn ngữ)
 
 Đảo ngược danh sách liên kết là câu hỏi phỏng vấn kinh điển: duyệt một lượt, tại mỗi nút "bẻ" con trỏ `next` trỏ ngược về nút trước.
+
+Ba con trỏ `prev`, `curr`, `next` dịch dần qua danh sách `1 → 2 → 3`; mỗi bước bẻ một mũi tên:
+
+```mermaid
+graph TD
+    subgraph B3["Bước 3: xong — prev là head mới"]
+        Y1["1"]
+        Y2["2"] --> Y1
+        Y3["3"] --> Y2
+        YP["prev/head"] -.-> Y3
+    end
+    subgraph B2["Bước 2: bẻ 2 trỏ về 1"]
+        X1["1"]
+        X2["2"] --> X1
+        X3["3"] --> XN["..."]
+        XP["prev"] -.-> X2
+    end
+    subgraph B1["Bước 1: bẻ 1 trỏ về null"]
+        W1["1"] --> WN["null"]
+        W2["2"] --> W3["3"]
+        WP["prev"] -.-> W1
+        WC["curr"] -.-> W2
+    end
+    subgraph B0["Ban đầu: 1 → 2 → 3 → null"]
+        V1["1"] --> V2["2"]
+        V2 --> V3["3"]
+        V3 --> VN["null"]
+    end
+    B0 --> B1 --> B2 --> B3
+```
 
 === "JavaScript"
     ```js

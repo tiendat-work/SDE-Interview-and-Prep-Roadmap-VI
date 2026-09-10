@@ -166,6 +166,32 @@ Chọn thuật toán ở ô bên dưới để xem quá trình sắp xếp chạ
 
 **Ý tưởng:** chia để trị (divide and conquer) — chia đôi mảng, sắp xếp đệ quy hai nửa, rồi **trộn (merge)** hai nửa đã sắp thành một. Luôn đạt `O(n log n)`, ổn định, và là nền tảng của sắp xếp ngoài (external sort) khi dữ liệu không vừa RAM.
 
+Sơ đồ dưới minh hoạ cây chia–trộn với mảng `[5, 2, 8, 1, 9, 3]`: đi **xuống** là chia đôi liên tục tới khi mỗi mảnh còn 1 phần tử, đi **lên** là trộn ngược các mảnh đã sắp.
+
+```mermaid
+graph TD
+    A["[5, 2, 8, 1, 9, 3]"] --> B["[5, 2, 8]"]
+    A --> C["[1, 9, 3]"]
+    B --> D["[5]"]
+    B --> E["[2, 8]"]
+    E --> F["[2]"]
+    E --> G["[8]"]
+    C --> H["[1]"]
+    C --> I["[9, 3]"]
+    I --> J["[9]"]
+    I --> K["[3]"]
+    F -.->|"trộn"| L["[2, 8]"]
+    G -.->|"trộn"| L
+    D -.->|"trộn"| M["[2, 5, 8]"]
+    L -.->|"trộn"| M
+    J -.->|"trộn"| N["[3, 9]"]
+    K -.->|"trộn"| N
+    H -.->|"trộn"| O["[1, 3, 9]"]
+    N -.->|"trộn"| O
+    M -.->|"trộn"| P["[1, 2, 3, 5, 8, 9]"]
+    O -.->|"trộn"| P
+```
+
 === "JavaScript"
     ```js
     function mergeSort(arr) {
@@ -219,6 +245,22 @@ Chọn thuật toán ở ô bên dưới để xem quá trình sắp xếp chạ
 ## 5. Quick Sort (sắp xếp nhanh)
 
 **Ý tưởng:** chọn một phần tử **chốt (pivot)**, phân hoạch (partition) mảng thành phần nhỏ hơn và lớn hơn chốt, rồi đệ quy hai phần. Nhanh nhất trên thực tế do sắp tại chỗ và thân thiện với bộ nhớ đệm (cache).
+
+Sơ đồ phân hoạch: chọn chốt (ở đây là `5`), mọi phần tử `≤ 5` dồn về trái, `> 5` dồn về phải. Chốt về đúng vị trí cuối cùng, rồi hai phần được đệ quy độc lập.
+
+```mermaid
+graph TD
+    A["[5, 2, 8, 1, 9, 3] — chốt = 5"] --> B["Phần trái ≤ 5: [2, 1, 3]"]
+    A --> C["Chốt đúng chỗ: 5"]
+    A --> D["Phần phải > 5: [8, 9]"]
+    B --> E["đệ quy quick sort [2, 1, 3]"]
+    D --> F["đệ quy quick sort [8, 9]"]
+    E --> G["[1, 2, 3]"]
+    F --> H["[8, 9]"]
+    G --> I["Kết quả: [1, 2, 3, 5, 8, 9]"]
+    C --> I
+    H --> I
+```
 
 === "JavaScript"
     ```js

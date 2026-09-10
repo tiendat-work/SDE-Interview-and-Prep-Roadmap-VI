@@ -9,6 +9,24 @@ Một bài toán giải được bằng DP khi có hai tính chất:
 - **Bài toán con chồng lấp (overlapping subproblems):** cùng một bài con xuất hiện lại nhiều lần.
 - **Cấu trúc con tối ưu (optimal substructure):** lời giải tối ưu của bài lớn được xây từ lời giải tối ưu của các bài con.
 
+Cây gọi đệ quy Fibonacci `fib(5)` dưới đây cho thấy **bài con chồng lấp**: `fib(3)` bị tính 2 lần, `fib(2)` bị tính 3 lần… DP loại bỏ trùng lặp này bằng cách lưu lại kết quả mỗi bài con.
+
+```mermaid
+graph TD
+    A["fib(5)"] --> B["fib(4)"]
+    A --> C["fib(3) ★"]
+    B --> D["fib(3) ★"]
+    B --> E["fib(2) ♦"]
+    C --> F["fib(2) ♦"]
+    C --> G["fib(1)"]
+    D --> H["fib(2) ♦"]
+    D --> I["fib(1)"]
+    E --> J["fib(1)"]
+    E --> K["fib(0)"]
+```
+
+Các nút cùng ký hiệu (`★`, `♦`) là **cùng một bài con** bị tính lại nhiều lần — nguồn gốc của độ phức tạp mũ `O(2^n)` khi không ghi nhớ.
+
 ## Khi nào dùng / Vì sao quan trọng
 
 DP xuất hiện trong hầu hết các bài toán tối ưu: tìm giá trị lớn/nhỏ nhất, đếm số cách, kiểm tra khả thi... Nhận diện đúng "trạng thái" (state) và "công thức truy hồi" (recurrence) là kỹ năng cốt lõi trong phỏng vấn.
@@ -43,6 +61,18 @@ Viết đệ quy tự nhiên, nhưng lưu kết quả mỗi bài con vào bộ n
 ## Ví dụ
 
 **0/1 Knapsack — bằng lập bảng (tabulation)**
+
+Bảng DP dưới đây minh hoạ cách điền ô cho `weights = [1, 3, 4, 5]`, `values = [1, 4, 5, 7]`, `W = 7`. Hàng `i` = xét `i` món đầu; cột `w` = sức chứa. Mỗi ô `dp[i][w]` = **max(không lấy món i = ô ngay trên; lấy món i = giá trị món + ô `dp[i-1][w - weight]`)**. Ô **`9`** ở góc dưới phải (in đậm) là đáp án:
+
+| i \\ w | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|--------|---|---|---|---|---|---|---|---|
+| **0** (chưa món nào) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **1** (w=1,v=1) | 0 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| **2** (w=3,v=4) | 0 | 1 | 1 | 4 | 5 | 5 | 5 | 5 |
+| **3** (w=4,v=5) | 0 | 1 | 1 | 4 | 5 | 6 | 6 | 9 |
+| **4** (w=5,v=7) | 0 | 1 | 1 | 4 | 5 | 7 | 8 | **9** |
+
+Ví dụ ô `dp[3][7] = 9`: hoặc bỏ món 3 (lấy `dp[2][7] = 5`), hoặc lấy món 3 (giá trị `5` + `dp[2][7-4] = dp[2][3] = 4`) ⇒ `max(5, 9) = 9`. Bảng được điền từ trái sang phải, trên xuống dưới.
 
 === "JavaScript"
     ```js

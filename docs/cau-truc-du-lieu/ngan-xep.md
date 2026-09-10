@@ -123,6 +123,26 @@ print(is_balanced("{[(])}"))  # False
 
 ### Ứng dụng: đánh giá biểu thức hậu tố (postfix / RPN)
 
+Ngăn xếp là "bộ nhớ tạm" cho hai ứng dụng kinh điển. **Call stack** lưu ngữ cảnh các lời gọi hàm lồng nhau — khi `main` gọi `f` gọi `g`, khung của `g` nằm trên đỉnh và trả về trước (LIFO). **Đánh giá hậu tố** `2 3 + 4 *`: số thì push, gặp toán tử thì pop hai toán hạng rồi push kết quả:
+
+```mermaid
+graph TD
+    subgraph EVAL["Đánh giá hậu tố: 2 3 + 4 *"]
+        direction TB
+        S1["push 2 → [2]"] --> S2["push 3 → [2, 3]"]
+        S2 --> S3["gặp '+': pop 3, pop 2 → push 5 → [5]"]
+        S3 --> S4["push 4 → [5, 4]"]
+        S4 --> S5["gặp '*': pop 4, pop 5 → push 20 → [20]"]
+    end
+    subgraph CALL["Call stack: main gọi f, f gọi g"]
+        direction TB
+        C3["g() ← đỉnh, chạy & trả về trước"] --> C2["f()"]
+        C2 --> C1["main() ← đáy"]
+    end
+```
+
+### Ứng dụng: đánh giá biểu thức hậu tố (postfix / RPN) — mã nguồn
+
 ```python
 def eval_postfix(tokens):
     stack = []

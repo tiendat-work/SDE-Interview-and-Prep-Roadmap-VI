@@ -27,6 +27,32 @@ Mảng kém phù hợp khi cần chèn/xóa liên tục ở giữa tập dữ li
 
 Mảng được lưu trong các ô nhớ liền kề: mỗi phần tử nằm ngay sau phần tử trước. Địa chỉ của phần tử thứ `i` được tính trực tiếp từ địa chỉ gốc cộng với `i × kích_thước_phần_tử`, nhờ đó truy cập theo chỉ số rất nhanh.
 
+**Sơ đồ bố cục mảng trong bộ nhớ** — mảng `int` (4 byte/phần tử) bắt đầu tại địa chỉ gốc `1000`. Hàng trên là chỉ số, hàng giữa là giá trị, hàng dưới là địa chỉ ô nhớ liền kề:
+
+<svg viewBox="0 0 520 150" width="100%" role="img" aria-label="Bố cục mảng trong bộ nhớ" style="max-width:600px;font-family:sans-serif;font-size:13px">
+  <g text-anchor="middle">
+    <!-- chỉ số -->
+    <g fill="#888" font-size="11">
+      <text x="70" y="24">chỉ số 0</text><text x="160" y="24">1</text><text x="250" y="24">2</text>
+      <text x="340" y="24">3</text><text x="430" y="24">4</text>
+    </g>
+    <!-- ô giá trị liền kề -->
+    <g>
+      <rect x="30" y="32" width="80" height="40" fill="#4db6ac" stroke="#2a9d8f"/><text x="70" y="57" fill="#fff">10</text>
+      <rect x="120" y="32" width="80" height="40" fill="#4db6ac" stroke="#2a9d8f"/><text x="160" y="57" fill="#fff">20</text>
+      <rect x="210" y="32" width="80" height="40" fill="#4db6ac" stroke="#2a9d8f"/><text x="250" y="57" fill="#fff">30</text>
+      <rect x="300" y="32" width="80" height="40" fill="#4db6ac" stroke="#2a9d8f"/><text x="340" y="57" fill="#fff">40</text>
+      <rect x="390" y="32" width="80" height="40" fill="#4db6ac" stroke="#2a9d8f"/><text x="430" y="57" fill="#fff">50</text>
+    </g>
+    <!-- địa chỉ -->
+    <g fill="#666" font-size="11">
+      <text x="70" y="92">1000</text><text x="160" y="92">1004</text><text x="250" y="92">1008</text>
+      <text x="340" y="92">1012</text><text x="430" y="92">1016</text>
+    </g>
+    <text x="250" y="122" font-size="12" fill="#444">Địa chỉ phần tử i = 1000 + i × 4  →  truy cập O(1)</text>
+  </g>
+</svg>
+
 ### Phân loại mảng
 
 1. **Mảng tĩnh (static array):** Kích thước cố định, xác định lúc biên dịch hoặc khai báo. Ví dụ `int arr[10];` trong C.
@@ -136,7 +162,48 @@ Bảng dưới đây gom các thao tác cốt lõi (chèn, xóa, duyệt) ở c�
         print(i, v)
     ```
 
-### Thử ngay: chèn / xóa / duyệt trên mảng
+### Thử ngay: chèn / xóa trên mảng
+
+**Minh hoạ chèn và xóa dịch chuyển phần tử.** Chèn giá trị `99` vào chỉ số 2 → mọi phần tử từ chỉ số 2 phải **dịch sang phải**. Xóa phần tử ở chỉ số 1 → mọi phần tử phía sau **dịch sang trái**. Đây là lý do chèn/xóa ở giữa tốn `O(n)`.
+
+<svg viewBox="0 0 500 250" width="100%" role="img" aria-label="Chèn và xóa làm dịch chuyển phần tử" style="max-width:600px;font-family:sans-serif;font-size:13px">
+  <g text-anchor="middle">
+    <!-- CHÈN -->
+    <text x="20" y="20" text-anchor="start" fill="#444" font-size="12">Chèn 99 vào chỉ số 2 — các phần tử dịch sang phải:</text>
+    <g transform="translate(30,30)">
+      <rect x="0" y="0" width="48" height="34" fill="#eee" stroke="#ccc"/><text x="24" y="22">10</text>
+      <rect x="52" y="0" width="48" height="34" fill="#eee" stroke="#ccc"/><text x="76" y="22">20</text>
+      <rect x="104" y="0" width="48" height="34" fill="#f4a261" stroke="#e76f51"/><text x="128" y="22" fill="#fff">99</text>
+      <rect x="156" y="0" width="48" height="34" fill="#cfe8e4" stroke="#ccc"/><text x="180" y="22">30</text>
+      <rect x="208" y="0" width="48" height="34" fill="#cfe8e4" stroke="#ccc"/><text x="232" y="22">40</text>
+      <!-- mũi tên dịch phải -->
+      <g stroke="#e76f51" stroke-width="1.5" fill="none">
+        <path d="M156,44 q26,16 52,0" marker-end="url(#ar)"/>
+        <path d="M208,44 q26,16 52,0" marker-end="url(#ar)"/>
+      </g>
+      <text x="180" y="74" fill="#e76f51" font-size="10">dịch phải</text>
+    </g>
+    <!-- XÓA -->
+    <text x="20" y="150" text-anchor="start" fill="#444" font-size="12">Xóa phần tử ở chỉ số 1 — các phần tử phía sau dịch sang trái:</text>
+    <g transform="translate(30,160)">
+      <rect x="0" y="0" width="48" height="34" fill="#eee" stroke="#ccc"/><text x="24" y="22">10</text>
+      <rect x="52" y="0" width="48" height="34" fill="#d9d9d9" stroke="#bbb" stroke-dasharray="4"/><text x="76" y="22" fill="#999">20✗</text>
+      <rect x="104" y="0" width="48" height="34" fill="#cfe8e4" stroke="#ccc"/><text x="128" y="22">30</text>
+      <rect x="156" y="0" width="48" height="34" fill="#cfe8e4" stroke="#ccc"/><text x="180" y="22">40</text>
+      <rect x="208" y="0" width="48" height="34" fill="#cfe8e4" stroke="#ccc"/><text x="232" y="22">50</text>
+      <g stroke="#2a9d8f" stroke-width="1.5" fill="none">
+        <path d="M128,44 q-26,16 -52,0" marker-end="url(#ar2)"/>
+        <path d="M180,44 q-26,16 -52,0" marker-end="url(#ar2)"/>
+        <path d="M232,44 q-26,16 -52,0" marker-end="url(#ar2)"/>
+      </g>
+      <text x="150" y="74" fill="#2a9d8f" font-size="10">dịch trái</text>
+    </g>
+    <defs>
+      <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#e76f51"/></marker>
+      <marker id="ar2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#2a9d8f"/></marker>
+    </defs>
+  </g>
+</svg>
 
 !!! tip "Thử ngay (chạy được)"
     Bấm **▶ Chạy** để xem từng bước chèn, xóa, dịch chuyển phần tử. Bạn có thể sửa mảng hoặc vị trí rồi chạy lại.

@@ -49,6 +49,27 @@ dequeue() → A          front=2
 enqueue(D) → rear quay về 0:  [D, _, B, C, _]  rear=1
 ```
 
+**Hàng đợi vòng** coi mảng như một vòng tròn: khi `rear` chạm cuối mảng, nó quay về ô 0 (nhờ phép chia dư) để tái dùng chỗ trống phía đầu. **Deque** thì thao tác được ở cả hai đầu:
+
+```mermaid
+graph TD
+    subgraph DEQUE["Deque — thêm/xóa ở cả hai đầu"]
+        direction LR
+        DL["addFront / removeFront"] --- DA["10"]
+        DA --- DB["20"]
+        DB --- DC["30"]
+        DC --- DR["addRear / removeRear"]
+    end
+    subgraph CIRC["Hàng đợi vòng: rear quay về ô 0 khi chạm cuối"]
+        direction LR
+        Q0["ô 0: D"] --> Q1["ô 1: (trống)"]
+        Q1 --> Q2["ô 2: B ← front"]
+        Q2 --> Q3["ô 3: C"]
+        Q3 --> Q4["ô 4: (trống)"]
+        Q4 -->|"rear quay vòng"| Q0
+    end
+```
+
 ## Ví dụ
 
 ### Hàng đợi đơn giản bằng collections.deque

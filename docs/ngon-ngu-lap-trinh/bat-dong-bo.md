@@ -58,6 +58,24 @@ graph LR
     MACRO -->|"lặp lại"| SYNC
 ```
 
+## Sơ đồ: callback vs promise
+
+Hai kiểu xử lý bất đồng bộ phổ biến. Với callback, ta truyền hàm để dịch vụ gọi lại khi xong. Với Promise, ta nhận ngay một đối tượng đại diện cho kết quả tương lai rồi nối `.then()` khi nó resolve.
+
+```mermaid
+sequenceDiagram
+    participant App as Ứng dụng
+    participant IO as Tác vụ I/O
+    Note over App,IO: Kiểu Callback
+    App->>IO: gọi và truyền hàm callback
+    Note over App: không chờ, làm việc khác
+    IO-->>App: xong rồi gọi lại callback
+    Note over App,IO: Kiểu Promise
+    App->>IO: gọi, nhận Promise trạng thái pending
+    IO-->>App: resolve trả về giá trị
+    App->>App: chạy .then xử lý kết quả
+```
+
 ## Ví dụ đa ngôn ngữ
 
 === "JavaScript"

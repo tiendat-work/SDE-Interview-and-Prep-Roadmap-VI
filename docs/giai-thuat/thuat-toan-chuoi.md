@@ -17,6 +17,25 @@ Thuật toán chuỗi (string algorithms) là nhóm kỹ thuật xử lý văn b
 
 Tìm mẫu bằng cách dựng trước **mảng tiền tố (prefix function / LPS)** cho mẫu — cho biết khi so khớp thất bại thì nhảy con trỏ về đâu mà không phải so lại từ đầu. **Thời gian:** `O(n + m)`.
 
+**Minh hoạ mảng LPS** cho mẫu `"ababaca"`. `LPS[i]` = độ dài đoạn vừa là **tiền tố** vừa là **hậu tố** của `pattern[0..i]`. Khi lệch tại `j`, ta nhảy `j = LPS[j-1]` thay vì về 0.
+
+| chỉ số i | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+|----------|---|---|---|---|---|---|---|
+| ký tự    | a | b | a | b | a | c | a |
+| LPS[i]   | 0 | 0 | 1 | 2 | 3 | 0 | 1 |
+
+Ví dụ tại `i=4`, đoạn `"ababa"` có tiền tố `"aba"` trùng hậu tố `"aba"` → `LPS[4]=3`.
+
+**Sơ đồ trượt mẫu khi khớp / khi lệch** — tìm `"abc"` trong `"ababcabc"`:
+
+```mermaid
+graph TD
+    S1["Khớp a,b tại text[0..1]<br/>rồi text[2]='a' ≠ pattern[2]='c' → LỆCH"] --> S2["j &gt; 0: nhảy j = LPS[j-1]<br/>KHÔNG lùi con trỏ text i"]
+    S2 --> S3["Trượt mẫu sang phải, thử lại từ vị trí mới"]
+    S3 --> S4["Khớp toàn bộ 'abc' tại text[2..4] → ghi vị trí 2"]
+    S4 --> S5["Sau khi khớp: j = LPS[j-1] để tìm lần khớp kế tiếp"]
+```
+
 ### Rabin–Karp
 
 Dùng **hàm băm cuộn (rolling hash)** để so mã băm của cửa sổ văn bản với mã băm của mẫu; chỉ khi băm trùng mới so sánh trực tiếp. **Thời gian:** `O(n + m)` trung bình, `O(n·m)` xấu nhất (nhiều va chạm băm). Rất mạnh khi tìm **nhiều mẫu** cùng lúc.

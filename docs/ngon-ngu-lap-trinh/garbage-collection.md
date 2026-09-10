@@ -137,6 +137,19 @@ graph LR
 - **Pha Mark:** duyệt từ root, đánh dấu mọi đối tượng còn tham chiếu (A, B).
 - **Pha Sweep:** quét toàn bộ heap, giải phóng các đối tượng không được đánh dấu (C, D).
 
+## Sơ đồ GC theo thế hệ
+
+Heap được chia thành thế hệ trẻ (young: Eden + Survivor) và thế hệ già (old). Đối tượng mới sinh ở Eden; nếu sống sót qua các đợt Minor GC sẽ được thăng cấp dần lên Old gen — nơi ít bị quét hơn.
+
+```mermaid
+graph LR
+    NEW["Đối tượng mới"] --> EDEN["Eden<br/>(young gen)"]
+    EDEN -->|"sống qua Minor GC"| SURV["Survivor<br/>(young gen)"]
+    SURV -->|"sống sót nhiều lần"| OLD["Old gen<br/>(Tenured)"]
+    EDEN -.->|"Minor GC: quét thường xuyên, nhanh"| GC1["Thu hồi bộ nhớ"]
+    OLD -.->|"Major GC: quét hiếm, chậm"| GC2["Thu hồi bộ nhớ"]
+```
+
 ## Tham khảo
 
 - *The Garbage Collection Handbook* (Jones et al.)

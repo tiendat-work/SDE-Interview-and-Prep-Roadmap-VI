@@ -42,6 +42,20 @@ Từ bốn bước đó, quy trình phỏng vấn thực tế thường mở r�
 - Tách bài lớn thành các bài con độc lập, dễ giải.
 - Ví dụ: "tìm chuỗi con dài nhất" = "duyệt các cửa sổ" + "kiểm tra điều kiện" + "cập nhật kết quả".
 
+Sơ đồ minh hoạ cách chia nhỏ bài "tìm chuỗi con dài nhất không lặp ký tự" thành các bài con rồi ghép kết quả:
+
+```mermaid
+graph TD
+    P["Bài lớn: chuỗi con dài nhất<br/>không lặp ký tự"] --> S1["Bài con 1<br/>Duyệt các cửa sổ liên tục"]
+    P --> S2["Bài con 2<br/>Kiểm tra cửa sổ có ký tự lặp?"]
+    P --> S3["Bài con 3<br/>Cập nhật độ dài lớn nhất"]
+    S1 --> M["Ghép: cửa sổ trượt +<br/>tập ký tự đang xét"]
+    S2 --> M
+    S3 --> M
+    M --> ANS["Lời giải O(n)"]
+```
+
+
 **4. Giải bài đơn giản hơn (Solve a simpler version)**
 
 - Nếu bí, hãy giải phiên bản dễ hơn (bỏ bớt ràng buộc) rồi tổng quát dần.

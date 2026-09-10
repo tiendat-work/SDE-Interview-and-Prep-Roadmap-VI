@@ -106,6 +106,40 @@ cProfile.run("has_duplicate_slow(list(range(2000)))")  # xem hàm nào tốn th�
 
 ## Thử ngay: memoization so với đệ quy vét cạn
 
+Hai sơ đồ dưới minh hoạ vì sao ghi nhớ (memoization) lại nhanh hơn. **Không cache**, cây gọi `fib(5)` phình ra vì các bài con bị tính lại nhiều lần:
+
+```mermaid
+graph TD
+    F5["fib(5)"] --> F4a["fib(4)"]
+    F5 --> F3a["fib(3)"]
+    F4a --> F3b["fib(3)"]
+    F4a --> F2a["fib(2)"]
+    F3a --> F2b["fib(2)"]
+    F3a --> F1a["fib(1)"]
+    F3b --> F2c["fib(2)"]
+    F3b --> F1b["fib(1)"]
+    F2a --> F1c["fib(1)"]
+    F2a --> F0a["fib(0)"]
+    F2b --> F1d["fib(1)"]
+    F2b --> F0b["fib(0)"]
+    F2c --> F1e["fib(1)"]
+    F2c --> F0c["fib(0)"]
+```
+
+**Có cache**, mỗi giá trị `fib(k)` chỉ tính một lần; các lời gọi lặp lại chỉ tra bảng (mũi tên nét đứt) nên cây thu về đường thẳng:
+
+```mermaid
+graph TD
+    F5["fib(5)"] --> F4["fib(4)"]
+    F5 -.->|"tra cache"| F3["fib(3)"]
+    F4 --> F3
+    F4 -.->|"tra cache"| F2["fib(2)"]
+    F3 --> F2
+    F3 -.->|"tra cache"| F1["fib(1)"]
+    F2 --> F1
+    F2 --> F0["fib(0)"]
+```
+
 Playground tính Fibonacci bằng hai cách: đệ quy thuần (`O(2ⁿ)` — số lời gọi bùng nổ) và đệ quy có ghi nhớ (`O(n)`). Nó in **số lần gọi hàm** và **thời gian chạy** để bạn thấy đánh đổi thời gian – không gian rõ ràng: chỉ thêm một object nhỏ mà nhanh gấp hàng nghìn lần.
 
 <div class="js-demo" data-title="Memoization vs đệ quy vét cạn (Fibonacci)">

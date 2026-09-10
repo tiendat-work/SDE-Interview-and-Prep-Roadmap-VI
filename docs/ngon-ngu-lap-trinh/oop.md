@@ -53,6 +53,19 @@ classDiagram
 - **Kế thừa (is-a):** Chó *là một* Động vật.
 - **Kết hợp (has-a):** Xe *có một* Động cơ. Nguyên tắc "ưu tiên composition hơn inheritance" giúp giảm ràng buộc chặt và tránh hệ thống phân cấp cứng nhắc.
 
+## Sơ đồ đa hình
+
+Đa hình (polymorphism) nghĩa là cùng một lời gọi `con.keu()` cho hành vi khác nhau tùy kiểu thật của đối tượng lúc chạy (dynamic dispatch).
+
+```mermaid
+graph TD
+    CALL["Lời gọi chung: con.keu()"]
+    CALL --> DISPATCH{"Kiểu thật của đối tượng?"}
+    DISPATCH -->|"Cho"| C["Trả về: Gâu gâu"]
+    DISPATCH -->|"Meo"| M["Trả về: Meo meo"]
+    DISPATCH -->|"Vit"| V["Trả về: Cạp cạp"]
+```
+
 ## Ví dụ: kế thừa, trừu tượng, đa hình
 
 === "JavaScript"

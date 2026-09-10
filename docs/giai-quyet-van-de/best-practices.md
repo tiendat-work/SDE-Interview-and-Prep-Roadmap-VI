@@ -57,6 +57,24 @@ Code được đọc nhiều hơn được viết. Trong phỏng vấn và công
 - Nhận review một cách cởi mở; giải thích quyết định thiết kế.
 - Dùng danh sách kiểm (checklist): logic đúng chưa, có test chưa, có lỗ hổng bảo mật không, có trùng lặp không.
 
+## Quy trình review & refactor
+
+Sơ đồ dưới mô tả một vòng đánh giá code (code review) và tái cấu trúc (refactor) điển hình: chạy kiểm thử trước, review theo checklist, và chỉ gộp (merge) khi đạt.
+
+```mermaid
+flowchart TD
+    START([Có thay đổi code]) --> T["Chạy test + linter tự động"]
+    T --> P{"Test xanh?"}
+    P -->|"Không"| FIX["Sửa lỗi"]
+    FIX --> T
+    P -->|"Có"| R["Review theo checklist<br/>(đúng, dễ đọc, có test, bảo mật, trùng lặp)"]
+    R --> Q{"Cần sửa?"}
+    Q -->|"Có lỗi logic"| FIX
+    Q -->|"Code khó đọc / trùng lặp"| RF["Refactor<br/>(đổi tên, tách hàm, DRY)"]
+    RF --> T
+    Q -->|"Đạt"| MERGE([Gộp vào nhánh chính])
+```
+
 ## Ví dụ
 
 **Trước / sau khi cải thiện** — cùng một hàm tính trung bình cộng:

@@ -33,6 +33,36 @@ Cây biểu diễn dữ liệu phân cấp và cho phép tìm kiếm/chèn/xóa 
 - **Cây nhị phân (binary tree):** mỗi nút có tối đa 2 con (trái/phải).
 - **Duyệt cây:** trung thứ tự (in-order), tiền thứ tự (pre-order), hậu thứ tự (post-order), theo mức (level-order/BFS).
 
+Ba kiểu duyệt theo chiều sâu khác nhau ở **thời điểm ghi nhận gốc**. Với cây ví dụ ở trên (gốc 5), số thứ tự dưới đây cho biết thứ tự các nút được đưa ra:
+
+```mermaid
+graph TD
+    subgraph POST["Post-order: 2 4 3 6 8 7 5 (trái → phải → gốc)"]
+        PA(("5 · #7")) --> PB(("3 · #3"))
+        PA --> PC(("7 · #6"))
+        PB --> PD(("2 · #1"))
+        PB --> PE(("4 · #2"))
+        PC --> PF(("6 · #4"))
+        PC --> PG(("8 · #5"))
+    end
+    subgraph PRE["Pre-order: 5 3 2 4 7 6 8 (gốc → trái → phải)"]
+        RA(("5 · #1")) --> RB(("3 · #2"))
+        RA --> RC(("7 · #5"))
+        RB --> RD(("2 · #3"))
+        RB --> RE(("4 · #4"))
+        RC --> RF(("6 · #6"))
+        RC --> RG(("8 · #7"))
+    end
+    subgraph IN["In-order: 2 3 4 5 6 7 8 (trái → gốc → phải)"]
+        IA(("5 · #4")) --> IB(("3 · #2"))
+        IA --> IC(("7 · #6"))
+        IB --> ID(("2 · #1"))
+        IB --> IE(("4 · #3"))
+        IC --> IF(("6 · #5"))
+        IC --> IG(("8 · #7"))
+    end
+```
+
 ### Cây tìm kiếm nhị phân (Binary Search Tree — BST)
 
 Với mỗi nút: mọi giá trị ở cây con trái **nhỏ hơn** nút, mọi giá trị ở cây con phải **lớn hơn**. Nhờ đó tìm kiếm/chèn/xóa trung bình O(log n) — mỗi bước so sánh loại được một nửa cây còn lại, y hệt tìm kiếm nhị phân trên mảng. Điểm mấu chốt: **duyệt in-order một BST luôn cho dãy tăng dần**, đó là bất biến (invariant) dùng để kiểm tra một cây có phải BST hợp lệ hay không.
@@ -50,6 +80,25 @@ Ba thao tác cốt lõi:
 Để tránh suy biến, cây tự cân bằng tự động điều chỉnh sau mỗi lần chèn/xóa để giữ chiều cao ~ O(log n):
 
 - **Cây AVL:** với mỗi nút, **hệ số cân bằng** = chiều cao(cây con trái) − chiều cao(cây con phải) phải nằm trong {−1, 0, +1}. Khi chèn/xóa làm lệch quá ngưỡng, ta khôi phục bằng bốn kiểu **xoay (rotation)**: LL (xoay phải), RR (xoay trái), LR và RL (xoay kép). Vì cân bằng rất chặt (chiều cao ≤ 1.44·log₂n), tìm kiếm cực nhanh — thích hợp khi **đọc nhiều, ghi ít** (từ điển tra cứu, cơ sở dữ liệu chỉ đọc).
+
+Minh họa **xoay trái (RR)**: chèn 10 → 20 → 30 làm cây lệch phải (hệ số cân bằng của 10 là −2). Xoay quanh 10 đưa 20 lên gốc, cân bằng lại:
+
+```mermaid
+graph TD
+    subgraph SAU["Sau khi xoay trái (cân bằng)"]
+        S20(("20")) --> S10(("10"))
+        S20 --> S30(("30"))
+    end
+    subgraph TRUOC["Trước khi xoay (lệch phải, mất cân bằng)"]
+        T10(("10 · cb=-2")) --> TX(("&nbsp;"))
+        T10 --> T20(("20 · cb=-1"))
+        T20 --> TY(("&nbsp;"))
+        T20 --> T30(("30"))
+    end
+    TRUOC -->|"xoay trái quanh nút 10"| SAU
+    style TX fill:transparent,stroke:transparent
+    style TY fill:transparent,stroke:transparent
+```
 - **Cây đỏ-đen (Red-Black tree):** mỗi nút tô màu đỏ hoặc đen theo 5 quy tắc (gốc đen, lá `null` đen, không có hai nút đỏ liền nhau, mọi đường từ một nút xuống lá có cùng số nút đen...). Các quy tắc này bảo đảm đường dài nhất không quá gấp đôi đường ngắn nhất → chiều cao ≤ 2·log₂(n+1). Cân bằng **lỏng hơn AVL** nên mỗi lần chèn/xóa cần ít phép xoay hơn (tối đa 2–3 lần xoay), phù hợp khi **ghi nhiều**. Đây là cấu trúc đứng sau `std::map`/`std::set` (C++), `TreeMap`/`TreeSet` (Java) và bộ lập lịch CFS của nhân Linux.
 
 Tóm lại: AVL cân bằng chặt hơn → tìm kiếm nhanh hơn một chút; Red-Black ghi nhanh hơn → phổ biến trong thư viện chuẩn.

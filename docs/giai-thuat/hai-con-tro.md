@@ -16,6 +16,18 @@ Kỹ thuật này phù hợp với nhiều dạng bài phổ biến:
 
 ## Cách hoạt động
 
+### Hai kiểu bố trí con trỏ
+
+```mermaid
+graph TD
+    A["Kỹ thuật hai con trỏ"] --> B["Hai đầu đối diện<br/>(opposite ends)"]
+    A --> C["Cùng hướng<br/>(same direction)"]
+    B --> B1["left ở đầu, right ở cuối<br/>tiến lại gần nhau"]
+    B --> B2["Two Sum (mảng đã sắp)<br/>kiểm tra đối xứng, đảo mảng"]
+    C --> C1["cả hai xuất phát từ đầu<br/>một nhanh, một chậm"]
+    C --> C2["cửa sổ trượt, bỏ trùng<br/>phát hiện chu trình linked list"]
+```
+
 Có hai kiểu bố trí con trỏ chính:
 
 **1. Hai đầu đối diện (opposite ends)**
@@ -86,6 +98,36 @@ def isPalindrome(s):
 **Ví dụ 3 — Two Sum trên mảng đã sắp (kiểu hai đầu đối diện)**
 
 Cho mảng số nguyên `nums` **đã sắp tăng dần** và một giá trị `target`, trả về chỉ số của hai số có tổng bằng `target`.
+
+**Minh hoạ hai con trỏ di chuyển** trên `nums = [2, 3, 5, 8, 11, 15]`, `target = 13`. Mỗi hàng là một bước: `left` (▶) và `right` (◀) chỉ vào ô nào, tổng bằng bao nhiêu, và quyết định dịch con trỏ.
+
+<svg viewBox="0 0 480 250" width="100%" role="img" aria-label="Minh hoạ hai con trỏ hai đầu đối diện" style="max-width:560px;font-family:sans-serif">
+  <g font-size="13" text-anchor="middle">
+    <!-- tiêu đề cột giá trị -->
+    <text x="240" y="16" font-size="12" fill="#666">nums = [2, 3, 5, 8, 11, 15], target = 13</text>
+    <!-- Bước 1: left=0(2), right=5(15) => 17 > 13 -> right-- -->
+    <g transform="translate(0,28)">
+      <rect x="40" y="0" width="60" height="26" fill="#4db6ac" rx="3"/><text x="70" y="18" fill="#fff">2 ▶L</text>
+      <rect x="100" y="0" width="60" height="26" fill="#eee" rx="3"/><text x="130" y="18">3</text>
+      <rect x="160" y="0" width="60" height="26" fill="#eee" rx="3"/><text x="190" y="18">5</text>
+      <rect x="220" y="0" width="60" height="26" fill="#eee" rx="3"/><text x="250" y="18">8</text>
+      <rect x="280" y="0" width="60" height="26" fill="#eee" rx="3"/><text x="310" y="18">11</text>
+      <rect x="340" y="0" width="60" height="26" fill="#f4a261" rx="3"/><text x="370" y="18" fill="#fff">15 R◀</text>
+      <text x="440" y="18" font-size="11" fill="#a33" text-anchor="start">17&gt;13 → R--</text>
+    </g>
+    <!-- Bước 2: left=0(2), right=4(11) => 13 = 13 tìm thấy -->
+    <g transform="translate(0,62)">
+      <rect x="40" y="0" width="60" height="26" fill="#4db6ac" rx="3"/><text x="70" y="18" fill="#fff">2 ▶L</text>
+      <rect x="100" y="0" width="60" height="26" fill="#eee" rx="3"/><text x="130" y="18">3</text>
+      <rect x="160" y="0" width="60" height="26" fill="#eee" rx="3"/><text x="190" y="18">5</text>
+      <rect x="220" y="0" width="60" height="26" fill="#eee" rx="3"/><text x="250" y="18">8</text>
+      <rect x="280" y="0" width="60" height="26" fill="#2a9d8f" rx="3"/><text x="310" y="18" fill="#fff">11 R◀</text>
+      <rect x="340" y="0" width="60" height="26" fill="#eee" rx="3"/><text x="370" y="18">15</text>
+      <text x="440" y="18" font-size="11" fill="#083" text-anchor="start">2+11=13 ✓</text>
+    </g>
+    <text x="40" y="118" font-size="12" fill="#666" text-anchor="start">Quy tắc: tổng &gt; target → lùi R; tổng &lt; target → tiến L; bằng → tìm thấy.</text>
+  </g>
+</svg>
 
 !!! tip "Thử ngay (chạy được)"
     Bấm **▶ Chạy** để hai con trỏ quét mảng đã sắp tìm cặp có tổng bằng `target`, in từng bước. Sửa `nums`/`target` rồi chạy lại.

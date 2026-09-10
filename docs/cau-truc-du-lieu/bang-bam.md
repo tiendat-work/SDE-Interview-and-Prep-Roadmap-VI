@@ -51,6 +51,26 @@ Mọi phần tử lưu ngay trong mảng; khi ô đã đầy thì **dò (probing
 - **Dò bậc hai (quadratic probing):** thử `i+1², i+2²...` — giảm cụm.
 - **Băm kép (double hashing):** dùng hàm băm thứ hai để quyết định bước nhảy.
 
+Hai chiến lược xử lý cùng một va chạm (khóa "Bình" và "Cường" đều băm vào ô 2) theo hai cách khác nhau — chaining nối ra ngoài, open addressing dò sang ô trống kế tiếp:
+
+```mermaid
+graph LR
+    subgraph OPEN["Open addressing — dò tuyến tính, lưu trong mảng"]
+        O0["ô 0"]
+        O1["ô 1: An"]
+        O2["ô 2: Bình"]
+        O3["ô 3: Cường (dò từ ô 2 sang)"]
+        O2 -.->|"ô 2 đầy → thử ô 3"| O3
+    end
+    subgraph CHAIN["Chaining — mỗi ô là một danh sách liên kết"]
+        C0["ô 0"]
+        C1["ô 1"] --> CA["An"]
+        C2["ô 2"] --> CB["Bình"]
+        CB --> CC["Cường"]
+        C3["ô 3"]
+    end
+```
+
 ### Hệ số tải & tái băm (load factor & rehashing)
 
 **Hệ số tải** = số phần tử / số ô. Khi vượt ngưỡng (thường 0.7), bảng **tái băm (rehash)**: cấp phát mảng lớn hơn rồi băm lại toàn bộ khóa để giữ hiệu năng O(1).

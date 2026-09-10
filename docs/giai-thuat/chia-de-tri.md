@@ -30,6 +30,41 @@ Với công thức truy hồi dạng `T(n) = a·T(n/b) + f(n)` — trong đó ch
 | Tìm kiếm nhị phân | `T(n) = T(n/2) + O(1)` | `O(log n)` (TH2) |
 | Karatsuba | `T(n) = 3T(n/2) + O(n)` | `O(n^1.585)` (TH1) |
 
+Sơ đồ dưới hình dung ba trường hợp qua **phân bố công việc theo tầng** của cây đệ quy (gốc ở trên, lá ở dưới):
+
+```mermaid
+graph TD
+    subgraph TH1["TH1: công việc dồn ở LÁ"]
+        A1["gốc: ít"] --> A2["tầng giữa"] --> A3["LÁ: nhiều ▓▓▓"]
+    end
+    subgraph TH2["TH2: công việc ĐỀU mỗi tầng"]
+        B1["gốc: ▓▓"] --> B2["giữa: ▓▓"] --> B3["lá: ▓▓"]
+    end
+    subgraph TH3["TH3: công việc dồn ở GỐC"]
+        C1["GỐC: nhiều ▓▓▓"] --> C2["tầng giữa"] --> C3["lá: ít"]
+    end
+```
+
+### Cây đệ quy (recursion tree)
+
+Với merge sort `T(n) = 2T(n/2) + O(n)`: mỗi tầng chia đôi kích thước nhưng **tổng công việc mỗi tầng vẫn là `O(n)`** (phần trộn). Có `log₂ n` tầng, nên tổng cộng `O(n log n)` — đúng trường hợp 2 của định lý thợ.
+
+```mermaid
+graph TD
+    A["T(n) — chi phí trộn: n"] --> B["T(n/2) — n/2"]
+    A --> C["T(n/2) — n/2"]
+    B --> D["T(n/4) — n/4"]
+    B --> E["T(n/4) — n/4"]
+    C --> F["T(n/4) — n/4"]
+    C --> G["T(n/4) — n/4"]
+    D --> H["... tới T(1)"]
+    E --> H
+    F --> H
+    G --> H
+```
+
+Cộng theo tầng: `n + 2·(n/2) + 4·(n/4) + … = n + n + n + …` (mỗi tầng đúng `n`), nhân với số tầng `log₂ n` ⇒ `O(n log n)`.
+
 ### Các ví dụ kinh điển
 
 - **Merge Sort:** chia đôi, sắp hai nửa, trộn lại. `O(n log n)`.

@@ -60,6 +60,18 @@ graph TD
 Nhiều ngôn ngữ tĩnh không bắt khai báo mọi nơi mà **tự suy** kiểu: `auto` (C++),
 `var` (Java/C#), `let x = 5` (Rust/TypeScript). Giữ an toàn tĩnh nhưng bớt dài dòng.
 
+## Sơ đồ: kiểm tra kiểu diễn ra lúc nào
+
+Trục tĩnh/động quyết định lỗi kiểu bị bắt ở giai đoạn nào: ngôn ngữ tĩnh kiểm tra lúc biên dịch (bắt sớm), ngôn ngữ động kiểm tra lúc chạy (lộ muộn).
+
+```mermaid
+graph LR
+    CODE["Mã nguồn"] --> COMPILE["Biên dịch"]
+    COMPILE -->|"kiểu tĩnh: kiểm tra tại đây"| STATIC["Bắt lỗi kiểu sớm"]
+    COMPILE --> RUN["Chạy chương trình"]
+    RUN -->|"kiểu động: kiểm tra tại đây"| DYNAMIC["Lỗi kiểu lộ khi thực thi"]
+```
+
 ## Ví dụ đa ngôn ngữ
 
 === "Python"

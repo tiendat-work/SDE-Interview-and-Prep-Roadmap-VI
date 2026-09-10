@@ -102,6 +102,30 @@ print("demB:", demB());                  // 1 (độc lập với demA)
 </textarea>
 </div>
 
+## Sơ đồ: hàm bậc cao & bao đóng
+
+Hàm bậc cao (higher-order function) là hàm **nhận hàm khác làm tham số** hoặc **trả về một hàm**. Bao đóng (closure) là hàm trả về đó vẫn "ghi nhớ" biến ở phạm vi nơi nó sinh ra.
+
+```mermaid
+graph LR
+    IN["Hàm truyền vào<br/>(callback)"] --> HOF["Hàm bậc cao<br/>(map / filter / reduce)"]
+    DATA["Dữ liệu đầu vào"] --> HOF
+    HOF --> OUT["Hàm trả về<br/>(hàm mới)"]
+    HOF --> RESULT["Kết quả đã biến đổi"]
+```
+
+```mermaid
+graph TD
+    OUTER["taoNhan(heSo)<br/>phạm vi ngoài"]
+    VAR["biến heSo<br/>(được ghi nhớ)"]
+    INNER["hàm trả về<br/>x => x * heSo"]
+    OUTER --> VAR
+    OUTER --> INNER
+    INNER -.->|"vẫn truy cập được"| VAR
+    CALL["gọi gapDoi(10)"] --> INNER
+    INNER --> RES["kết quả 20<br/>(dùng heSo = 2)"]
+```
+
 ## Ưu / nhược điểm
 
 - **Ưu:** Dễ suy luận và kiểm thử (không trạng thái ẩn); an toàn hơn khi song song; code cô đọng, tái sử dụng cao.

@@ -49,7 +49,22 @@ Mô tả **kết quả mong muốn** mà không nói rõ từng bước thực h
 
 ## Ví dụ: mệnh lệnh vs khai báo
 
-Cùng bài toán "tổng bình phương các số chẵn", hai phong cách khác nhau rõ rệt.
+Cùng bài toán "tổng bình phương các số chẵn", hai phong cách khác nhau rõ rệt. Sơ đồ dưới đây cho thấy luồng tư duy khác biệt: mệnh lệnh mô tả từng bước lặp, còn khai báo mô tả chuỗi phép biến đổi dữ liệu.
+
+```mermaid
+graph LR
+    subgraph ML["Mệnh lệnh (Imperative)"]
+        M1["Khởi tạo tổng = 0"] --> M2["Lặp qua từng số"]
+        M2 --> M3["Nếu chẵn: cộng bình phương"]
+        M3 --> M2
+        M2 --> M4["Trả về tổng"]
+    end
+    subgraph KB["Khai báo (Declarative)"]
+        D1["Danh sách số"] --> D2["filter: giữ số chẵn"]
+        D2 --> D3["map: bình phương"]
+        D3 --> D4["reduce: cộng dồn"]
+    end
+```
 
 === "JavaScript"
     ```js

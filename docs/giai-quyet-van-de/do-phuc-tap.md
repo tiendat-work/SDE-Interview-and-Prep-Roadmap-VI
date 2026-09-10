@@ -164,6 +164,34 @@ print('Kết luận: O(n) tăng tuyến tính, O(n^2) tăng theo bình phương.
 
 ## Sơ đồ so sánh các mức độ phức tạp
 
+Đồ thị dưới đây vẽ số phép tính (trục dọc) theo kích thước đầu vào `n` (trục ngang) cho từng bậc độ phức tạp. Đường càng dốc thì thuật toán càng "đội" chi phí nhanh khi `n` lớn:
+
+<svg viewBox="0 0 480 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Đồ thị các đường cong độ phức tạp" style="max-width:100%;height:auto;background:#1e1e2e;border-radius:8px">
+  <!-- trục -->
+  <line x1="50" y1="300" x2="450" y2="300" stroke="#888" stroke-width="1.5"/>
+  <line x1="50" y1="300" x2="50" y2="20" stroke="#888" stroke-width="1.5"/>
+  <text x="240" y="330" fill="#ccc" font-size="13" text-anchor="middle">n (kích thước đầu vào)</text>
+  <text x="16" y="160" fill="#ccc" font-size="13" text-anchor="middle" transform="rotate(-90 16 160)">số phép tính</text>
+  <!-- O(1) -->
+  <polyline points="50,295 450,293" fill="none" stroke="#4db6ac" stroke-width="2.5"/>
+  <text x="455" y="293" fill="#4db6ac" font-size="12">O(1)</text>
+  <!-- O(log n) -->
+  <polyline points="50,290 120,250 200,232 300,220 450,208" fill="none" stroke="#81c784" stroke-width="2.5"/>
+  <text x="455" y="208" fill="#81c784" font-size="12">O(log n)</text>
+  <!-- O(n) -->
+  <polyline points="50,300 450,150" fill="none" stroke="#64b5f6" stroke-width="2.5"/>
+  <text x="455" y="150" fill="#64b5f6" font-size="12">O(n)</text>
+  <!-- O(n log n) -->
+  <polyline points="50,300 130,260 220,205 320,150 420,95 445,80" fill="none" stroke="#ba68c8" stroke-width="2.5"/>
+  <text x="415" y="72" fill="#ba68c8" font-size="12">O(n log n)</text>
+  <!-- O(n^2) -->
+  <polyline points="50,300 160,280 240,240 300,190 350,130 385,70 405,35" fill="none" stroke="#ffb74d" stroke-width="2.5"/>
+  <text x="345" y="55" fill="#ffb74d" font-size="12">O(n²)</text>
+  <!-- O(2^n) -->
+  <polyline points="50,300 120,295 170,280 210,240 240,180 265,110 285,40" fill="none" stroke="#e57373" stroke-width="2.5"/>
+  <text x="230" y="40" fill="#e57373" font-size="12">O(2ⁿ)</text>
+</svg>
+
 Bảng dưới minh hoạ số phép tính tăng thế nào khi kích thước đầu vào `n` tăng, cho thấy độ dốc của từng đường cong độ phức tạp.
 
 | n | O(1) | O(log n) | O(n) | O(n log n) | O(n²) | O(2ⁿ) |

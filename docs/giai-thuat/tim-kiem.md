@@ -45,6 +45,49 @@ Duyệt tuần tự từng phần tử cho tới khi gặp mục tiêu. Không y
 
 Yêu cầu **mảng đã sắp**. Mỗi bước so sánh mục tiêu với phần tử giữa (mid) rồi loại bỏ nửa không thể chứa mục tiêu, thu hẹp không gian tìm kiếm còn một nửa. **Thời gian:** `O(log n)`.
 
+Sơ đồ dưới minh hoạ việc **loại nửa mảng mỗi bước** khi tìm `target = 23` trong `[2, 5, 8, 12, 16, 23, 38, 56, 72, 91]` (chỉ số `0..9`). Vùng `▓` là khoảng `[lo, hi]` còn xét, `↑` là `mid`:
+
+```
+Bước 1:  ▓▓▓▓▓▓▓▓▓▓   lo=0, hi=9, mid=4 (=16)  →  16 < 23 ⇒ bỏ nửa trái, lo=5
+          2 5 8 …  ↑
+Bước 2:       ▓▓▓▓▓   lo=5, hi=9, mid=7 (=56)  →  56 > 23 ⇒ bỏ nửa phải, hi=6
+                  ↑
+Bước 3:       ▓▓      lo=5, hi=6, mid=5 (=23)  →  23 = 23 ⇒ TÌM THẤY tại chỉ số 5
+          ↑
+```
+
+Mỗi bước, khoảng còn lại giảm đi một nửa: `10 → 5 → 2 → 1`, nên số bước là `O(log n)`.
+
+<svg viewBox="0 0 640 150" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-size="13">
+  <text x="10" y="20" fill="#888">Trục số (mảng đã sắp) — khoảng còn xét thu hẹp mỗi bước:</text>
+  <!-- Bước 1: full range -->
+  <rect x="40" y="35" width="560" height="20" fill="#4db6ac" opacity="0.25" stroke="#4db6ac"/>
+  <text x="10" y="50" fill="#888">B1</text>
+  <line x1="320" y1="30" x2="320" y2="60" stroke="#888" stroke-width="2"/>
+  <text x="300" y="75" fill="#888">mid=16 &lt; 23</text>
+  <!-- Bước 2: right half -->
+  <rect x="320" y="90" width="280" height="20" fill="#4db6ac" opacity="0.4" stroke="#4db6ac"/>
+  <text x="10" y="105" fill="#888">B2</text>
+  <line x1="460" y1="85" x2="460" y2="115" stroke="#888" stroke-width="2"/>
+  <text x="440" y="130" fill="#888">mid=56 &gt; 23</text>
+  <!-- Bước 3: found -->
+  <rect x="320" y="130" width="56" height="16" fill="#4db6ac" opacity="0.7" stroke="#4db6ac"/>
+  <text x="384" y="143" fill="#4db6ac">✓ 23 tại chỉ số 5</text>
+</svg>
+
+Cây quyết định dưới đây tóm tắt ba nhánh so sánh `arr[mid]` với `target` ở mỗi vòng lặp:
+
+```mermaid
+graph TD
+    A["So sánh arr[mid] với target"] --> B{"arr[mid] = target?"}
+    B -->|"đúng"| C["Trả về mid — tìm thấy"]
+    B -->|"sai"| D{"arr[mid] < target?"}
+    D -->|"đúng — mục tiêu ở nửa phải"| E["lo = mid + 1"]
+    D -->|"sai — mục tiêu ở nửa trái"| F["hi = mid - 1"]
+    E --> G["Lặp lại với khoảng mới"]
+    F --> G
+```
+
 ### Jump Search (tìm kiếm nhảy)
 
 Trên mảng đã sắp, nhảy từng bước cỡ `√n` để khoanh vùng khối chứa mục tiêu, rồi tìm tuyến tính trong khối đó. **Thời gian:** `O(√n)`.

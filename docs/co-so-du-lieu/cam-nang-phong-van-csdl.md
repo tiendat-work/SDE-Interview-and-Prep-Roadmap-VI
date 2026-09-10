@@ -119,6 +119,22 @@ Hãy nói rằng lựa chọn phụ thuộc vào:
 - quy mô
 - mức độ quen thuộc của đội ngũ
 
+Sơ đồ quyết định chọn loại cơ sở dữ liệu:
+
+```mermaid
+graph TD
+    A["Bắt đầu: chọn CSDL"] --> B{"Cần giao dịch và quan hệ chặt chẽ?"}
+    B -->|"Có"| C["CSDL quan hệ (SQL)"]
+    B -->|"Không"| D{"Quy mô rất lớn, lược đồ linh hoạt?"}
+    D -->|"Có"| E["NoSQL"]
+    D -->|"Không"| C
+    E --> F{"Hình dạng dữ liệu?"}
+    F -->|"Tài liệu JSON"| G["Document (MongoDB)"]
+    F -->|"Tra cứu theo khóa"| H["Key-Value (Redis, DynamoDB)"]
+    F -->|"Phân tán rất lớn"| I["Column-Family (Cassandra)"]
+    F -->|"Kết nối cao"| J["Graph (Neo4j)"]
+```
+
 ---
 
 ## 3. Kiến thức SQL cơ bản
@@ -256,6 +272,37 @@ Ví dụ:
 - một đơn hàng có thể có nhiều mục hàng (item)
 - một sản phẩm có thể xuất hiện trong nhiều đơn hàng
 
+Sơ đồ quan hệ thực thể (ERD) cho mô hình trên:
+
+```mermaid
+erDiagram
+    users ||--o{ orders : "dat"
+    orders ||--|{ order_items : "chua"
+    products ||--o{ order_items : "xuat_hien_trong"
+    users {
+        int id PK
+        string email
+        string ten
+    }
+    orders {
+        int id PK
+        int user_id FK
+        datetime created_at
+        string status
+    }
+    order_items {
+        int id PK
+        int order_id FK
+        int product_id FK
+        int so_luong
+    }
+    products {
+        int id PK
+        string ten
+        decimal gia
+    }
+```
+
 ---
 
 ## 5. Khóa và ràng buộc (Keys and Constraints)
@@ -351,6 +398,24 @@ Thường được mô hình hóa bằng một bảng nối (join table):
 
 - `student_courses`
 
+Sơ đồ ba loại quan hệ:
+
+```mermaid
+graph LR
+    subgraph MOT_MOT["Một-một (1:1)"]
+        U1["users"] --- P1["user_profiles"]
+    end
+    subgraph MOT_NHIEU["Một-nhiều (1:N)"]
+        U2["users"] --> O1["orders"]
+        U2 --> O2["orders"]
+        U2 --> O3["orders"]
+    end
+    subgraph NHIEU_NHIEU["Nhiều-nhiều (N:M)"]
+        S1["students"] --> SC["student_courses"]
+        C1["courses"] --> SC
+    end
+```
+
 ---
 
 ## 7. Chuẩn hóa (Normalization)
@@ -381,6 +446,16 @@ Dạng chuẩn thứ ba (Third Normal Form) nghĩa là:
 ### BCNF
 
 Dạng chuẩn Boyce-Codd (Boyce-Codd Normal Form) là một phiên bản nghiêm ngặt hơn của 3NF.
+
+Quy trình chuẩn hóa tuần tự:
+
+```mermaid
+graph LR
+    A["Dữ liệu thô<br/>(chưa chuẩn hóa)"] --> B["1NF<br/>giá trị nguyên tử<br/>không nhóm lặp"]
+    B --> C["2NF<br/>bỏ phụ thuộc<br/>một phần khóa"]
+    C --> D["3NF<br/>bỏ phụ thuộc<br/>bắc cầu"]
+    D --> E["BCNF<br/>nghiêm ngặt hơn 3NF"]
+```
 
 ### Vì sao chuẩn hóa quan trọng
 
@@ -443,6 +518,27 @@ Hãy biết khi nào phép nối hữu ích, nhưng cũng cần biết rằng qu
 - full join = tất cả hàng từ cả hai bảng
 - cross join = mỗi hàng ghép với mọi hàng khác
 
+Sơ đồ trực quan các loại phép nối (phần tô đậm là kết quả trả về):
+
+```mermaid
+graph TD
+    subgraph INNER["INNER JOIN"]
+        I["Chỉ phần giao nhau<br/>A ∩ B"]
+    end
+    subgraph LEFT["LEFT JOIN"]
+        L["Toàn bộ A<br/>+ phần khớp của B"]
+    end
+    subgraph RIGHT["RIGHT JOIN"]
+        R["Toàn bộ B<br/>+ phần khớp của A"]
+    end
+    subgraph FULL["FULL JOIN"]
+        F["Toàn bộ A ∪ B"]
+    end
+    subgraph CROSS["CROSS JOIN"]
+        X["Tích Descartes<br/>A × B"]
+    end
+```
+
 ---
 
 ## 9. Giao dịch (Transactions)
@@ -466,9 +562,33 @@ Nếu bước 3 thất bại, bạn có thể muốn hoàn tác (rollback) các 
 - `COMMIT`
 - `ROLLBACK`
 
+Vòng đời của một giao dịch:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Active: "BEGIN"
+    Active --> PartiallyCommitted: "lệnh cuối chạy xong"
+    Active --> Failed: "gặp lỗi"
+    PartiallyCommitted --> Committed: "COMMIT (ghi bền vững)"
+    PartiallyCommitted --> Failed: "lỗi khi ghi"
+    Failed --> Aborted: "ROLLBACK"
+    Committed --> [*]
+    Aborted --> [*]
+```
+
 ---
 
 ## 10. Các thuộc tính ACID
+
+Bốn thuộc tính đảm bảo độ tin cậy của giao dịch:
+
+```mermaid
+graph TD
+    ACID["ACID"] --> A["Atomicity<br/>Nguyên tử<br/>(tất cả hoặc không gì)"]
+    ACID --> C["Consistency<br/>Nhất quán<br/>(luôn hợp lệ)"]
+    ACID --> I["Isolation<br/>Cô lập<br/>(không can thiệp lẫn nhau)"]
+    ACID --> D["Durability<br/>Bền vững<br/>(tồn tại qua sự cố)"]
+```
 
 ### Tính nguyên tử (Atomicity)
 
@@ -545,6 +665,17 @@ Các giao dịch hành xử như thể được chạy lần lượt từng cái
 - đọc bóng ma (phantom read)
 - mất cập nhật (lost update)
 
+### Bảng mức cô lập so với hiện tượng bất thường
+
+Bảng dưới cho biết mỗi mức cô lập có ngăn được hiện tượng bất thường tương ứng hay không:
+
+| Mức cô lập | Đọc bẩn | Đọc không lặp lại | Đọc bóng ma |
+|---|---|---|---|
+| Read Uncommitted | Có thể xảy ra | Có thể xảy ra | Có thể xảy ra |
+| Read Committed | Ngăn được | Có thể xảy ra | Có thể xảy ra |
+| Repeatable Read | Ngăn được | Ngăn được | Có thể xảy ra |
+| Serializable | Ngăn được | Ngăn được | Ngăn được |
+
 ---
 
 ## 12. Đánh chỉ mục (Indexing)
@@ -574,6 +705,28 @@ Nó hoạt động tốt với:
 ### B+ tree
 
 B+ tree có quan hệ gần với B-tree và thường được các engine cơ sở dữ liệu dùng bên trong, vì các nút lá (leaf node) đặc biệt phù hợp cho truy cập tuần tự.
+
+Cấu trúc một cây B+ tree (dữ liệu nằm ở lá, các lá liên kết thành chuỗi để quét khoảng):
+
+```mermaid
+graph TD
+    R["Nút gốc<br/>[30 | 60]"] --> N1["Nút trong<br/>[10 | 20]"]
+    R --> N2["Nút trong<br/>[40 | 50]"]
+    R --> N3["Nút trong<br/>[70 | 80]"]
+    N1 --> L1["Lá: 5,10"]
+    N1 --> L2["Lá: 15,20"]
+    N1 --> L3["Lá: 25,30"]
+    N2 --> L4["Lá: 35,40"]
+    N2 --> L5["Lá: 45,50"]
+    N2 --> L6["Lá: 55,60"]
+    N3 --> L7["Lá: 65,70"]
+    N3 --> L8["Lá: 75,80"]
+    N3 --> L9["Lá: 85,90"]
+    L1 -.->|"liên kết lá"| L2
+    L2 -.-> L3
+    L3 -.-> L4
+    L4 -.-> L5
+```
 
 ### Đánh chỉ mục bitmap (Bitmap Indexing)
 
@@ -975,6 +1128,19 @@ Sao chép (replication) nghĩa là giữ các bản sao dữ liệu trên nhiề
 - primary (máy chính) xử lý các thao tác ghi
 - replica (bản sao) thường phục vụ các thao tác đọc
 
+Kiến trúc sao chép primary-replica (master-slave):
+
+```mermaid
+graph TD
+    APP["Ứng dụng"] -->|"GHI"| P["Primary<br/>(máy chính)"]
+    APP -->|"ĐỌC"| R1["Replica 1"]
+    APP -->|"ĐỌC"| R2["Replica 2"]
+    APP -->|"ĐỌC"| R3["Replica 3"]
+    P -.->|"sao chép (có thể trễ)"| R1
+    P -.->|"sao chép (có thể trễ)"| R2
+    P -.->|"sao chép (có thể trễ)"| R3
+```
+
 ### Đánh đổi
 
 - replica có thể bị trễ (lag)
@@ -995,6 +1161,19 @@ Chia dữ liệu thành các phần nhỏ hơn để dễ quản lý hoặc tăn
 ### Phân mảnh (Sharding)
 
 Phân phối dữ liệu trên nhiều thực thể (instance) cơ sở dữ liệu.
+
+Sơ đồ phân mảnh dữ liệu theo khóa định tuyến (shard key):
+
+```mermaid
+graph TD
+    APP["Ứng dụng"] --> ROUTER["Bộ định tuyến<br/>(theo shard key)"]
+    ROUTER -->|"user_id 0-999"| S1["Shard 1"]
+    ROUTER -->|"user_id 1000-1999"| S2["Shard 2"]
+    ROUTER -->|"user_id 2000-2999"| S3["Shard 3"]
+    S1 --> D1[("DB 1")]
+    S2 --> D2[("DB 2")]
+    S3 --> D3[("DB 3")]
+```
 
 ### Vì sao làm điều đó
 

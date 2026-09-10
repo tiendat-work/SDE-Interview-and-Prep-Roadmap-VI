@@ -126,6 +126,25 @@ graph TD
 - **Tiến trình:** cô lập, an toàn hơn, tốn tài nguyên khi giao tiếp (IPC).
 - **Luồng:** nhẹ, chia sẻ bộ nhớ nên giao tiếp nhanh nhưng cần đồng bộ hoá (khoá) để tránh race condition.
 
+## Sơ đồ race condition
+
+Khi hai luồng cùng đọc-sửa-ghi một biến chung mà không có khóa, các thao tác đan xen nhau khiến một lần tăng bị mất. Sơ đồ dưới đây minh họa hai luồng cùng tăng `bo_dem` nhưng kết quả sai.
+
+```mermaid
+sequenceDiagram
+    participant T1 as Luồng 1
+    participant M as Biến chung bo_dem
+    participant T2 as Luồng 2
+    Note over M: bo_dem = 0
+    T1->>M: đọc bo_dem, nhận 0
+    T2->>M: đọc bo_dem, nhận 0
+    T1->>T1: tính 0 + 1 = 1
+    T2->>T2: tính 0 + 1 = 1
+    T1->>M: ghi bo_dem = 1
+    T2->>M: ghi bo_dem = 1
+    Note over M: Mất một lần tăng, bo_dem = 1 đáng lẽ 2
+```
+
 ## Ưu / nhược điểm
 
 - **Ưu:** Tận dụng đa lõi, tăng thông lượng, giữ ứng dụng phản hồi tốt.

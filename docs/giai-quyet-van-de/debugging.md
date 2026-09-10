@@ -14,6 +14,19 @@ Gỡ lỗi (debugging) là quá trình **tìm, hiểu và sửa** lỗi (bug) tr
 
 Quy trình gỡ lỗi có hệ thống:
 
+```mermaid
+flowchart TD
+    START([Phát hiện lỗi]) --> R["Tái hiện lỗi<br/>(tìm đầu vào nhỏ nhất làm lỗi xuất hiện ổn định)"]
+    R --> O["Quan sát & đặt giả thuyết<br/>(đọc thông báo lỗi, truy vết ngăn xếp)"]
+    O --> I["Cô lập<br/>(chia đôi, kiểm tra giá trị từng nửa)"]
+    I --> H{"Đã tìm ra nguyên nhân gốc?"}
+    H -->|"Chưa"| O
+    H -->|"Rồi"| F["Sửa nguyên nhân gốc<br/>(không chỉ triệu chứng)"]
+    F --> V{"Chạy lại test: đã hết lỗi?"}
+    V -->|"Chưa"| O
+    V -->|"Rồi"| DONE([Hoàn thành])
+```
+
 1. **Tái hiện lỗi (reproduce):** tìm đầu vào nhỏ nhất làm lỗi xuất hiện ổn định.
 2. **Quan sát & đặt giả thuyết:** đọc thông báo lỗi (error message) và **truy vết ngăn xếp (stack trace)** để biết lỗi ở đâu.
 3. **Cô lập (isolate):** thu hẹp phạm vi nghi ngờ bằng cách chia đôi — kiểm tra giá trị ở nửa chương trình, xác định lỗi nằm ở nửa nào (tương tự tìm kiếm nhị phân).

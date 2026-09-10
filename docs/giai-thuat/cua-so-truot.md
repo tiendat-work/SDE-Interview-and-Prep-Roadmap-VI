@@ -19,6 +19,18 @@ Quy tắc then chốt: nếu tính hợp lệ của cửa sổ có tính **đơn
 
 Có hai mẫu (pattern) cốt lõi.
 
+### Phân biệt hai kiểu cửa sổ
+
+```mermaid
+graph TD
+    A["Cửa sổ trượt"] --> B["Kích thước CỐ ĐỊNH = k"]
+    A --> C["Kích thước THAY ĐỔI"]
+    B --> B1["r tiến 1 bước<br/>l = r - k + 1 luôn cách đều"]
+    B --> B2["ví dụ: tổng lớn nhất mảng con độ dài k"]
+    C --> C1["r nới rộng, l thu hẹp khi cần"]
+    C --> C2["ví dụ: chuỗi con dài/ngắn nhất thoả điều kiện"]
+```
+
 ### 1. Cửa sổ kích thước cố định (fixed-size window)
 
 Độ dài cửa sổ luôn bằng `k`. Trượt từng bước một: thêm phần tử vừa đi vào, bỏ phần tử vừa đi ra.
@@ -78,6 +90,57 @@ def max_sum_k(a, k):
 ```
 
 **Ví dụ 2 — Chuỗi con dài nhất không lặp ký tự (LeetCode 3, cửa sổ thay đổi)**
+
+**Minh hoạ cửa sổ trượt** trên `s = "abcabcbb"`. Ô **tô màu** là cửa sổ hiện tại `[l..r]`. Khi gặp ký tự đã có trong cửa sổ, `l` nhảy qua vị trí trùng để cửa sổ luôn không lặp.
+
+<svg viewBox="0 0 470 210" width="100%" role="img" aria-label="Minh hoạ cửa sổ trượt trên chuỗi" style="max-width:560px;font-family:sans-serif;font-size:13px">
+  <g text-anchor="middle">
+    <text x="235" y="14" font-size="12" fill="#666">s = a b c a b c b b — tìm chuỗi con dài nhất không lặp</text>
+    <!-- header chỉ số -->
+    <g fill="#999" font-size="11">
+      <text x="60" y="34">0</text><text x="100" y="34">1</text><text x="140" y="34">2</text>
+      <text x="180" y="34">3</text><text x="220" y="34">4</text><text x="260" y="34">5</text>
+      <text x="300" y="34">6</text><text x="340" y="34">7</text>
+    </g>
+    <!-- Bước r=2: cửa sổ [0..2] "abc" dài 3 -->
+    <g transform="translate(0,42)">
+      <rect x="40" y="0" width="40" height="26" fill="#4db6ac" rx="3"/><text x="60" y="18" fill="#fff">a</text>
+      <rect x="80" y="0" width="40" height="26" fill="#4db6ac" rx="3"/><text x="100" y="18" fill="#fff">b</text>
+      <rect x="120" y="0" width="40" height="26" fill="#4db6ac" rx="3"/><text x="140" y="18" fill="#fff">c</text>
+      <rect x="160" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="180" y="18">a</text>
+      <rect x="200" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="220" y="18">b</text>
+      <rect x="240" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="260" y="18">c</text>
+      <rect x="280" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="300" y="18">b</text>
+      <rect x="320" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="340" y="18">b</text>
+      <text x="380" y="18" font-size="11" fill="#083" text-anchor="start">[0..2] "abc" =3</text>
+    </g>
+    <!-- Bước r=3: 'a' trùng, l nhảy tới 1 -> cửa sổ [1..3] "bca" -->
+    <g transform="translate(0,76)">
+      <rect x="40" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="60" y="18">a</text>
+      <rect x="80" y="0" width="40" height="26" fill="#4db6ac" rx="3"/><text x="100" y="18" fill="#fff">b</text>
+      <rect x="120" y="0" width="40" height="26" fill="#4db6ac" rx="3"/><text x="140" y="18" fill="#fff">c</text>
+      <rect x="160" y="0" width="40" height="26" fill="#4db6ac" rx="3"/><text x="180" y="18" fill="#fff">a</text>
+      <rect x="200" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="220" y="18">b</text>
+      <rect x="240" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="260" y="18">c</text>
+      <rect x="280" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="300" y="18">b</text>
+      <rect x="320" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="340" y="18">b</text>
+      <text x="380" y="18" font-size="11" fill="#a33" text-anchor="start">'a' lặp → l=1</text>
+    </g>
+    <!-- Bước r=6: 'b' trùng, l nhảy -> cửa sổ [4..6] "cb"? show [5..6] -->
+    <g transform="translate(0,110)">
+      <rect x="40" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="60" y="18">a</text>
+      <rect x="80" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="100" y="18">b</text>
+      <rect x="120" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="140" y="18">c</text>
+      <rect x="160" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="180" y="18">a</text>
+      <rect x="200" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="220" y="18">b</text>
+      <rect x="240" y="0" width="40" height="26" fill="#4db6ac" rx="3"/><text x="260" y="18" fill="#fff">c</text>
+      <rect x="280" y="0" width="40" height="26" fill="#4db6ac" rx="3"/><text x="300" y="18" fill="#fff">b</text>
+      <rect x="320" y="0" width="40" height="26" fill="#eee" rx="3"/><text x="340" y="18">b</text>
+      <text x="380" y="18" font-size="11" fill="#666" text-anchor="start">[5..6] "cb" =2</text>
+    </g>
+    <text x="40" y="162" font-size="12" fill="#083" text-anchor="start">Kết quả: dài nhất = "abc" (độ dài 3).</text>
+  </g>
+</svg>
 
 !!! tip "Thử ngay (chạy được)"
     Bấm **▶ Chạy** để cửa sổ trượt tìm chuỗi con dài nhất không lặp ký tự, in từng bước và kết quả. Sửa `s` rồi chạy lại.

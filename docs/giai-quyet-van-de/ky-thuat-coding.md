@@ -14,6 +14,39 @@ Phần lớn bài phỏng vấn coding là biến thể của một số mẫu c
 
 ## Cách hoạt động
 
+Các kỹ thuật thường được nhóm theo bản chất tiếp cận. Sơ đồ cây dưới đây phân loại những kỹ thuật cốt lõi để bạn định vị nhanh khi gặp đề:
+
+```mermaid
+graph TD
+    ROOT["Kỹ thuật lập trình"] --> A["Chia & đệ quy"]
+    ROOT --> B["Tối ưu tổ hợp"]
+    ROOT --> C["Duyệt mảng/chuỗi"]
+    ROOT --> D["Cấu trúc dữ liệu"]
+    ROOT --> E["Đồ thị"]
+
+    A --> A1["Chia để trị"]
+    A --> A2["Đệ quy"]
+    A --> A3["Quy hoạch động"]
+
+    B --> B1["Quay lui"]
+    B --> B2["Tham lam"]
+    B --> B3["Nhánh cận"]
+
+    C --> C1["Hai con trỏ"]
+    C --> C2["Cửa sổ trượt"]
+    C --> C3["Tìm kiếm nhị phân"]
+    C --> C4["Con trỏ nhanh-chậm"]
+    C --> C5["Tổng tiền tố"]
+
+    D --> D1["Băm (hash)"]
+    D --> D2["Heap / hàng đợi ưu tiên"]
+    D --> D3["Cây tiền tố (Trie)"]
+    D --> D4["Union-Find"]
+
+    E --> E1["BFS / DFS"]
+    E --> E2["Sắp xếp tô-pô"]
+```
+
 **Chia mô-đun (Modular design)** — tách chương trình thành các hàm nhỏ, mỗi hàm làm một việc. Dễ đọc, dễ kiểm thử, dễ tái sử dụng.
 
 **Chia để trị (Divide and conquer)** — chia bài thành các bài con giống nhau, giải rồi gộp kết quả. Điển hình: merge sort, quick sort, tìm kiếm nhị phân. Độ phức tạp thường phân tích qua **định lý thợ (Master Theorem)**.
@@ -150,6 +183,29 @@ Phần lớn bài phỏng vấn coding là biến thể của một số mẫu c
         backtrack()
         return res
     ```
+
+**Cây quay lui sinh hoán vị của `[A, B, C]`** — mỗi nhánh là một lựa chọn "chọn → đệ quy → lùi lại"; mỗi lá là một hoán vị hoàn chỉnh (`3! = 6` lá):
+
+```mermaid
+graph TD
+    R["( )"] --> A["A"]
+    R --> B["B"]
+    R --> C["C"]
+
+    A --> AB["A B"]
+    A --> AC["A C"]
+    B --> BA["B A"]
+    B --> BC["B C"]
+    C --> CA["C A"]
+    C --> CB["C B"]
+
+    AB --> ABC["A B C ✓"]
+    AC --> ACB["A C B ✓"]
+    BA --> BAC["B A C ✓"]
+    BC --> BCA["B C A ✓"]
+    CA --> CAB["C A B ✓"]
+    CB --> CBA["C B A ✓"]
+```
 
 ## Thử ngay: quay lui sinh hoán vị
 

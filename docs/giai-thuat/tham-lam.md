@@ -25,6 +25,43 @@ Khung chung: sắp xếp/ưu tiên các lựa chọn theo một tiêu chí, rồ
 - **Prim & Kruskal (cây khung nhỏ nhất — Minimum Spanning Tree, MST):** Prim mở rộng cây bằng cạnh nhẹ nhất nối ra ngoài (dùng hàng đợi ưu tiên); Kruskal xét các cạnh tăng dần theo trọng số, thêm cạnh nếu không tạo chu trình (dùng cấu trúc Union-Find để kiểm tra chu trình). Cả hai đều `O(E log V)`.
 - **Dijkstra (đường đi ngắn nhất):** với đồ thị trọng số **không âm**, luôn mở rộng đỉnh có khoảng cách tạm nhỏ nhất. `O(E log V)` với hàng đợi ưu tiên.
 
+### Minh hoạ Activity Selection trên trục thời gian
+
+Sáu hoạt động vẽ theo khoảng `[bắt đầu, kết thúc]`. Sắp theo thời điểm **kết thúc** rồi lần lượt nhận hoạt động nào không đè lên hoạt động vừa chọn. Thanh **tô đậm** là được chọn, thanh **mờ** bị bỏ vì chồng lấn.
+
+<svg viewBox="0 0 560 250" width="100%" role="img" aria-label="Minh hoạ Activity Selection trên trục thời gian" style="max-width:640px;font-family:sans-serif">
+  <!-- lưới trục thời gian -->
+  <g stroke="#cfcfcf" stroke-width="1">
+    <line x1="40" y1="20" x2="40" y2="210"/>
+    <line x1="88" y1="20" x2="88" y2="210"/>
+    <line x1="136" y1="20" x2="136" y2="210"/>
+    <line x1="184" y1="20" x2="184" y2="210"/>
+    <line x1="232" y1="20" x2="232" y2="210"/>
+    <line x1="280" y1="20" x2="280" y2="210"/>
+    <line x1="328" y1="20" x2="328" y2="210"/>
+    <line x1="376" y1="20" x2="376" y2="210"/>
+    <line x1="424" y1="20" x2="424" y2="210"/>
+    <line x1="472" y1="20" x2="472" y2="210"/>
+    <line x1="520" y1="20" x2="520" y2="210"/>
+  </g>
+  <!-- nhãn trục -->
+  <g fill="#666" font-size="11" text-anchor="middle">
+    <text x="40" y="228">0</text><text x="88" y="228">1</text><text x="136" y="228">2</text>
+    <text x="184" y="228">3</text><text x="232" y="228">4</text><text x="280" y="228">5</text>
+    <text x="328" y="228">6</text><text x="376" y="228">7</text><text x="424" y="228">8</text>
+    <text x="472" y="228">9</text><text x="520" y="228">10</text>
+    <text x="280" y="245" font-size="12">thời gian</text>
+  </g>
+  <!-- CHỌN [1,3] --><rect x="88" y="28" width="96" height="20" rx="4" fill="#4db6ac"/><text x="136" y="42" fill="#083" font-size="11" text-anchor="middle">[1,3] ✓</text>
+  <!-- BỎ [2,5] --><rect x="136" y="56" width="144" height="20" rx="4" fill="#d9d9d9"/><text x="208" y="70" fill="#777" font-size="11" text-anchor="middle">[2,5] ✗</text>
+  <!-- CHỌN [4,7] --><rect x="232" y="84" width="144" height="20" rx="4" fill="#4db6ac"/><text x="304" y="98" fill="#083" font-size="11" text-anchor="middle">[4,7] ✓</text>
+  <!-- BỎ [1,8] --><rect x="88" y="112" width="336" height="20" rx="4" fill="#d9d9d9"/><text x="256" y="126" fill="#777" font-size="11" text-anchor="middle">[1,8] ✗</text>
+  <!-- BỎ [5,9] --><rect x="280" y="140" width="192" height="20" rx="4" fill="#d9d9d9"/><text x="376" y="154" fill="#777" font-size="11" text-anchor="middle">[5,9] ✗</text>
+  <!-- CHỌN [8,10] --><rect x="424" y="168" width="96" height="20" rx="4" fill="#4db6ac"/><text x="472" y="182" fill="#083" font-size="11" text-anchor="middle">[8,10] ✓</text>
+</svg>
+
+Kết quả: chọn được tối đa **3** hoạt động `[1,3] → [4,7] → [8,10]`.
+
 ## Ví dụ
 
 **Activity Selection — chọn nhiều hoạt động không giao nhau nhất**
@@ -145,6 +182,24 @@ Khung chung: sắp xếp/ưu tiên các lựa chọn theo một tiêu chí, rồ
 
     print(huffman({'a': 5, 'b': 9, 'c': 12, 'd': 13, 'e': 16, 'f': 45}))
     ```
+
+### Minh hoạ cây Huffman
+
+Với tần suất `f=45, e=16, d=13, c=12, b=9, a=5`, luôn gộp **hai nút tần suất nhỏ nhất** thành một nút cha (giá trị = tổng), lặp tới khi còn một gốc. Nhánh trái ghi `0`, nhánh phải ghi `1`; đường từ gốc tới lá là mã của ký tự đó (ký tự tần suất cao → mã ngắn).
+
+```mermaid
+graph TD
+    R100["100"] -->|"0"| F45["f: 45"]
+    R100 -->|"1"| N55["55"]
+    N55 -->|"0"| N25["25"]
+    N55 -->|"1"| N30["30"]
+    N25 -->|"0"| C12["c: 12"]
+    N25 -->|"1"| D13["d: 13"]
+    N30 -->|"0"| N14["14"]
+    N30 -->|"1"| E16["e: 16"]
+    N14 -->|"0"| A5["a: 5"]
+    N14 -->|"1"| B9["b: 9"]
+```
 
 ## Thử ngay: Activity Selection in từng bước chọn
 
