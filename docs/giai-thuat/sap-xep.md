@@ -10,15 +10,17 @@ Sắp xếp (sorting) là quá trình sắp đặt lại các phần tử trong 
 - **So sánh / khử trùng lặp:** dữ liệu đã sắp giúp dễ phát hiện phần tử trùng hoặc gần nhau.
 - **Câu hỏi phỏng vấn:** hiểu rõ đánh đổi (trade-off) giữa các thuật toán sắp xếp là kiến thức bắt buộc.
 
-## Cách hoạt động
+## Phân loại
 
 Ta chia các thuật toán sắp xếp thành hai nhóm chính:
 
-**Nhóm dựa trên so sánh (comparison-based)** — so sánh từng cặp phần tử. Giới hạn lý thuyết là `O(n log n)`.
+- **Nhóm dựa trên so sánh (comparison-based)** — so sánh từng cặp phần tử. Giới hạn lý thuyết là `O(n log n)`: Bubble, Selection, Insertion, Merge, Quick, Heap.
+- **Nhóm không so sánh (non-comparison)** — dùng tính chất của khóa (giá trị số nguyên, chữ số...) để đạt tuyến tính `O(n)` trong điều kiện nhất định: Counting, Radix, Bucket.
 
-**Nhóm không so sánh (non-comparison)** — dùng tính chất của khóa (giá trị số nguyên, chữ số...) để đạt tuyến tính `O(n)` trong điều kiện nhất định.
+Hai khái niệm cần nắm:
 
-Một khái niệm quan trọng là **tính ổn định (stability)**: thuật toán ổn định giữ nguyên thứ tự tương đối của các phần tử có cùng khóa.
+- **Tính ổn định (stability):** thuật toán ổn định giữ nguyên thứ tự tương đối của các phần tử có cùng khóa. Quan trọng khi sắp xếp theo nhiều tiêu chí.
+- **Sắp xếp tại chỗ (in-place):** chỉ dùng `O(1)` bộ nhớ phụ, không cần mảng phụ lớn.
 
 ## Hoạt hình trực quan
 
@@ -33,120 +35,214 @@ Chọn thuật toán ở ô bên dưới để xem quá trình sắp xếp chạ
 
 <div class="sort-viz" data-algos="bubble,selection,insertion,merge,quick" data-size="32" data-speed="55"></div>
 
-### Bubble Sort (sắp xếp nổi bọt)
+---
 
-**Ý tưởng:** duyệt qua mảng nhiều lần, đổi chỗ hai phần tử kề nhau nếu sai thứ tự; phần tử lớn dần "nổi" về cuối. **Thời gian:** `O(n²)`; **bộ nhớ:** `O(1)`; **ổn định:** có.
+## 1. Bubble Sort (sắp xếp nổi bọt)
 
-### Selection Sort (sắp xếp chọn)
+**Ý tưởng:** duyệt qua mảng nhiều lần, so sánh và đổi chỗ hai phần tử kề nhau nếu sai thứ tự; sau mỗi lượt, phần tử lớn nhất "nổi" dần về cuối. Nếu một lượt không đổi chỗ nào thì mảng đã sắp, dừng sớm.
 
-**Ý tưởng:** mỗi lượt tìm phần tử nhỏ nhất trong phần chưa sắp rồi đưa về đầu. **Thời gian:** `O(n²)` (kể cả trường hợp tốt nhất); **bộ nhớ:** `O(1)`; **ổn định:** không.
+**Các bước:** lặp `i` từ 0 đến `n-1`; ở mỗi lượt so sánh các cặp `(j, j+1)` và đổi chỗ nếu `arr[j] > arr[j+1]`.
 
-### Insertion Sort (sắp xếp chèn)
+=== "JavaScript"
+    ```js
+    function bubbleSort(arr) {
+      const n = arr.length;
+      for (let i = 0; i < n - 1; i++) {
+        let swapped = false;                       // cờ tối ưu: phát hiện đã sắp xong
+        for (let j = 0; j < n - 1 - i; j++) {      // phần cuối đã đúng vị trí
+          if (arr[j] > arr[j + 1]) {
+            [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];  // đổi chỗ
+            swapped = true;
+          }
+        }
+        if (!swapped) break;                       // không đổi chỗ nào -> đã sắp
+      }
+      return arr;
+    }
+    console.log(bubbleSort([5, 1, 4, 2, 8]));       // [1, 2, 4, 5, 8]
+    ```
+=== "Python"
+    ```python
+    def bubble_sort(arr):
+        n = len(arr)
+        for i in range(n - 1):
+            swapped = False                          # cờ tối ưu
+            for j in range(n - 1 - i):               # phần cuối đã đúng vị trí
+                if arr[j] > arr[j + 1]:
+                    arr[j], arr[j + 1] = arr[j + 1], arr[j]  # đổi chỗ
+                    swapped = True
+            if not swapped:                          # không đổi chỗ nào -> đã sắp
+                break
+        return arr
 
-**Ý tưởng:** xây dần mảng đã sắp bằng cách lấy từng phần tử và chèn vào đúng vị trí trong phần đã sắp phía trước. **Thời gian:** `O(n²)` trung bình, `O(n)` khi mảng gần sắp; **bộ nhớ:** `O(1)`; **ổn định:** có. Rất hiệu quả với mảng nhỏ hoặc gần sắp.
+    print(bubble_sort([5, 1, 4, 2, 8]))              # [1, 2, 4, 5, 8]
+    ```
 
-### Merge Sort (sắp xếp trộn)
+**Thời gian:** `O(n)` tốt nhất (đã sắp, nhờ cờ), `O(n²)` trung bình/xấu nhất — **Bộ nhớ:** `O(1)` — **Ổn định:** có.
 
-**Ý tưởng:** chia để trị — chia đôi mảng, sắp xếp đệ quy hai nửa, rồi trộn (merge) lại. **Thời gian:** `O(n log n)` mọi trường hợp; **bộ nhớ:** `O(n)`; **ổn định:** có.
+---
 
-### Quick Sort (sắp xếp nhanh)
+## 2. Selection Sort (sắp xếp chọn)
 
-**Ý tưởng:** chọn một phần tử chốt (pivot), phân hoạch (partition) mảng thành phần nhỏ hơn và lớn hơn chốt, rồi đệ quy hai phần. **Thời gian:** `O(n log n)` trung bình, `O(n²)` xấu nhất (chốt xấu); **bộ nhớ:** `O(log n)` cho ngăn xếp đệ quy; **ổn định:** không.
+**Ý tưởng:** chia mảng thành phần đã sắp (bên trái) và chưa sắp (bên phải). Mỗi lượt tìm phần tử nhỏ nhất trong phần chưa sắp rồi đổi về đầu phần chưa sắp. Số lần đổi chỗ ít (tối đa `n-1`).
 
-### Heap Sort (sắp xếp vun đống)
+=== "JavaScript"
+    ```js
+    function selectionSort(arr) {
+      const n = arr.length;
+      for (let i = 0; i < n - 1; i++) {
+        let min = i;                          // giả định phần tử nhỏ nhất là arr[i]
+        for (let j = i + 1; j < n; j++) {
+          if (arr[j] < arr[min]) min = j;     // tìm chỉ số nhỏ nhất thực sự
+        }
+        if (min !== i) {
+          [arr[i], arr[min]] = [arr[min], arr[i]];  // đưa nhỏ nhất về đầu
+        }
+      }
+      return arr;
+    }
+    console.log(selectionSort([64, 25, 12, 22, 11]));  // [11, 12, 22, 25, 64]
+    ```
+=== "Python"
+    ```python
+    def selection_sort(arr):
+        n = len(arr)
+        for i in range(n - 1):
+            mn = i                              # giả định nhỏ nhất là arr[i]
+            for j in range(i + 1, n):
+                if arr[j] < arr[mn]:
+                    mn = j                      # cập nhật chỉ số nhỏ nhất
+            if mn != i:
+                arr[i], arr[mn] = arr[mn], arr[i]  # đưa nhỏ nhất về đầu
+        return arr
 
-**Ý tưởng:** xây một đống cực đại (max-heap) từ mảng, liên tục lấy phần tử lớn nhất ở gốc đưa về cuối. **Thời gian:** `O(n log n)`; **bộ nhớ:** `O(1)`; **ổn định:** không.
+    print(selection_sort([64, 25, 12, 22, 11]))   # [11, 12, 22, 25, 64]
+    ```
 
-### Counting Sort (sắp xếp đếm)
+**Thời gian:** `O(n²)` mọi trường hợp — **Bộ nhớ:** `O(1)` — **Ổn định:** không (có thể làm ổn định nếu chèn thay vì đổi chỗ).
 
-**Ý tưởng:** đếm số lần xuất hiện của mỗi khóa (số nguyên trong khoảng nhỏ) rồi dựng lại mảng. **Thời gian:** `O(n + k)` với `k` là miền giá trị; **bộ nhớ:** `O(k)`; **ổn định:** có. Chỉ dùng khi miền giá trị không quá lớn.
+---
 
-### Radix Sort (sắp xếp cơ số)
+## 3. Insertion Sort (sắp xếp chèn)
 
-**Ý tưởng:** sắp xếp số theo từng chữ số (từ hàng đơn vị lên), mỗi lượt dùng counting sort ổn định. **Thời gian:** `O(d·(n + k))` với `d` là số chữ số; **bộ nhớ:** `O(n + k)`; **ổn định:** có.
+**Ý tưởng:** xây dần mảng đã sắp bằng cách lấy từng phần tử và chèn vào đúng vị trí trong phần đã sắp phía trước (giống cách sắp bài trên tay). Rất nhanh với mảng nhỏ hoặc gần sắp.
 
-## Ví dụ
+=== "JavaScript"
+    ```js
+    function insertionSort(arr) {
+      for (let i = 1; i < arr.length; i++) {
+        const key = arr[i];       // phần tử cần chèn
+        let j = i - 1;
+        while (j >= 0 && arr[j] > key) {  // dịch các phần tử lớn hơn sang phải
+          arr[j + 1] = arr[j];
+          j--;
+        }
+        arr[j + 1] = key;         // đặt key vào đúng chỗ
+      }
+      return arr;
+    }
+    console.log(insertionSort([12, 11, 13, 5, 6]));  // [5, 6, 11, 12, 13]
+    ```
+=== "Python"
+    ```python
+    def insertion_sort(arr):
+        for i in range(1, len(arr)):
+            key = arr[i]                # phần tử cần chèn
+            j = i - 1
+            while j >= 0 and arr[j] > key:   # dịch phần tử lớn hơn sang phải
+                arr[j + 1] = arr[j]
+                j -= 1
+            arr[j + 1] = key            # đặt key vào đúng chỗ
+        return arr
 
-**Merge Sort — sắp xếp trộn**
+    print(insertion_sort([12, 11, 13, 5, 6]))   # [5, 6, 11, 12, 13]
+    ```
+
+**Thời gian:** `O(n)` tốt nhất (gần sắp), `O(n²)` trung bình/xấu nhất — **Bộ nhớ:** `O(1)` — **Ổn định:** có. Là thành phần của Timsort cho các đoạn ngắn.
+
+---
+
+## 4. Merge Sort (sắp xếp trộn)
+
+**Ý tưởng:** chia để trị (divide and conquer) — chia đôi mảng, sắp xếp đệ quy hai nửa, rồi **trộn (merge)** hai nửa đã sắp thành một. Luôn đạt `O(n log n)`, ổn định, và là nền tảng của sắp xếp ngoài (external sort) khi dữ liệu không vừa RAM.
 
 === "JavaScript"
     ```js
     function mergeSort(arr) {
       if (arr.length <= 1) return arr;          // 0 hoặc 1 phần tử đã sắp sẵn
-      const mid = arr.length >> 1;              // chia đôi mảng
+      const mid = arr.length >> 1;
       const left = mergeSort(arr.slice(0, mid));   // đệ quy nửa trái
       const right = mergeSort(arr.slice(mid));     // đệ quy nửa phải
-      return merge(left, right);                // trộn hai nửa đã sắp
+      return merge(left, right);
     }
 
     function merge(left, right) {
       const result = [];
       let i = 0, j = 0;
       while (i < left.length && j < right.length) {
-        // dùng <= để giữ tính ổn định (stable)
-        if (left[i] <= right[j]) result.push(left[i++]);
+        if (left[i] <= right[j]) result.push(left[i++]);  // <= để ổn định
         else result.push(right[j++]);
       }
-      // chép nốt phần còn lại
       return result.concat(left.slice(i)).concat(right.slice(j));
     }
-
-    console.log(mergeSort([5, 2, 8, 1, 9, 3]));   // [1, 2, 3, 5, 8, 9]
+    console.log(mergeSort([5, 2, 8, 1, 9, 3]));    // [1, 2, 3, 5, 8, 9]
     ```
 === "Python"
     ```python
     def merge_sort(arr):
-        if len(arr) <= 1:           # mảng 0 hoặc 1 phần tử đã sắp sẵn
+        if len(arr) <= 1:
             return arr
-        mid = len(arr) // 2         # chia đôi mảng
-        left = merge_sort(arr[:mid])    # sắp xếp đệ quy nửa trái
-        right = merge_sort(arr[mid:])   # sắp xếp đệ quy nửa phải
-        return merge(left, right)   # trộn hai nửa đã sắp
+        mid = len(arr) // 2
+        left = merge_sort(arr[:mid])     # đệ quy nửa trái
+        right = merge_sort(arr[mid:])    # đệ quy nửa phải
+        return merge(left, right)
 
     def merge(left, right):
         result = []
         i = j = 0
-        # so sánh song song, luôn lấy phần tử nhỏ hơn
         while i < len(left) and j < len(right):
-            if left[i] <= right[j]:     # dùng <= để giữ tính ổn định
-                result.append(left[i])
-                i += 1
+            if left[i] <= right[j]:      # <= để giữ tính ổn định
+                result.append(left[i]); i += 1
             else:
-                result.append(right[j])
-                j += 1
-        result.extend(left[i:])     # chép nốt phần còn lại
+                result.append(right[j]); j += 1
+        result.extend(left[i:])
         result.extend(right[j:])
         return result
 
-    print(merge_sort([5, 2, 8, 1, 9, 3]))   # [1, 2, 3, 5, 8, 9]
+    print(merge_sort([5, 2, 8, 1, 9, 3]))    # [1, 2, 3, 5, 8, 9]
     ```
 
-**Quick Sort — sắp xếp nhanh (phân hoạch tại chỗ, kiểu Lomuto)**
+**Thời gian:** `O(n log n)` mọi trường hợp — **Bộ nhớ:** `O(n)` — **Ổn định:** có.
+
+---
+
+## 5. Quick Sort (sắp xếp nhanh)
+
+**Ý tưởng:** chọn một phần tử **chốt (pivot)**, phân hoạch (partition) mảng thành phần nhỏ hơn và lớn hơn chốt, rồi đệ quy hai phần. Nhanh nhất trên thực tế do sắp tại chỗ và thân thiện với bộ nhớ đệm (cache).
 
 === "JavaScript"
     ```js
     function quickSort(arr, low = 0, high = arr.length - 1) {
       if (low < high) {
         const p = partition(arr, low, high);   // p là vị trí đúng của chốt
-        quickSort(arr, low, p - 1);            // đệ quy phần bên trái chốt
-        quickSort(arr, p + 1, high);           // đệ quy phần bên phải chốt
+        quickSort(arr, low, p - 1);            // đệ quy phần trái
+        quickSort(arr, p + 1, high);           // đệ quy phần phải
       }
       return arr;
     }
 
     function partition(arr, low, high) {
-      const pivot = arr[high];   // chọn phần tử cuối làm chốt
-      let i = low - 1;           // ranh giới các phần tử nhỏ hơn chốt
+      const pivot = arr[high];   // chọn phần tử cuối làm chốt (Lomuto)
+      let i = low - 1;
       for (let j = low; j < high; j++) {
         if (arr[j] <= pivot) {
           i++;
-          [arr[i], arr[j]] = [arr[j], arr[i]];   // đưa phần tử nhỏ về trái
+          [arr[i], arr[j]] = [arr[j], arr[i]];  // đưa phần tử nhỏ về trái
         }
       }
-      [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];   // đặt chốt đúng chỗ
+      [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];  // đặt chốt đúng chỗ
       return i + 1;
     }
-
     console.log(quickSort([5, 2, 8, 1, 9, 3]));   // [1, 2, 3, 5, 8, 9]
     ```
 === "Python"
@@ -156,27 +252,29 @@ Chọn thuật toán ở ô bên dưới để xem quá trình sắp xếp chạ
             high = len(arr) - 1
         if low < high:
             p = partition(arr, low, high)   # p là vị trí đúng của chốt
-            quick_sort(arr, low, p - 1)     # đệ quy phần bên trái chốt
-            quick_sort(arr, p + 1, high)    # đệ quy phần bên phải chốt
+            quick_sort(arr, low, p - 1)     # đệ quy phần trái
+            quick_sort(arr, p + 1, high)    # đệ quy phần phải
         return arr
 
     def partition(arr, low, high):
         pivot = arr[high]       # chọn phần tử cuối làm chốt
-        i = low - 1             # ranh giới các phần tử nhỏ hơn chốt
+        i = low - 1
         for j in range(low, high):
             if arr[j] <= pivot:
                 i += 1
-                arr[i], arr[j] = arr[j], arr[i]   # đưa phần tử nhỏ về trái
-        arr[i + 1], arr[high] = arr[high], arr[i + 1]   # đặt chốt vào đúng vị trí
+                arr[i], arr[j] = arr[j], arr[i]  # đưa phần tử nhỏ về trái
+        arr[i + 1], arr[high] = arr[high], arr[i + 1]  # đặt chốt đúng chỗ
         return i + 1
 
-    print(quick_sort([5, 2, 8, 1, 9, 3]))   # [1, 2, 3, 5, 8, 9]
+    print(quick_sort([5, 2, 8, 1, 9, 3]))    # [1, 2, 3, 5, 8, 9]
     ```
 
-## Thử ngay: Quick Sort in từng bước phân hoạch
+**Thời gian:** `O(n log n)` trung bình, `O(n²)` xấu nhất (chốt kém) — **Bộ nhớ:** `O(log n)` cho ngăn xếp đệ quy — **Ổn định:** không.
 
-!!! tip "Chạy được ngay"
-    Bấm **▶ Chạy** để xem quick sort làm việc: mỗi lần phân hoạch (partition) sẽ in ra chốt (pivot), đoạn đang xử lý và trạng thái mảng sau khi đặt chốt về đúng vị trí. Sửa mảng `data` rồi chạy lại để thử dữ liệu khác.
+!!! tip "Tránh trường hợp xấu nhất O(n²)"
+    Chọn chốt **ngẫu nhiên** hoặc dùng **trung vị của ba (median-of-three)** để tránh mảng đã sắp/gần sắp làm quick sort suy biến thành `O(n²)`.
+
+### Thử ngay: Quick Sort in từng bước phân hoạch
 
 <div class="js-demo" data-title="Quick Sort — in các bước phân hoạch">
 <textarea class="js-demo-src">
@@ -212,37 +310,241 @@ print(`Kết quả cuối: [${data.join(', ')}]`);
 </textarea>
 </div>
 
-## Độ phức tạp
+---
 
-| Thuật toán | Tốt nhất | Trung bình | Xấu nhất | Bộ nhớ | Ổn định |
-|-----------|----------|-----------|----------|--------|---------|
-| Bubble | O(n) | O(n²) | O(n²) | O(1) | Có |
-| Selection | O(n²) | O(n²) | O(n²) | O(1) | Không |
-| Insertion | O(n) | O(n²) | O(n²) | O(1) | Có |
-| Merge | O(n log n) | O(n log n) | O(n log n) | O(n) | Có |
-| Quick | O(n log n) | O(n log n) | O(n²) | O(log n) | Không |
-| Heap | O(n log n) | O(n log n) | O(n log n) | O(1) | Không |
-| Counting | O(n + k) | O(n + k) | O(n + k) | O(k) | Có |
-| Radix | O(d(n+k)) | O(d(n+k)) | O(d(n+k)) | O(n + k) | Có |
+## 6. Heap Sort (sắp xếp vun đống)
 
-## Ưu / nhược điểm
+**Ý tưởng:** xây một **đống cực đại (max-heap)** từ mảng, sau đó liên tục lấy phần tử lớn nhất ở gốc đưa về cuối rồi vun lại đống. Sắp tại chỗ và luôn `O(n log n)`, nhưng không thân thiện cache bằng quick sort.
 
-- **Ưu:**
-    - **Merge sort:** ổn định, luôn `O(n log n)`, phù hợp sắp xếp ngoài (external sort).
-    - **Quick sort:** nhanh trên thực tế, sắp xếp tại chỗ, thân thiện với bộ nhớ đệm (cache).
-    - **Counting/Radix:** vượt giới hạn `O(n log n)` khi khóa là số nguyên miền hẹp.
-- **Nhược:**
-    - **Bubble/Selection/Insertion:** chậm `O(n²)`, chỉ hợp dữ liệu nhỏ.
-    - **Merge sort:** tốn thêm `O(n)` bộ nhớ.
-    - **Quick sort:** xấu nhất `O(n²)` nếu chọn chốt kém (khắc phục bằng chốt ngẫu nhiên hoặc trung vị của ba).
+=== "JavaScript"
+    ```js
+    function heapSort(arr) {
+      const n = arr.length;
+      // Xây max-heap: vun từ nút cha cuối cùng lên gốc
+      for (let i = Math.floor(n / 2) - 1; i >= 0; i--) heapify(arr, n, i);
+      // Lần lượt đưa gốc (lớn nhất) về cuối rồi vun lại
+      for (let i = n - 1; i > 0; i--) {
+        [arr[0], arr[i]] = [arr[i], arr[0]];
+        heapify(arr, i, 0);
+      }
+      return arr;
+    }
+
+    function heapify(arr, n, i) {
+      let largest = i;
+      const l = 2 * i + 1, r = 2 * i + 2;   // con trái, con phải
+      if (l < n && arr[l] > arr[largest]) largest = l;
+      if (r < n && arr[r] > arr[largest]) largest = r;
+      if (largest !== i) {
+        [arr[i], arr[largest]] = [arr[largest], arr[i]];
+        heapify(arr, n, largest);           // vun tiếp nhánh bị ảnh hưởng
+      }
+    }
+    console.log(heapSort([12, 11, 13, 5, 6, 7]));  // [5, 6, 7, 11, 12, 13]
+    ```
+=== "Python"
+    ```python
+    def heapify(arr, n, i):
+        largest = i
+        l, r = 2 * i + 1, 2 * i + 2       # con trái, con phải
+        if l < n and arr[l] > arr[largest]:
+            largest = l
+        if r < n and arr[r] > arr[largest]:
+            largest = r
+        if largest != i:
+            arr[i], arr[largest] = arr[largest], arr[i]
+            heapify(arr, n, largest)       # vun tiếp nhánh bị ảnh hưởng
+
+    def heap_sort(arr):
+        n = len(arr)
+        for i in range(n // 2 - 1, -1, -1):   # xây max-heap
+            heapify(arr, n, i)
+        for i in range(n - 1, 0, -1):         # đưa gốc về cuối rồi vun lại
+            arr[0], arr[i] = arr[i], arr[0]
+            heapify(arr, i, 0)
+        return arr
+
+    print(heap_sort([12, 11, 13, 5, 6, 7]))   # [5, 6, 7, 11, 12, 13]
+    ```
+
+**Thời gian:** `O(n log n)` mọi trường hợp — **Bộ nhớ:** `O(1)` — **Ổn định:** không.
+
+---
+
+## 7. Counting Sort (sắp xếp đếm)
+
+**Ý tưởng:** đếm số lần xuất hiện của mỗi khóa (số nguyên trong khoảng nhỏ `[0..k]`), rồi dùng tổng tích lũy (prefix sum) để đặt mỗi phần tử vào đúng vị trí. Không so sánh nên vượt giới hạn `O(n log n)`, nhưng chỉ dùng được khi miền giá trị `k` không quá lớn.
+
+=== "JavaScript"
+    ```js
+    function countingSort(arr) {
+      if (arr.length === 0) return arr;
+      const max = Math.max(...arr);
+      const count = new Array(max + 1).fill(0);
+      for (const x of arr) count[x]++;          // đếm số lần xuất hiện
+      const result = [];
+      for (let v = 0; v <= max; v++) {          // duyệt theo thứ tự khóa tăng dần
+        while (count[v]-- > 0) result.push(v);
+      }
+      return result;
+    }
+    console.log(countingSort([4, 2, 2, 8, 3, 3, 1]));  // [1, 2, 2, 3, 3, 4, 8]
+    ```
+=== "Python"
+    ```python
+    def counting_sort(arr):
+        if not arr:
+            return arr
+        mx = max(arr)
+        count = [0] * (mx + 1)
+        for x in arr:
+            count[x] += 1                 # đếm số lần xuất hiện
+        result = []
+        for v in range(mx + 1):           # duyệt theo khóa tăng dần
+            result.extend([v] * count[v])
+        return result
+
+    print(counting_sort([4, 2, 2, 8, 3, 3, 1]))   # [1, 2, 2, 3, 3, 4, 8]
+    ```
+
+**Thời gian:** `O(n + k)` — **Bộ nhớ:** `O(k)` — **Ổn định:** có (khi cài bằng prefix sum duyệt từ phải). Dùng khi `k = O(n)`.
+
+---
+
+## 8. Radix Sort (sắp xếp cơ số)
+
+**Ý tưởng:** sắp xếp số theo **từng chữ số**, từ hàng đơn vị lên hàng cao nhất, mỗi lượt dùng một sắp xếp ổn định (thường là counting sort) theo chữ số hiện tại. Nhờ tính ổn định, thứ tự các lượt trước được bảo toàn.
+
+=== "JavaScript"
+    ```js
+    function radixSort(arr) {
+      if (arr.length === 0) return arr;
+      const max = Math.max(...arr);
+      for (let exp = 1; Math.floor(max / exp) > 0; exp *= 10) {
+        countingByDigit(arr, exp);   // sắp ổn định theo chữ số tại vị trí exp
+      }
+      return arr;
+    }
+
+    function countingByDigit(arr, exp) {
+      const n = arr.length;
+      const output = new Array(n);
+      const count = new Array(10).fill(0);
+      for (let i = 0; i < n; i++) count[Math.floor(arr[i] / exp) % 10]++;
+      for (let d = 1; d < 10; d++) count[d] += count[d - 1];   // prefix sum
+      for (let i = n - 1; i >= 0; i--) {         // duyệt từ phải để giữ ổn định
+        const digit = Math.floor(arr[i] / exp) % 10;
+        output[--count[digit]] = arr[i];
+      }
+      for (let i = 0; i < n; i++) arr[i] = output[i];
+    }
+    console.log(radixSort([170, 45, 75, 90, 2, 802, 24, 66]));
+    // [2, 24, 45, 66, 75, 90, 170, 802]
+    ```
+=== "Python"
+    ```python
+    def counting_by_digit(arr, exp):
+        n = len(arr)
+        output = [0] * n
+        count = [0] * 10
+        for x in arr:
+            count[(x // exp) % 10] += 1
+        for d in range(1, 10):
+            count[d] += count[d - 1]        # prefix sum
+        for i in range(n - 1, -1, -1):      # duyệt từ phải để giữ ổn định
+            digit = (arr[i] // exp) % 10
+            count[digit] -= 1
+            output[count[digit]] = arr[i]
+        arr[:] = output
+
+    def radix_sort(arr):
+        if not arr:
+            return arr
+        mx = max(arr)
+        exp = 1
+        while mx // exp > 0:
+            counting_by_digit(arr, exp)
+            exp *= 10
+        return arr
+
+    print(radix_sort([170, 45, 75, 90, 2, 802, 24, 66]))
+    # [2, 24, 45, 66, 75, 90, 170, 802]
+    ```
+
+**Thời gian:** `O(d·(n + k))` với `d` là số chữ số, `k` là cơ số (10) — **Bộ nhớ:** `O(n + k)` — **Ổn định:** có.
+
+---
+
+## So sánh trực quan bằng số phép toán
+
+Bấm **▶ Chạy** để so sánh số phép so sánh của các thuật toán trên cùng một mảng ngẫu nhiên. Sửa `n` để thấy khác biệt `O(n²)` và `O(n log n)` giãn ra ra sao.
+
+<div class="js-demo" data-title="Đếm số phép so sánh: O(n²) vs O(n log n)">
+<textarea class="js-demo-src">
+function makeArray(n) {
+  const a = [];
+  for (let i = 0; i < n; i++) a.push(Math.floor(Math.random() * 1000));
+  return a;
+}
+
+function bubbleCount(arr) {
+  let c = 0;
+  for (let i = 0; i < arr.length - 1; i++)
+    for (let j = 0; j < arr.length - 1 - i; j++) { c++; if (arr[j] > arr[j+1]) [arr[j],arr[j+1]]=[arr[j+1],arr[j]]; }
+  return c;
+}
+
+function mergeCount(arr) {
+  let c = 0;
+  function ms(a) {
+    if (a.length <= 1) return a;
+    const m = a.length >> 1, L = ms(a.slice(0,m)), R = ms(a.slice(m)), out = [];
+    let i = 0, j = 0;
+    while (i < L.length && j < R.length) { c++; out.push(L[i] <= R[j] ? L[i++] : R[j++]); }
+    return out.concat(L.slice(i)).concat(R.slice(j));
+  }
+  ms(arr);
+  return c;
+}
+
+const n = 200;
+const base = makeArray(n);
+print(`Mảng ${n} phần tử ngẫu nhiên:`);
+print(`  Bubble Sort: ${bubbleCount([...base])} phép so sánh  (~O(n²))`);
+print(`  Merge Sort:  ${mergeCount([...base])} phép so sánh  (~O(n log n))`);
+</textarea>
+</div>
+
+## Bảng độ phức tạp
+
+| Thuật toán | Tốt nhất | Trung bình | Xấu nhất | Bộ nhớ | Ổn định | Tại chỗ |
+|-----------|----------|-----------|----------|--------|---------|---------|
+| Bubble | O(n) | O(n²) | O(n²) | O(1) | Có | Có |
+| Selection | O(n²) | O(n²) | O(n²) | O(1) | Không | Có |
+| Insertion | O(n) | O(n²) | O(n²) | O(1) | Có | Có |
+| Merge | O(n log n) | O(n log n) | O(n log n) | O(n) | Có | Không |
+| Quick | O(n log n) | O(n log n) | O(n²) | O(log n) | Không | Có |
+| Heap | O(n log n) | O(n log n) | O(n log n) | O(1) | Không | Có |
+| Counting | O(n + k) | O(n + k) | O(n + k) | O(k) | Có | Không |
+| Radix | O(d(n+k)) | O(d(n+k)) | O(d(n+k)) | O(n + k) | Có | Không |
+
+## Chọn thuật toán nào?
+
+- **Mảng nhỏ hoặc gần sắp:** Insertion sort (nhanh, đơn giản).
+- **Cần ổn định + đảm bảo `O(n log n)`:** Merge sort.
+- **Nhanh nhất trên thực tế, sắp tại chỗ:** Quick sort (với chốt ngẫu nhiên).
+- **Cần `O(n log n)` tại chỗ, không lo xấu nhất:** Heap sort.
+- **Khóa là số nguyên miền hẹp:** Counting/Radix sort (đạt tuyến tính).
+- **Thư viện chuẩn:** Python `sorted()` và Java `Arrays.sort()` (kiểu object) dùng **Timsort** — lai giữa merge và insertion sort, tối ưu cho dữ liệu thực tế có sẵn các đoạn đã sắp.
 
 ## Câu hỏi phỏng vấn thường gặp
 
 1. Vì sao merge sort ổn định còn quick sort thì không?
 2. Khi nào quick sort rơi vào `O(n²)` và làm sao tránh?
 3. Counting sort và radix sort đạt tuyến tính bằng cách nào, và giới hạn của chúng là gì?
-4. Python dùng thuật toán sắp xếp nào cho `sorted()`? (Timsort — lai giữa merge và insertion sort.)
+4. Python dùng thuật toán sắp xếp nào cho `sorted()`? (Timsort.)
 5. Giải thích sự khác nhau giữa sắp xếp trong bộ nhớ (in-memory) và sắp xếp ngoài (external).
+6. Vì sao heap sort tại chỗ và `O(n log n)` nhưng vẫn thường chậm hơn quick sort trong thực tế? (Kém thân thiện với cache, nhiều lần nhảy bộ nhớ.)
 
 ## Tham khảo
 
