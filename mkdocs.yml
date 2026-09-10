@@ -70,30 +70,85 @@ nav:
       - cau-truc-du-lieu/index.md
       - Mảng: cau-truc-du-lieu/mang.md
       - Danh sách liên kết: cau-truc-du-lieu/danh-sach-lien-ket.md
+      - Ngăn xếp: cau-truc-du-lieu/ngan-xep.md
+      - Hàng đợi: cau-truc-du-lieu/hang-doi.md
+      - Cây: cau-truc-du-lieu/cay.md
+      - Đồ thị: cau-truc-du-lieu/do-thi.md
+      - Bảng băm: cau-truc-du-lieu/bang-bam.md
   - Giải thuật:
       - giai-thuat/index.md
+      - Sắp xếp: giai-thuat/sap-xep.md
+      - Tìm kiếm: giai-thuat/tim-kiem.md
+      - Quy hoạch động: giai-thuat/quy-hoach-dong.md
+      - Tham lam: giai-thuat/tham-lam.md
+      - Chia để trị: giai-thuat/chia-de-tri.md
+      - Thuật toán chuỗi: giai-thuat/thuat-toan-chuoi.md
       - Hai con trỏ: giai-thuat/hai-con-tro.md
       - Cửa sổ trượt: giai-thuat/cua-so-truot.md
   - Thiết kế hệ thống:
       - thiet-ke-he-thong/index.md
+      - Mẫu thiết kế: thiet-ke-he-thong/design-patterns.md
+      - Nguyên lý OOP & SOLID: thiet-ke-he-thong/nguyen-ly-oop.md
+      - Khả năng mở rộng: thiet-ke-he-thong/scalability.md
+      - Hệ phân tán: thiet-ke-he-thong/he-phan-tan.md
+      - Microservices (thiết kế): thiet-ke-he-thong/microservices-kien-truc.md
+      - Thiết kế & tối ưu CSDL: thiet-ke-he-thong/thiet-ke-csdl.md
   - Hệ điều hành:
       - he-dieu-hanh/index.md
+      - Tiến trình & Luồng: he-dieu-hanh/tien-trinh-luong.md
+      - Đồng bộ hoá: he-dieu-hanh/dong-bo-hoa.md
+      - Bế tắc (Deadlock): he-dieu-hanh/deadlock.md
+      - Lập lịch: he-dieu-hanh/lap-lich.md
+      - Quản lý bộ nhớ: he-dieu-hanh/quan-ly-bo-nho.md
+      - Hệ thống tệp: he-dieu-hanh/he-thong-tep.md
   - Mạng máy tính:
       - mang-may-tinh/index.md
+      - TCP/IP & OSI: mang-may-tinh/tcp-ip.md
+      - HTTP: mang-may-tinh/http.md
+      - DNS: mang-may-tinh/dns.md
+      - Định tuyến: mang-may-tinh/dinh-tuyen.md
   - Cơ sở dữ liệu:
       - co-so-du-lieu/index.md
       - Cẩm nang phỏng vấn CSDL: co-so-du-lieu/cam-nang-phong-van-csdl.md
+      - SQL & CSDL quan hệ: co-so-du-lieu/sql.md
+      - NoSQL: co-so-du-lieu/nosql.md
+      - ACID: co-so-du-lieu/acid.md
+      - Chỉ mục: co-so-du-lieu/chi-muc.md
+      - Giao dịch: co-so-du-lieu/giao-dich.md
   - Ngôn ngữ lập trình:
       - ngon-ngu-lap-trinh/index.md
+      - Mô hình lập trình: ngon-ngu-lap-trinh/paradigm.md
+      - Quản lý bộ nhớ: ngon-ngu-lap-trinh/quan-ly-bo-nho.md
+      - Lập trình đồng thời: ngon-ngu-lap-trinh/concurrency.md
+      - Xử lý lỗi: ngon-ngu-lap-trinh/xu-ly-loi.md
+      - Lập trình hàm: ngon-ngu-lap-trinh/functional.md
+      - OOP: ngon-ngu-lap-trinh/oop.md
+      - Bất đồng bộ: ngon-ngu-lap-trinh/bat-dong-bo.md
+      - Hệ thống kiểu: ngon-ngu-lap-trinh/type-system.md
+      - Thu gom rác: ngon-ngu-lap-trinh/garbage-collection.md
+      - Đệ quy: ngon-ngu-lap-trinh/de-quy.md
   - Kiến trúc hệ thống:
       - kien-truc-he-thong/index.md
+      - Client-Server: kien-truc-he-thong/client-server.md
       - RESTful: kien-truc-he-thong/rest.md
+      - SOA: kien-truc-he-thong/soa.md
+      - Message Queue: kien-truc-he-thong/message-queue.md
       - Microservices: kien-truc-he-thong/microservices.md
+      - EDA: kien-truc-he-thong/eda.md
+      - Phân tầng: kien-truc-he-thong/layered.md
+      - Caching: kien-truc-he-thong/caching.md
   - Giải quyết vấn đề:
       - giai-quyet-van-de/index.md
+      - Chiến lược: giai-quyet-van-de/chien-luoc.md
+      - Kỹ thuật coding: giai-quyet-van-de/ky-thuat-coding.md
+      - Thực hành tốt: giai-quyet-van-de/best-practices.md
+      - Độ phức tạp (Big O): giai-quyet-van-de/do-phuc-tap.md
+      - Gỡ lỗi: giai-quyet-van-de/debugging.md
+      - Tối ưu hoá: giai-quyet-van-de/toi-uu.md
   - Quản lý phiên bản:
       - quan-ly-phien-ban/index.md
       - Git: quan-ly-phien-ban/git.md
+      - Bitbucket: quan-ly-phien-ban/bitbucket.md
   - Tóm tắt sách:
       - tom-tat-sach/index.md
       - System Design Interview (Alex Xu): tom-tat-sach/system-design-interview-alex-xu.md
