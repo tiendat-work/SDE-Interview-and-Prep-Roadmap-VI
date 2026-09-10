@@ -4,9 +4,9 @@ Kiến trúc microservices (microservices architecture) là một phương pháp
 
 ### Mục lục
 
-1. [Các đặc điểm chính](#cac-dac-diem-chinh)
-2. [Ưu điểm](#uu-diem)
-3. [Nhược điểm](#nhuoc-diem)
+1. [Các đặc điểm chính](#cac-ac-iem-chinh)
+2. [Ưu điểm](#uu-iem)
+3. [Nhược điểm](#nhuoc-iem)
 4. [Các mẫu thiết kế trong Microservices](#cac-mau-thiet-ke-trong-microservices)
 5. [Triển khai](#trien-khai)
 6. [Top 76 câu hỏi về kiến trúc Microservices](#top-76-cau-hoi-ve-kien-truc-microservices)

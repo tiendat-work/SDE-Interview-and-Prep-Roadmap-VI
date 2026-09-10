@@ -4,7 +4,7 @@
 1. [Git](#git)
 2. [GitHub](#github)
 3. [GitOps](#gitops)
-4. [75 câu hỏi phỏng vấn hàng đầu về Git, GitHub và GitOps](#75-cau-hoi-phong-van-hang-dau-ve-git-github-va-gitops)
+4. [75 câu hỏi phỏng vấn hàng đầu về Git, GitHub và GitOps](#75-cau-hoi-phong-van-hang-au-ve-git-github-va-gitops)
 
 ## Git
 **Git** là một hệ thống quản lý phiên bản phân tán (distributed version control system) dùng để theo dõi các thay đổi trong mã nguồn trong quá trình phát triển phần mềm. Nó cho phép nhiều lập trình viên cùng làm việc trên một dự án đồng thời mà không gây ảnh hưởng đến thay đổi của nhau. Dưới đây là một số khái niệm và lệnh quan trọng:

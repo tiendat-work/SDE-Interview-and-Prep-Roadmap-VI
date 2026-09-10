@@ -13,8 +13,8 @@ Welcome to the SDE Interview Preparation Roadmap! This repository is not just ab
 <details>
 <summary>1. <span style="color:green;">Data Structures</span></summary>
 
-   - [ ] [**Arrays**](./Data%20Structures/Arrays.md)
-   - [ ] [**Linked Lists**](./Data%20Structures/LinkedList.md)
+   - [ ] [**Arrays**](./legacy/Data%20Structures/Arrays.md)
+   - [ ] [**Linked Lists**](./legacy/Data%20Structures/LinkedList.md)
      - [ ] Singly linked lists
        - [ ] Circularly linked lists
        - [ ] Lock-free linked lists
@@ -457,7 +457,7 @@ Welcome to the SDE Interview Preparation Roadmap! This repository is not just ab
    - [ ] **Client-server architecture**
      - [ ] Basics
      - [ ] Communication protocols
-   - [ ] [**RESTful architecture**](./System%20Design/RESTfulArchitecture.md)
+   - [ ] [**RESTful architecture**](./legacy/RESTfulArchitecture.md)
    - [ ] **Service-Oriented Architecture (SOA)**
      - [ ] Principles
      - [ ] Advantages
@@ -466,7 +466,7 @@ Welcome to the SDE Interview Preparation Roadmap! This repository is not just ab
      - [ ] Basics
      - [ ] Use cases
      - [ ] Implementations (e.g., RabbitMQ, Kafka)
-   - [ ] [**Microservices**](./System%20Design/Microservices.md)
+   - [ ] [**Microservices**](./legacy/Microservices.md)
    - [ ] **Event-Driven Architecture (EDA)**
      - [ ] Basics
      - [ ] Components
@@ -536,7 +536,7 @@ Welcome to the SDE Interview Preparation Roadmap! This repository is not just ab
 <details>
 <summary>10. <span style="color:green;">Version control System</span></summary>
 
-   - [ ] [**Git**](./Version%20Control%20Systems/Git.md)
+   - [ ] [**Git**](./legacy/Version%20Control%20Systems/Git.md)
    - [ ] **Bitbucket**
 
 

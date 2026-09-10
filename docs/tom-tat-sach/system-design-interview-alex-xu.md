@@ -10,7 +10,7 @@ cầu, (b) các quyết định thiết kế chính, (c) đánh đổi (trade-of
 
 ## Mục lục
 
-1. [Scale từ 0 đến hàng triệu người dùng](#chuong-1-scale-tu-0-den-hang-trieu-nguoi-dung-scale-from-zero-to-millions-of-users)
+1. [Scale từ 0 đến hàng triệu người dùng](#chuong-1-scale-tu-0-en-hang-trieu-nguoi-dung-scale-from-zero-to-millions-of-users)
 2. [Ước lượng back-of-the-envelope](#chuong-2-uoc-luong-back-of-the-envelope-back-of-the-envelope-estimation)
 3. [Khung 4 bước cho phỏng vấn thiết kế hệ thống](#chuong-3-khung-4-buoc-cho-phong-van-thiet-ke-he-thong-a-framework-for-system-design-interviews)
 4. [Thiết kế Rate Limiter](#chuong-4-thiet-ke-rate-limiter-design-a-rate-limiter)
@@ -22,7 +22,7 @@ cầu, (b) các quyết định thiết kế chính, (c) đánh đổi (trade-of
 10. [Hệ thống thông báo](#chuong-10-he-thong-thong-bao-design-a-notification-system)
 11. [News Feed](#chuong-11-news-feed-design-a-news-feed-system)
 12. [Hệ thống chat](#chuong-12-he-thong-chat-design-a-chat-system)
-13. [Gợi ý tìm kiếm tự động](#chuong-13-goi-y-tim-kiem-tu-dong-design-a-search-autocomplete-system)
+13. [Gợi ý tìm kiếm tự động](#chuong-13-goi-y-tim-kiem-tu-ong-design-a-search-autocomplete-system)
 14. [Thiết kế YouTube](#chuong-14-thiet-ke-youtube-design-youtube)
 15. [Thiết kế Google Drive](#chuong-15-thiet-ke-google-drive-design-google-drive)
 16. [Học tiếp](#chuong-16-hoc-tiep-the-learning-continues)
