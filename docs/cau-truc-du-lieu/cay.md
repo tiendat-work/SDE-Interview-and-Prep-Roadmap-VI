@@ -372,6 +372,27 @@ search(root, 9);
 
 Bộ nhớ nhìn chung O(n); trie tốn nhiều bộ nhớ hơn do lưu con trỏ cho mỗi ký tự.
 
+### Vì sao có các con số này?
+
+!!! question "Tại sao BST tìm/chèn/xóa là O(log n) khi cân bằng nhưng O(n) khi suy biến?"
+    Bí quyết nằm ở **chiều cao (height)** của cây, vì mọi thao tác đều là một chuyến **đi từ gốc xuống** — mỗi bước rẽ trái hoặc phải, số bước tối đa đúng bằng chiều cao.
+
+    - **Khi cân bằng — O(log n):** nhờ bất biến "trái < nút < phải", mỗi lần so sánh với một nút cho phép **loại bỏ trọn một cây con**, tức khoảng một nửa số nút còn lại — y hệt tìm kiếm nhị phân trên mảng. Từ `n` nút, số nút còn xét giảm `n → n/2 → n/4 → ...`; số lần chia đôi để về 1 chính là `log₂ n`. Một cây cân bằng chứa `n` nút chỉ cao khoảng `log₂ n` tầng: 1 triệu nút → chỉ ~20 tầng, nên tối đa ~20 bước.
+    - **Khi suy biến — O(n):** nếu chèn dữ liệu **đã sắp xếp** (1, 2, 3, 4...), mỗi nút mới luôn lớn hơn nút hiện tại nên luôn gắn vào con phải. Cây biến thành một "sợi dây" nghiêng — thực chất là **danh sách liên kết**. Lúc này chiều cao = `n` (mọi nút xếp thành một hàng dọc), nên đi từ gốc tới lá phải qua cả `n` nút → mỗi thao tác thành O(n), mất sạch lợi thế.
+
+    Nói ngắn: BST nhanh **không phải** do bản thân cấu trúc, mà do cây **thấp**. Cây thấp ⇒ nhanh; cây cao (lệch) ⇒ chậm.
+
+!!! question "Tại sao cần cây tự cân bằng (AVL / đỏ-đen)?"
+    Vì BST thường **không tự biết** mình đang suy biến — thứ tự dữ liệu đầu vào (đã sắp, gần sắp) là chuyện ta không kiểm soát được, mà đó lại chính là trường hợp làm cây cao lên thành O(n). Cây tự cân bằng thêm **thông tin kiểm soát** (hệ số cân bằng ở AVL, màu đỏ/đen ở red-black) và sau mỗi lần chèn/xóa sẽ **tự phát hiện lệch rồi xoay (rotation)** để kéo chiều cao về `O(log n)`.
+
+    Trực giác về phép xoay: khi một nhánh dài ra quá mức, ta "nhấc" nút ở giữa nhánh đó lên làm gốc con và đẩy nút cũ xuống — giống như dựng lại một cái đòn bẩy đang nghiêng cho thăng bằng. Chi phí một lần xoay chỉ là **đổi vài con trỏ — O(1)**, nhưng đổi lại **bảo hành vĩnh viễn** rằng cây không bao giờ cao hơn `~2·log₂ n`. Đó là cái giá rất rẻ để mọi thao tác về sau luôn là O(log n) thay vì có nguy cơ O(n).
+
+!!! question "Tại sao heap lấy min/max là O(1) nhưng xóa (pop) lại O(log n)?"
+    - **Lấy min/max — O(1):** tính chất heap bắt buộc cha luôn ≤ con (min-heap) hoặc ≥ con (max-heap). Truyền dồn xuống, **phần tử cực trị buộc phải nằm ở gốc** — tức phần tử đầu mảng. Muốn xem nó chỉ cần đọc `h[0]`, không phải tìm kiếm gì cả → O(1).
+    - **Xóa gốc — O(log n):** vấn đề là sau khi lấy gốc đi, ta để lại một "cái lỗ" ở đỉnh và phải **khôi phục tính chất heap**. Cách làm: nhấc phần tử **cuối cùng** lên lấp vào gốc (giữ cây "gần hoàn chỉnh"), rồi **sift-down** — so nó với hai con, đổi chỗ với con nhỏ hơn (min-heap), lặp lại cho tới khi về đúng chỗ. Mỗi bước sift-down đi xuống **một tầng**, mà heap là cây nhị phân gần hoàn chỉnh nên chỉ cao `log₂ n` tầng → tối đa `log₂ n` lần đổi chỗ → O(log n).
+
+    Tóm lại: heap được thiết kế để phần tử cực trị **luôn sẵn ở gốc** (nên "xem" là tức thì), nhưng cái giá là mỗi lần "lấy ra" phải sắp xếp lại một đường dọc theo chiều cao — mà chiều cao chỉ là O(log n).
+
 ## Ưu / nhược điểm
 
 - **Ưu:**

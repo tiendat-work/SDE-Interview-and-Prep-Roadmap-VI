@@ -104,6 +104,23 @@ gantt
 | MLFQ | Có | Tự thích nghi tác vụ | Cấu hình phức tạp |
 | EDF | Có | Đảm bảo deadline real-time | Sụp đổ khi quá tải |
 
+!!! question "Tại sao Round Robin công bằng nhưng tốn nhiều context switch?"
+    **Công bằng đến từ chính cơ chế lượng tử + xoay vòng.** RR cắt CPU thành các lát thời gian đều nhau (quantum) và phát cho từng tiến trình theo vòng tròn. Không ai được giữ CPU quá một quantum trước khi bị đẩy về cuối hàng đợi, nên **mọi tiến trình đều tiến triển** và không tiến trình dài nào độc chiếm CPU chặn những cái phía sau (khác hẳn FCFS bị convoy effect). Trực giác: như thầy giáo cho mỗi học sinh giơ tay đúng 2 phút phát biểu rồi chuyển người kế — ai cũng có lượt, phản hồi đầu tiên đến nhanh.
+
+    **Nhưng cái giá của "cắt nhỏ và xoay vòng" chính là context switch.** Mỗi khi hết quantum mà tiến trình chưa xong, hệ phải **chuyển ngữ cảnh** sang tiến trình kế: lưu/nạp thanh ghi, có thể xả TLB và làm nguội cache — toàn chi phí thuần không sinh việc hữu ích. Số lần chuyển tỉ lệ nghịch với độ lớn quantum:
+
+    - **Quantum quá nhỏ** → tiến trình bị cắt liên tục → **rất nhiều** context switch → phần lớn thời gian CPU dành để "dọn bàn" thay vì tính. Ví dụ burst 100ms với quantum 1ms phải chuyển ~100 lần; nếu mỗi lần tốn 0.1ms thì mất 10% CPU cho overhead thuần.
+    - **Quantum quá lớn** → ít chuyển hơn nhưng RR **thoái hoá thành FCFS**, mất luôn ưu điểm phản hồi nhanh.
+
+    Đánh đổi cốt lõi: RR đổi **thông lượng/hiệu suất** (do overhead chuyển ngữ cảnh) lấy **công bằng và độ phản hồi thấp** — chọn quantum là nghệ thuật cân bằng hai thứ đó (thường 10–100ms).
+
+!!! question "Tại sao SJF tối ưu thời gian chờ trung bình nhưng có thể gây đói (starvation)?"
+    **Tối ưu — chứng minh bằng trực giác "việc ngắn trước".** Thời gian chờ trung bình = tổng thời gian chờ của mọi tiến trình chia đều. Khi xếp một tiến trình lên trước, **burst của nó bị cộng vào thời gian chờ của TẤT CẢ tiến trình đứng sau**. Vậy muốn tổng chờ nhỏ nhất, hãy để tiến trình có burst **ngắn nhất** lên trước — vì nó "đè" chi phí chờ ít nhất lên số đông phía sau. Đây đúng là bài toán sắp xếp cổ điển: xử lý theo thứ tự tăng dần độ dài luôn cho tổng thời gian chờ nhỏ nhất, và SJF làm chính xác điều đó → **tối ưu về mặt toán học** (với tập tiến trình đến cùng lúc).
+
+    Ví dụ P1=8, P2=4, P3=2: chạy SJF (2→4→8) cho chờ TB `(0+2+6)/3 = 2.67`; chạy theo thứ tự đến (8→4→2) cho `(0+8+12)/3 = 6.67`. Đưa việc ngắn lên trước cứu được rất nhiều thời gian chờ tích luỹ.
+
+    **Nhưng cùng logic "ngắn trước" lại là nguồn gốc của đói.** Vì SJF **luôn** ưu tiên burst ngắn, một tiến trình **dài** có thể bị các tiến trình ngắn mới đến liên tục **chen lên trước mãi mãi**. Trong hệ bận rộn với dòng công việc ngắn không ngừng, tiến trình dài **không bao giờ tới lượt** → **starvation (bỏ đói)**. Trực giác: ở phòng cấp cứu ưu tiên ca nhanh, một bệnh nhân cần điều trị lâu cứ bị đẩy lùi mỗi khi có ca nhẹ mới vào. Đánh đổi: SJF đổi **công bằng** lấy **thời gian chờ trung bình tối ưu**; cách chữa thực dụng là **lão hoá (aging)** — tăng dần ưu tiên của tiến trình theo thời gian nó đã chờ, để rốt cuộc nó cũng được chạy.
+
 ## Ví dụ
 ```python
 # Tính thời gian chờ và hoàn thành trung bình cho FCFS và SJF (non-preemptive)

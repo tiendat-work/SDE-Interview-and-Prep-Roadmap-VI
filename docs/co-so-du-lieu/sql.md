@@ -81,6 +81,15 @@ Chuẩn hoá loại bỏ dư thừa (redundancy) và bất thường khi cập n
 
 Thực tế thường chuẩn hoá tới 3NF, đôi khi **phi chuẩn hoá (denormalize)** có chủ đích để tăng tốc đọc.
 
+!!! question "Tại sao chuẩn hoá giảm trùng lặp nhưng có thể làm CHẬM truy vấn? (và khi nào phi chuẩn hoá)"
+    **Chuẩn hoá = tách một sự thật ra đúng một chỗ.** Ví dụ tên trưởng phòng chỉ lưu ở bảng `phong_ban`, mọi nơi khác *trỏ tới* qua khoá ngoại thay vì chép lại. Lợi ích:
+
+    - **Không trùng lặp** → tiết kiệm chỗ, và quan trọng hơn là **tránh bất thường cập nhật (update anomaly)**: đổi tên trưởng phòng chỉ sửa **một hàng**, không phải đi tìm sửa hàng nghìn dòng đơn hàng có chép sẵn tên đó (chép nhiều nơi thì dễ sót → dữ liệu mâu thuẫn).
+
+    **Nhưng cái giá là JOIN.** Vì dữ liệu bị xé ra nhiều bảng, để hiển thị "đơn hàng + tên khách + tên phòng + tên trưởng phòng" ta phải **ghép (JOIN) nhiều bảng lại lúc đọc**. Mỗi JOIN buộc CSDL khớp khoá giữa các bảng (dò chỉ mục, băm, hoặc quét) — càng nhiều bảng, càng nhiều hàng, càng tốn công. Truy vấn đọc nóng chạy hàng triệu lần mà phải JOIN 5–6 bảng có thể trở thành điểm nghẽn.
+
+    **Vì vậy đôi khi phi chuẩn hoá:** cố ý **chép lại** vài trường (ví dụ lưu sẵn `ten_khach` ngay trong bảng đơn hàng) để **đọc một bảng là đủ, khỏi JOIN** → nhanh hơn nhiều. Đánh đổi ngược lại: tốn chỗ hơn và **phải tự lo đồng bộ bản sao** (đổi tên khách thì phải cập nhật nhiều nơi). Nguyên tắc: **chuẩn hoá để ghi an toàn/đúng đắn là mặc định; phi chuẩn hoá là tối ưu có chủ đích cho những truy vấn đọc nóng, chấp nhận thêm rủi ro trùng lặp.**
+
 ### Ví dụ chuẩn hoá từng bước
 Bảng chưa chuẩn hoá (một hàng đơn hàng gộp mọi thứ):
 
@@ -144,6 +153,12 @@ FULL OUTER → {1,2,3,4}        (hợp; hai đầu thiếu là NULL)
 | LEFT / RIGHT OUTER | Giữ toàn bộ bảng trái / phải |
 | FULL OUTER | Hợp — giữ cả hai, thiếu thì NULL |
 | CROSS | Tích Descartes (m × n hàng) |
+
+!!! question "Tại sao chỉ mục (index) giúp `WHERE` và `JOIN` nhanh?"
+    - **`WHERE`:** không có chỉ mục trên cột lọc, CSDL phải **quét toàn bảng** (đọc từng hàng để so điều kiện) → O(n). Chỉ mục giữ cột đó **đã sắp xếp** trong B+ tree, nên nhảy thẳng tới vùng khớp bằng cách chia đôi/rẽ nhánh → O(log n). Ví dụ `WHERE ho_ten = 'Lan'` trên 1 triệu hàng: quét ~1.000.000 lần đọc so với ~20 bước qua chỉ mục.
+    - **`JOIN`:** ghép hai bảng thực chất là "với mỗi hàng bảng A, tìm hàng khớp ở bảng B". Không chỉ mục trên cột nối của B, mỗi hàng của A phải **quét lại toàn bộ B** → chi phí `A × B` (nested loop tệ nhất). Có chỉ mục trên cột nối của B, mỗi lần tìm khớp chỉ tốn O(log n) → tổng còn `A × log B`. Đây là lý do **cột khoá ngoại dùng để JOIN gần như luôn nên được chỉ mục hoá**; thiếu nó là nguyên nhân kinh điển khiến JOIN chậm ở quy mô lớn.
+
+    Nói ngắn: chỉ mục biến thao tác "dò tìm tuyến tính" thành "tra cứu có định hướng", và cả `WHERE` lẫn `JOIN` đều bản chất là các thao tác dò tìm. (Chi tiết cơ chế B+ tree: xem trang [Chỉ mục](chi-muc.md).)
 
 #### Sơ đồ Venn các loại JOIN
 

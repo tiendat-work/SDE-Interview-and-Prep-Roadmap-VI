@@ -77,6 +77,31 @@ Khi cần nạp trang mới mà không còn khung trống, phải chọn "nạn 
 - **LRU (Least Recently Used):** thay trang lâu nhất không dùng. Xấp xỉ tốt Optimal nhưng tốn chi phí theo dõi thời điểm truy cập.
 - **Clock (Second Chance):** xấp xỉ LRU rẻ hơn: các trang xếp thành vòng, mỗi trang có bit tham chiếu (reference bit); kim quét, gặp bit=1 thì cho "cơ hội thứ hai" (xoá bit về 0), gặp bit=0 thì thay.
 
+!!! question "Tại sao phân trang (paging) giải quyết được phân mảnh ngoài?"
+    **Gốc rễ của phân mảnh ngoài là đòi hỏi "một khối liền kề".** Trong cấp phát liền khối, mỗi tiến trình cần một dải bộ nhớ **liên tục**. Sau nhiều lần cấp/thu hồi, vùng trống bị xé thành nhiều mảnh nhỏ rải rác — tổng dung lượng trống có thể thừa, nhưng **không mảnh nào đủ lớn liền một khối** để chứa tiến trình mới. Đó là phân mảnh ngoài. Trực giác: bãi đỗ xe còn trống 5 chỗ nhưng nằm rải rác, không có 5 chỗ liền nhau cho một xe buýt.
+
+    **Paging xoá bỏ đòi hỏi liền kề đó.** Nó cắt không gian địa chỉ ảo thành các **trang** kích thước cố định (thường 4 KB) và cắt RAM thành các **khung** cùng kích thước. Vì mọi trang và khung **cùng một cỡ**, bất kỳ trang nào cũng nhét vừa bất kỳ khung trống nào — không cần chúng liền kề nhau trong RAM. **Bảng trang** lo việc ánh xạ từng trang ảo → khung vật lý rải rác, còn tiến trình vẫn "thấy" không gian địa chỉ liên tục. Nhờ mọi ô trống đều dùng được (không có mảnh "quá nhỏ vô dụng"), phân mảnh ngoài biến mất. Đánh đổi: vẫn còn **phân mảnh trong** ở trang cuối (trang nửa rỗng vẫn chiếm trọn một khung), nhưng phần phí này nhỏ và có giới hạn (< 1 trang mỗi tiến trình).
+
+!!! question "Tại sao TLB tăng tốc truy cập bộ nhớ?"
+    **Vì nếu không có TLB, mỗi lần truy cập bộ nhớ phải tra bảng trang trong RAM — mà bảng trang cũng nằm trong RAM.** Với bảng trang nhiều cấp (ví dụ 4 cấp trên x86-64), một lần dịch địa chỉ ảo → vật lý phải đọc RAM **4 lần** (page walk) chỉ để biết địa chỉ thật, rồi mới đọc RAM lần thứ 5 lấy dữ liệu → mỗi truy cập logic hoá ra 5 lần chạm RAM, chậm khủng khiếp.
+
+    **TLB là bộ nhớ đệm siêu nhanh (nằm trong MMU/CPU) lưu các ánh xạ trang→khung vừa dùng.** Khi CPU sinh địa chỉ ảo, MMU tra TLB trước:
+
+    - **TLB hit:** tìm thấy ánh xạ ngay trong TLB (thời gian gần như 0, song song với truy cập cache) → nhảy thẳng tới khung, **bỏ qua toàn bộ page walk**. Đây là O(1).
+    - **TLB miss:** mới phải đi page walk chậm, rồi **nạp kết quả vào TLB** cho lần sau.
+
+    Điều làm TLB hiệu quả là **nguyên lý cục bộ**: chương trình truy cập đi truy cập lại một số ít trang trong khoảng thời gian ngắn, nên chỉ vài chục–vài trăm mục TLB cũng đạt **tỉ lệ hit trên 99%**. Trực giác: thay vì mỗi lần tìm nhà lại giở cả cuốn danh bạ dày (bảng trang trong RAM), bạn ghi vài địa chỉ hay dùng lên tờ giấy nhớ dán trên bàn (TLB) — liếc là thấy.
+
+!!! question "Tại sao thay trang LRU cho kết quả tốt?"
+    **Vì LRU đánh cược vào nguyên lý cục bộ thời gian (temporal locality) — và cược này gần như luôn thắng.** Chương trình thực có xu hướng: trang **vừa mới dùng** thì **sắp dùng lại** (vòng lặp, biến cục bộ, ngăn xếp lời gọi hàm...). Vậy khi buộc phải đẩy một trang ra, ứng viên **ít rủi ro nhất** là trang **lâu nhất không đụng tới** — vì theo cục bộ, nó cũng ít khả năng được dùng trong tương lai gần nhất.
+
+    So sánh trực giác:
+    - **Optimal** thay trang "lâu nhất mới dùng lại trong **tương lai**" — tốt nhất nhưng cần biết trước tương lai, bất khả thi.
+    - **LRU** dùng **quá khứ gần để dự đoán tương lai gần** — thay trang "lâu nhất **đã** dùng". Vì cục bộ khiến quá khứ và tương lai tương quan mạnh, LRU **xấp xỉ rất sát** Optimal.
+    - **FIFO** chỉ nhìn "vào sớm nhất", bỏ qua việc trang đó có đang được dùng liên tục hay không → dễ đẩy nhầm trang nóng, còn dính **nghịch lý Belady** (thêm khung mà page fault lại tăng).
+
+    Ví dụ: một trang chứa mã của vòng lặp đang chạy sẽ liên tục được "chạm", nên LRU luôn giữ nó lại; trong khi trang khởi tạo dùng một lần lúc đầu sẽ dần trở thành "lâu nhất không dùng" và bị thay ra đúng lúc — chính xác điều ta muốn. Đánh đổi: LRU tốt nhưng **tốn chi phí theo dõi** thời điểm truy cập từng trang, nên thực tế hay dùng xấp xỉ rẻ hơn như **Clock** (chỉ cần 1 bit tham chiếu).
+
 ### Buddy allocation (cấp phát bạn hữu)
 Kỹ thuật cấp phát bộ nhớ theo lũy thừa của 2: bộ nhớ chia đôi liên tục thành các khối "bạn hữu" (buddy) cho tới khi vừa yêu cầu. Khi giải phóng, nếu khối bạn hữu cũng rảnh thì gộp (coalesce) lại thành khối lớn hơn. Nhanh, giảm phân mảnh ngoài, nhưng gây phân mảnh trong (làm tròn lên lũy thừa 2). Linux dùng buddy system cho cấp phát khung trang.
 

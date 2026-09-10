@@ -129,6 +129,36 @@ Vài phân biệt hay hỏi:
 - **502 vs 503 vs 504:** 502 = gateway/proxy nhận phản hồi hỏng từ upstream;
   503 = server quá tải/bảo trì; 504 = gateway chờ upstream quá lâu (timeout).
 
+!!! question "Tại sao cần mã trạng thái chuẩn hoá?"
+    Vì client và server thường do **những người/tổ chức khác nhau** viết, bằng
+    **ngôn ngữ khác nhau**, và giữa chúng có nhiều tầng trung gian (proxy, CDN,
+    load balancer, trình duyệt). Cần một "ngôn ngữ chung" 3 chữ số để **máy tự
+    hiểu kết quả mà không cần đọc phần thân** — vốn có thể là HTML, JSON, hay
+    dữ liệu nhị phân tuỳ ứng dụng.
+
+    Mã chuẩn cho phép **hành vi tự động** ở các tầng không hề biết logic nghiệp
+    vụ của bạn:
+
+    - **Chữ số đầu phân nhóm ngay lập tức:** chỉ cần nhìn `2xx/3xx/4xx/5xx` là
+      biết thành công / chuyển hướng / lỗi client / lỗi server — không cần tra
+      từng mã. Trình duyệt, thư viện, công cụ giám sát dựa vào đó để quyết định.
+    - **Máy móc phản ứng đúng mà không cần người:** trình duyệt gặp **301** tự
+      cập nhật URL và cache; gặp **304** thì **dùng lại bản cache**, tiết kiệm
+      băng thông; thư viện HTTP gặp **429/503** biết **thử lại sau** (thường
+      theo header `Retry-After`); load balancer gặp **5xx** đánh dấu node hỏng
+      và chuyển hướng đi nơi khác.
+    - **Phân biệt "lỗi tại ai":** `4xx` nói "lỗi ở phía **bạn** (client) — sửa
+      request đi, gửi lại y hệt cũng vô ích", còn `5xx` nói "lỗi ở phía **tôi**
+      (server) — request của bạn ổn, cứ thử lại". Chỉ một chữ số đã định đoạt
+      client nên retry hay bỏ cuộc.
+
+    **Trực giác:** hãy tưởng tượng mỗi server tự chế mã riêng — client phải học
+    lại từ đầu cho mọi API, proxy không thể cache, monitor không thể đếm tỉ lệ
+    lỗi. Mã chuẩn (RFC) chính là **giao ước** để cả hệ sinh thái tỉ tỉ request
+    mỗi ngày hợp tác được với nhau. Đó cũng là lý do **dùng sai mã rất tai hại**:
+    trả `200 OK` kèm thông báo lỗi trong body khiến monitor tưởng mọi thứ ổn,
+    còn client thì retry vô ích một thứ đã hỏng.
+
 ### HTTP/1.1 vs HTTP/2 vs HTTP/3
 | Tiêu chí | HTTP/1.1 | HTTP/2 | HTTP/3 |
 |----------|----------|--------|--------|
@@ -145,6 +175,40 @@ Vài phân biệt hay hỏi:
 - **HTTP/2:** ghép nhiều luồng (stream) trên một kết nối TCP, nén header.
 - **HTTP/3:** chạy trên QUIC (UDP), thiết lập kết nối nhanh, không bị nghẽn
   do mất gói ở tầng TCP.
+
+!!! question "Tại sao HTTP/2 nhanh hơn HTTP/1.1?"
+    Nút thắt của HTTP/1.1 là **nghẽn đầu hàng (head-of-line blocking) ở tầng
+    ứng dụng**: trên một kết nối TCP, HTTP/1.1 xử lý request theo **thứ tự tuần
+    tự** — request sau phải đợi response của request trước xong mới được gửi
+    tiếp. Một trang web hiện đại cần hàng trăm tài nguyên (CSS, JS, ảnh); nếu
+    một response chậm, mọi thứ phía sau **xếp hàng chờ**.
+
+    Trình duyệt HTTP/1.1 lách bằng cách mở **6 kết nối TCP song song** mỗi tên
+    miền, nhưng cách này tốn kém: mỗi kết nối phải bắt tay TCP (+ TLS) riêng,
+    mỗi kết nối tự dò băng thông (slow start) lại từ đầu, và 6 vẫn là quá ít cho
+    hàng trăm tài nguyên.
+
+    **HTTP/2 giải bằng đa luồng (multiplexing):** cắt mỗi request/response thành
+    các **khung (frame) nhị phân** nhỏ có đánh số stream, rồi **trộn lẫn** chúng
+    trên **một** kết nối TCP duy nhất. Bên nhận dựa vào số stream để ráp lại.
+    Nhờ đó:
+
+    - Nhiều request "bay" **đồng thời** trên một kết nối — không request nào
+      phải đợi request khác xong (**hết nghẽn đầu hàng ở tầng ứng dụng**).
+    - Chỉ **một** lần bắt tay TCP/TLS, một lần slow start → tận dụng băng thông
+      tốt hơn hẳn 6 kết nối rời rạc.
+    - **Nén header (HPACK):** các header lặp đi lặp lại (Cookie, User-Agent...)
+      chỉ gửi một lần rồi tham chiếu, thay vì gửi lại nguyên si mỗi request như
+      HTTP/1.1 (dạng văn bản, không nén).
+
+    **Trực giác:** HTTP/1.1 giống một quầy thu ngân duy nhất, ai xong mới tới
+    người sau; HTTP/2 giống một quầy nhưng nhận **đồng thời** giỏ hàng của nhiều
+    khách, quét xen kẽ từng món rồi trả đúng giỏ. **Lưu ý HTTP/2 chưa hết hẳn
+    nghẽn đầu hàng:** nó vẫn nằm trên **một** kết nối TCP, nên nếu **một gói TCP
+    bị mất**, TCP giữ lại **mọi** stream để chờ truyền lại gói đó — nghẽn đầu
+    hàng bị đẩy xuống **tầng TCP**. Đây chính là lý do HTTP/3 bỏ TCP, chạy trên
+    QUIC (UDP) với các stream **độc lập**: mất gói của stream này không chặn
+    stream kia.
 
 ### HTTPS và TLS
 HTTPS là HTTP chạy trên TLS (Transport Layer Security), mã hoá dữ liệu để

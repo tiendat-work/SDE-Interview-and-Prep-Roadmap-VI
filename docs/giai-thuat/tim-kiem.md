@@ -312,6 +312,18 @@ print(soLan > 0
 | Exponential | O(log n) | Đã sắp | O(1) |
 | Ternary | O(log n) | Đã sắp / hàm đơn thức | O(1) |
 
+### Vì sao có các con số này?
+
+!!! question "Vì sao tìm kiếm nhị phân là O(log n)?"
+    Mấu chốt: mỗi bước **loại bỏ đúng một nửa** số ứng viên còn lại. So sánh mục tiêu với phần tử giữa (`mid`) cho biết mục tiêu — nếu có — nằm ở nửa trái hay nửa phải, nên ta **vứt bỏ cả nửa kia** mà không cần xem tới.
+
+    Không gian tìm kiếm co lại theo dãy `n → n/2 → n/4 → n/8 → … → 1`. Số lần chia đôi để từ `n` về `1` chính là `log₂ n`. Ví dụ mảng **1 triệu phần tử** chỉ cần khoảng **20 bước** (vì `2²⁰ ≈ 1.000.000`), còn **1 tỷ phần tử** chỉ tốn ~30 bước. Đó là lý do nhị phân nhanh vượt trội so với tuyến tính `O(n)` (phải duyệt tới 1 triệu phần tử).
+
+!!! question "Vì sao nhị phân bắt buộc mảng phải đã sắp?"
+    Vì bước "loại nửa" chỉ đúng khi mảng có **thứ tự**. Khi so `arr[mid]` với `target`, ta kết luận "mọi phần tử bên trái `mid` đều nhỏ hơn, mọi phần tử bên phải đều lớn hơn" — kết luận này **chỉ đúng nếu mảng đã sắp**.
+
+    Nếu mảng **chưa sắp**, phần tử cần tìm có thể nằm ở *bất kỳ* nửa nào, nên vứt bỏ một nửa là sai — có thể vứt luôn cả đáp án. Khi đó không còn cách nào ngoài duyệt tuyến tính `O(n)`. Đây là một **đánh đổi**: nếu chỉ tìm một lần trên dữ liệu chưa sắp thì tìm tuyến tính `O(n)` rẻ hơn; nhưng nếu tìm nhiều lần, bỏ ra `O(n log n)` sắp trước một lần rồi mỗi truy vấn chỉ `O(log n)` sẽ lời hơn hẳn.
+
 ## Ưu / nhược điểm
 
 - **Ưu:**

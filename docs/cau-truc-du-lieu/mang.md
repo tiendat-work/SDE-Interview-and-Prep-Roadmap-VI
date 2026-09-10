@@ -299,6 +299,27 @@ def find_majority_element(arr):
 
 Về bộ nhớ, mảng dùng O(n) để lưu n phần tử. Vì cần khối liền kề nên có thể gặp vấn đề phân mảnh (fragmentation) trong các chương trình chạy lâu, cấp phát/giải phóng thường xuyên.
 
+### Vì sao có các con số này?
+
+!!! question "Tại sao truy cập theo chỉ số là O(1)?"
+    Vì mảng nằm **liền kề** trong bộ nhớ và mỗi phần tử có **cùng kích thước**. Nhờ đó máy tính **tính thẳng** ra địa chỉ của phần tử `i` bằng một phép nhân cộng:
+
+    ```
+    địa_chỉ(arr[i]) = địa_chỉ_gốc + i × kích_thước_phần_tử
+    ```
+
+    Ví dụ mảng `int` (4 byte) bắt đầu tại `1000`: `arr[3]` nằm ở `1000 + 3×4 = 1012` → nhảy thẳng tới đó. Phép tính này **luôn cùng số bước** dù mảng có 10 hay 10 triệu phần tử — không cần dò tìm, nên là O(1). Đây chính là điều danh sách liên kết (linked list) **không** làm được: các nút của nó nằm rải rác, muốn tới phần tử thứ `i` phải đi lần lượt qua từng con trỏ → O(n).
+
+!!! question "Tại sao tìm kiếm tuyến tính là O(n) còn tìm nhị phân là O(log n)?"
+    - **Tuyến tính O(n):** khi mảng **chưa sắp xếp**, phần tử cần tìm có thể ở bất kỳ đâu, nên xấu nhất phải kiểm tra hết `n` phần tử.
+    - **Nhị phân O(log n):** khi mảng **đã sắp xếp**, mỗi lần so sánh với phần tử giữa cho phép **loại bỏ một nửa** số ứng viên còn lại. Từ `n` phần tử, sau mỗi bước còn `n/2 → n/4 → n/8...` — số lần chia đôi để về 1 chính là `log₂ n`. Ví dụ 1 triệu phần tử chỉ cần khoảng 20 bước (2²⁰ ≈ 1 triệu).
+
+!!! question "Tại sao chèn/xóa ở cuối là O(1) nhưng ở đầu/giữa là O(n)?"
+    Vì chỉ số phải **liên tục, không có lỗ hổng**. Khi chèn vào giữa, mọi phần tử phía sau phải **dịch sang phải một ô** để chừa chỗ (và dịch trái khi xóa). Chèn ở đầu là tệ nhất: cả `n` phần tử đều phải dịch → O(n). Còn ở cuối thì không có phần tử nào phía sau để dịch, nên chỉ O(1) — trừ lúc mảng động phải cấp phát vùng nhớ lớn hơn và sao chép toàn bộ (chi phí này được chia đều ra nhiều lần chèn nên gọi là **O(1) khấu hao**).
+
+!!! question "Tại sao sắp xếp tốt nhất là O(n log n)?"
+    Mọi thuật toán sắp xếp **dựa trên so sánh** (so từng cặp phần tử) không thể nhanh hơn O(n log n) — đây là giới hạn lý thuyết đã chứng minh. Trực giác: có `n!` cách sắp xếp khả dĩ, mỗi phép so sánh chỉ phân biệt được 2 nhánh, nên cần ít nhất `log₂(n!) ≈ n log n` phép so sánh để xác định đúng thứ tự. (Xem thêm trang [Thuật toán sắp xếp](../giai-thuat/sap-xep.md).)
+
 ## Ưu / nhược điểm
 
 - **Ưu:**

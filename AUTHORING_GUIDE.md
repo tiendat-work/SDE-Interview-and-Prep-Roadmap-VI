@@ -3,6 +3,29 @@
 Mục tiêu: mỗi trang phải GIÀU MINH HOẠ, không chỉ toàn chữ. Kết hợp: giải thích →
 sơ đồ → code (nhiều ngôn ngữ) → demo chạy được → bảng đánh đổi → câu hỏi phỏng vấn.
 
+## 0. NGUYÊN TẮC QUAN TRỌNG NHẤT: luôn giải thích "TẠI SAO"
+
+Người đọc phàn nàn rằng các trang chỉ NÊU kết luận mà không giải thích. Cấm viết
+kiểu liệt kê khô khan. Với MỌI khẳng định, con số, dòng bảng, hay độ phức tạp, phải
+trả lời được câu "tại sao lại thế?".
+
+Ví dụ SAI (chỉ nêu): "Truy cập theo chỉ số: O(1) nhờ bộ nhớ liền kề."
+Ví dụ ĐÚNG (giải thích cơ chế): "Truy cập theo chỉ số là O(1) vì mảng nằm liền kề
+trong bộ nhớ, mỗi phần tử cùng kích thước, nên CPU tính THẲNG địa chỉ bằng công
+thức `địa_chỉ_gốc + i × kích_thước` — một phép nhân cộng, không cần dò tìm; dù mảng
+1000 hay 1 triệu phần tử cũng cùng số bước." (kèm sơ đồ ô nhớ + địa chỉ).
+
+Quy tắc cụ thể:
+- Sau mỗi bảng độ phức tạp: thêm mục "Vì sao có các con số này?" giải thích TỪNG dòng
+  quan trọng (vì sao O(1)/O(n)/O(log n)/O(n log n)... — do cơ chế nào).
+- Mỗi thuật toán/khái niệm: nêu TRỰC GIÁC (ý tưởng vì sao nó hoạt động) trước khi vào
+  chi tiết, và giải thích vì sao nó nhanh/chậm/ổn định/không.
+- Với đánh đổi (trade-off): nói RÕ đánh đổi cái gì lấy cái gì và vì sao buộc phải đổi.
+- Dùng admonition để làm nổi phần giải thích sâu:
+  `!!! question "Tại sao?"` hoặc `!!! info "Giải thích"`.
+- Ưu tiên phép loại suy đời thực (analogy) khi khái niệm trừu tượng.
+- Viết như đang giảng cho người mới: giả định họ chưa biết, dẫn dắt từng bước.
+
 ## 1. Sơ đồ Mermaid
 Dùng fence ```mermaid. Nhãn có dấu tiếng Việt/ký tự đặc biệt PHẢI bọc ngoặc kép:
 `A["Máy khách"] -->|"HTTP"| B["Máy chủ"]`.

@@ -285,6 +285,32 @@ print(bf.might_contain("chó"))  # thường False; có thể True (dương tín
 
 Trường hợp xấu nhất O(n) xảy ra khi mọi khóa va chạm vào cùng một ô (hàm băm kém). Bloom filter: thêm/kiểm tra đều O(k) với k là số hàm băm.
 
+### Vì sao có các con số này?
+
+!!! question "Tại sao tra cứu trung bình là O(1) nhưng xấu nhất lại O(n)?"
+    Bảng băm có một "đường tắt": hàm băm **tính thẳng** ra chỉ số ô từ khóa (`index = hash(key) % capacity`) — một phép tính, không phải dò tìm. Nhảy tới ô đó là O(1). Nhưng đó mới là bước tìm **ô**; bên trong ô còn phải khớp đúng khóa.
+
+    - **Trung bình O(1):** khi hàm băm rải khóa **đều** và số ô đủ lớn, mỗi ô trung bình chỉ chứa rất ít phần tử (khoảng bằng hệ số tải, ví dụ ~0.7). Vậy sau khi nhảy tới ô, ta chỉ phải so vài phần tử — coi như hằng số → O(1).
+    - **Xấu nhất O(n):** nếu hàm băm kém (hoặc kẻ tấn công cố tình chọn khóa), **mọi khóa dồn hết vào một ô**. Ô đó biến thành một **danh sách liên kết dài n phần tử** (chaining) hoặc một dải ô bị dò liên tục (open addressing). Lúc này tra cứu phải quét tuyến tính cả `n` phần tử trong ô → O(n), y hệt tìm kiếm trên danh sách. Bảng băm đánh mất hoàn toàn lợi thế.
+
+    Nói cách khác: O(1) là **lời hứa có điều kiện** — nó chỉ đúng khi va chạm được giữ ở mức thấp. Con số "trung bình" giả định phân bố đều; con số "xấu nhất" là khi giả định đó sụp đổ.
+
+!!! question "Tại sao cần hàm băm tốt và phải kiểm soát hệ số tải?"
+    Hai yếu tố này chính là thứ **giữ cho lời hứa O(1) không bị phá vỡ** — mỗi cái chặn một nguyên nhân làm ô bị dồn:
+
+    - **Hàm băm tốt** lo phần **phân bố**: nếu nó rải khóa đều khắp các ô, không ô nào bị quá tải, độ dài mỗi chuỗi va chạm ở mức nhỏ. Hàm băm kém (ví dụ luôn trả cùng một số) dồn mọi khóa vào một ô → tụt về O(n) dù bảng còn trống mênh mông. Vì thế hàm băm cần **phân bố đều** và **xác định**.
+    - **Hệ số tải** (số phần tử / số ô) lo phần **mật độ**: dù hàm băm hoàn hảo, nếu nhét quá nhiều phần tử vào quá ít ô thì va chạm vẫn tăng chỉ vì "hết chỗ" (nguyên lý chuồng bồ câu). Khi hệ số tải vượt ngưỡng (thường ~0.7), bảng **tái băm (rehash)**: cấp mảng lớn gấp đôi rồi băm lại toàn bộ khóa, kéo mật độ xuống để mỗi ô lại thưa. Rehash một lần tốn O(n), nhưng chia đều cho rất nhiều lần chèn nên chi phí mỗi lần chèn vẫn là **O(1) khấu hao (amortized)**.
+
+    Ẩn dụ: hàm băm tốt = xếp khách đều ra nhiều bàn; hệ số tải thấp = có đủ bàn để không bàn nào chật. Thiếu một trong hai, "phục vụ tức thì" biến thành "xếp hàng dài".
+
+!!! question "Tại sao chaining và open addressing lại đánh đổi khác nhau?"
+    Cả hai giải quyết cùng một vấn đề (va chạm) nhưng chọn **nơi cất phần tử dư**, và lựa chọn đó kéo theo các hệ quả trái ngược:
+
+    - **Chaining (nối chuỗi):** phần tử va chạm được **cất ra ngoài mảng** trong một danh sách liên kết gắn vào ô. Ưu: đơn giản, **chịu được hệ số tải cao** (thậm chí > 1) mà không "vỡ trận", xóa dễ. Nhược: tốn thêm bộ nhớ cho **con trỏ** của mỗi nút, và các nút nằm rải rác khắp bộ nhớ nên **kém thân thiện với cache** của CPU.
+    - **Open addressing (địa chỉ mở):** không có danh sách ngoài — mọi phần tử **nằm ngay trong mảng**; khi ô đầy thì **dò (probing)** sang ô trống kế tiếp. Ưu: không tốn con trỏ, dữ liệu **liền kề nên tận dụng cache tốt**, thường nhanh hơn khi bảng còn thưa. Nhược: **rất nhạy với hệ số tải** — khi bảng gần đầy, chuỗi dò dài ra nhanh chóng (đặc biệt dò tuyến tính gây **cụm — clustering**), nên phải giữ hệ số tải thấp hơn (thường < 0.7) và **rehash sớm hơn**; xóa cũng phức tạp (phải đánh dấu "đã xóa" để không làm đứt chuỗi dò).
+
+    Tóm lại đánh đổi cốt lõi: chaining đổi **thêm bộ nhớ con trỏ** lấy **sự bền bỉ trước tải cao**; open addressing đổi **sự nhạy cảm với tải** lấy **bộ nhớ gọn và cache tốt**.
+
 ## Ưu / nhược điểm
 
 - **Ưu:**

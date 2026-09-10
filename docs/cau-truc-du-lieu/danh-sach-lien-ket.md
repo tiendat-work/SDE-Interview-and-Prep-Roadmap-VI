@@ -310,6 +310,30 @@ print('Sau khi đảo: ', toStr(head));
 
 Về bộ nhớ, danh sách liên kết dùng O(n) cho n nút, cộng thêm chi phí cho con trỏ ở mỗi nút.
 
+### Vì sao có các con số này?
+
+!!! question "Tại sao truy cập theo chỉ số là O(n) (chứ không phải O(1) như mảng)?"
+    Vì các nút **nằm rải rác** khắp bộ nhớ, không liền kề nhau. Với mảng, muốn tới phần tử thứ `i` máy tính **tính thẳng** địa chỉ bằng `địa_chỉ_gốc + i × kích_thước` — một phép nhân cộng, tới nơi ngay. Nhưng danh sách liên kết **không biết trước** nút thứ `i` nằm ở địa chỉ nào: thông tin duy nhất để tìm nút kế tiếp là con trỏ `next` nằm bên trong nút hiện tại.
+
+    Hãy hình dung một cuộc **truy tìm kho báu**: mỗi mảnh giấy chỉ ghi địa chỉ mảnh tiếp theo. Muốn tới mảnh thứ 5 bạn **buộc phải** đi qua mảnh 1 → 2 → 3 → 4, không thể nhảy cóc. Vì vậy tới nút thứ `i` cần đúng `i` bước đi theo con trỏ; xấu nhất (nút cuối) là `n` bước → O(n). Đây chính là cái giá phải trả cho việc bỏ đi bộ nhớ liền kề.
+
+!!! question "Tại sao chèn/xóa ở đầu chỉ là O(1)?"
+    Vì thao tác này **chỉ đổi vài con trỏ**, không hề đụng tới các nút còn lại. Để chèn vào đầu, ta chỉ cần: cho nút mới trỏ `next` vào head cũ, rồi cập nhật head sang nút mới — đúng **hai** phép gán, bất kể danh sách có 3 hay 3 triệu nút. Xóa đầu cũng vậy: chỉ cần dời head sang nút thứ hai.
+
+    Tương phản với **mảng**: chèn vào đầu mảng buộc **mọi** phần tử phía sau phải dịch sang phải một ô để chừa chỗ (và dịch trái khi xóa) → O(n). Danh sách liên kết không có khái niệm "chỗ liền kề" nên không cần dịch gì cả — chỉ nối lại vài sợi dây con trỏ.
+
+!!! info "Đánh đổi so với mảng: được gì, mất gì?"
+    Danh sách liên kết **đổi** khả năng truy cập ngẫu nhiên nhanh **lấy** khả năng chèn/xóa linh hoạt, và ngược lại với mảng:
+
+    | | Mảng | Danh sách liên kết |
+    |---|---|---|
+    | Truy cập phần tử thứ `i` | **O(1)** — tính thẳng địa chỉ | O(n) — phải đi lần lượt |
+    | Chèn/xóa ở đầu | O(n) — dịch cả mảng | **O(1)** — đổi con trỏ |
+    | Bộ nhớ phụ | Không (chỉ dữ liệu) | Mỗi nút tốn thêm 1 con trỏ |
+    | Tận dụng cache | Tốt (liền kề) | Kém (rải rác) |
+
+    Vì sao **buộc** phải đánh đổi? Chính tính liền kề giúp mảng tính địa chỉ tức thì lại là thứ khiến chèn/xóa phải dịch phần tử; còn tính rời rạc — nối bằng con trỏ — giúp danh sách chèn/xóa chỉ bằng vài phép gán lại khiến nó mất khả năng nhảy thẳng tới một vị trí. Không có cấu trúc nào vừa nhanh cả hai; chọn cái nào tùy thao tác nào bạn làm nhiều hơn.
+
 ## Ưu / nhược điểm
 
 - **Ưu:**

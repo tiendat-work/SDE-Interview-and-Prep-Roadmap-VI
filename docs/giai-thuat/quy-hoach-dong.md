@@ -230,6 +230,22 @@ coinChangeTable([1, 2, 5], 11);
 | Coin Change | O(amount·k) | O(amount) |
 | Edit Distance | O(m·n) | O(m·n), tối ưu còn O(min(m,n)) |
 
+### Vì sao có các con số này?
+
+!!! question "Vì sao DP tránh được việc tính lại?"
+    Nhìn lại cây đệ quy `fib(5)` ở đầu trang: `fib(3)` bị tính 2 lần, `fib(2)` tới 3 lần. Đó là **bài toán con chồng lấp (overlapping subproblems)** — cùng một bài con xuất hiện đi xuất hiện lại.
+
+    DP dùng **ghi nhớ (memoization)**: lần đầu giải một bài con thì **lưu kết quả vào bộ nhớ đệm**; những lần gặp lại chỉ *tra bảng* trả về ngay trong `O(1)`, không giải lại. Nói cách khác, mỗi trạng thái được tính **đúng một lần** rồi tái sử dụng vô số lần.
+
+    Trực giác: thay vì "làm lại từ đầu mỗi lần cần", ta "làm một lần, ghi ra giấy, lần sau đọc lại giấy".
+
+!!! question "Vì sao DP biến độ phức tạp mũ thành đa thức?"
+    Với `fib(n)` đệ quy thuần, cây gọi phình gấp đôi mỗi tầng → số nút cỡ `2ⁿ`, tức `O(2ⁿ)` — **mũ**. Nguyên nhân: cùng một bài con bị tính lại theo cấp số nhân.
+
+    Khi ghi nhớ, chi phí không còn phụ thuộc số *lần gọi* mà phụ thuộc **số trạng thái phân biệt**. Fibonacci chỉ có `n` trạng thái (`fib(0)…fib(n)`), mỗi trạng thái tính trong `O(1)` → tổng `O(n)`. Tổng quát: **thời gian DP ≈ (số trạng thái) × (chi phí mỗi trạng thái)**.
+
+    Đó là lý do các bảng trên ra đa thức: Knapsack có `n·W` trạng thái (`n` món × `W` sức chứa), mỗi ô tính `O(1)` → `O(n·W)`; LCS và Edit Distance có `m·n` cặp chỉ số → `O(m·n)`. Số cặp `(i, j)` khả dĩ là hữu hạn và nhỏ hơn hẳn số nhánh đệ quy mũ — chính việc *chặn số trạng thái* đã kéo mũ xuống đa thức.
+
 ## Ưu / nhược điểm
 
 - **Ưu:**

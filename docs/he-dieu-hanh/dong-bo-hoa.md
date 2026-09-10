@@ -6,6 +6,36 @@
 ## Khi nào dùng / Vì sao quan trọng
 Khi hai luồng cùng đọc–sửa–ghi một biến, thao tác tưởng "một dòng" như `x += 1` thực chất gồm nhiều bước máy (đọc, cộng, ghi) và có thể bị chen ngang, làm mất cập nhật. Đồng bộ hoá đảm bảo tính đúng đắn của chương trình đồng thời — điều bắt buộc trong hệ đa luồng, cơ sở dữ liệu, hệ điều hành.
 
+!!! question "Tại sao cần đồng bộ hoá? Race condition làm hỏng dữ liệu ra sao?"
+    Gốc rễ nằm ở chỗ một lệnh cấp cao **không nguyên tử** ở cấp máy. Lệnh `x += 1` thực ra là **ba bước** riêng biệt trên CPU:
+
+    ```
+    1. LOAD  R ← x     (đọc giá trị hiện tại từ bộ nhớ vào thanh ghi)
+    2. ADD   R ← R + 1 (cộng trong thanh ghi)
+    3. STORE x ← R     (ghi kết quả trở lại bộ nhớ)
+    ```
+
+    Bộ lập lịch có thể **chen ngang** giữa ba bước này. Giả sử `x = 5`, hai luồng A và B cùng chạy `x += 1`, kết quả đúng phải là `7`:
+
+    | Bước | Luồng A | Luồng B | Giá trị x |
+    |------|---------|---------|-----------|
+    | 1 | LOAD R_A ← 5 | | 5 |
+    | 2 | | LOAD R_B ← 5 | 5 |
+    | 3 | ADD R_A = 6 | | 5 |
+    | 4 | | ADD R_B = 6 | 5 |
+    | 5 | STORE x ← 6 | | 6 |
+    | 6 | | STORE x ← 6 | 6 |
+
+    Cả hai đọc cùng giá trị cũ `5` trước khi ai kịp ghi, nên **một lần tăng bị mất** → ra `6` thay vì `7`. Đây là **race condition (tranh chấp)**: kết quả phụ thuộc vào thứ tự đan xen ngẫu nhiên của bộ lập lịch, nên chương trình lúc đúng lúc sai — cực khó tái lập và gỡ lỗi. Trực giác: hai người cùng nhìn số dư tài khoản `5` triệu, mỗi người gửi thêm `1` triệu; nếu không khoá sổ, người ghi sau đè lên người ghi trước và ngân hàng "nuốt" mất một khoản.
+
+!!! question "Tại sao mutex/semaphore giải quyết được race condition?"
+    Cả hai biến chuỗi ba bước "đọc–sửa–ghi" thành **một khối không thể bị chen ngang** (vùng găng), bằng cách **tuần tự hoá** truy cập:
+
+    - **Mutex** ép **loại trừ lẫn nhau**: khi luồng A đã `lock()`, luồng B gọi `lock()` sẽ **bị chặn** (đưa vào trạng thái chờ, không được chạy tiếp) cho tới khi A `unlock()`. Nhờ đó A hoàn tất trọn vẹn cả ba bước rồi B mới bắt đầu → không còn cảnh cả hai cùng đọc giá trị cũ. Thao tác `lock/unlock` dựa trên lệnh phần cứng **nguyên tử** (như test-and-set, compare-and-swap) mà CPU đảm bảo không thể bị cắt ngang, nên bản thân việc giành khoá cũng an toàn.
+    - **Semaphore** là biến đếm với hai thao tác nguyên tử `wait`/`signal`: nó không chỉ khoá 1 luồng mà còn **đếm được** — cho phép tối đa N luồng vào cùng lúc, hoặc phối hợp thứ tự giữa producer và consumer (chờ tới khi "có hàng"/"còn ô trống"). Binary semaphore (0/1) đóng vai như một khoá.
+
+    Đánh đổi: đổi **một phần tính song song** (các luồng phải xếp hàng ở vùng găng) lấy **tính đúng đắn**. Vì thế vùng găng nên càng ngắn càng tốt — khoá lâu thì các luồng khác chờ nhiều, giảm hiệu năng.
+
 Ba yêu cầu của một lời giải vùng găng đúng:
 1. **Mutual exclusion:** tối đa một luồng trong vùng găng.
 2. **Progress:** nếu không luồng nào trong vùng găng, luồng muốn vào không bị trì hoãn vô cớ.

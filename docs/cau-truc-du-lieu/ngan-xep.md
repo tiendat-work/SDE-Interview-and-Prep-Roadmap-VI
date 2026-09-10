@@ -260,6 +260,25 @@ for (const test of ['{[()]}', '{[(])}']) {
 
 Lưu ý: với mảng động, push có thể là O(n) trong lần cấp phát lại bộ nhớ, nhưng O(1) khấu hao (amortized).
 
+### Vì sao có các con số này?
+
+!!! question "Tại sao push và pop đều là O(1)?"
+    Vì ngăn xếp **chỉ đụng vào một đầu duy nhất — đỉnh (top)** — và luôn biết chính xác đỉnh nằm ở đâu, nên không phải dò tìm hay dịch chuyển gì cả:
+
+    - **Cài bằng mảng:** ta giữ sẵn chỉ số `top`. Push = ghi giá trị vào ô `top+1` rồi tăng `top`; pop = đọc ô `top` rồi giảm `top`. Chỉ vài phép tính số học, không phụ thuộc ngăn xếp có bao nhiêu phần tử → O(1). (Khác với chèn vào **đầu** mảng vốn phải dịch cả mảng — ở đây ta thêm/bớt ngay ở **cuối** nên không phần tử nào phải dịch.)
+    - **Cài bằng danh sách liên kết:** push tạo một nút mới cho trỏ vào đỉnh cũ rồi cập nhật `top`; pop dời `top` sang nút kế tiếp. Đúng vài phép đổi con trỏ, bất kể ngăn xếp lớn cỡ nào → O(1).
+
+    Điểm mấu chốt: LIFO **cố tình giới hạn** mọi thao tác về một đầu, nhờ đó không bao giờ cần duyệt hay dịch phần tử — đó là lý do bản chất khiến nó nhanh.
+
+!!! question "Tại sao LIFO lại hợp với đệ quy, hoàn tác và đánh giá biểu thức?"
+    Vì cả ba đều có chung một cấu trúc: **cái mở ra sau cùng phải đóng lại trước tiên** — đúng khớp với "vào sau, ra trước".
+
+    - **Đệ quy / lời gọi hàm:** khi `main` gọi `f`, `f` lại gọi `g`, thì `g` phải chạy xong và trả về **trước** để `f` mới tiếp tục được. Thứ tự kết thúc ngược với thứ tự bắt đầu — chính là LIFO. Vì thế máy tính lưu ngữ cảnh mỗi lời gọi vào một *call stack*: khung của `g` nằm trên đỉnh, xong thì pop ra, lộ lại khung của `f` bên dưới. Nếu lồng quá sâu, stack đầy → *stack overflow*.
+    - **Hoàn tác (undo):** hành động bạn vừa làm **gần nhất** là cái cần hủy **đầu tiên**. Đẩy mỗi thao tác lên ngăn xếp; bấm Undo thì pop cái trên cùng — trật tự tự nhiên đúng LIFO.
+    - **Đánh giá biểu thức:** khi tính `2 3 + 4 *`, hai toán hạng **vừa** được đưa vào là cặp **cần lấy ra ngay** để áp toán tử. Push số vào; gặp toán tử thì pop đúng hai giá trị trên đỉnh (hai giá trị mới nhất) rồi push kết quả. Với biểu thức có ngoặc lồng nhau, ngoặc **mở sau cùng** phải **đóng trước** — lại là LIFO, nên ngăn xếp là công cụ tự nhiên để kiểm tra cân bằng ngoặc.
+
+    Nói gọn: bất cứ khi nào công việc **lồng vào nhau** (nested) — mở/đóng, gọi/trả về, làm/hủy — thì thứ tự xử lý luôn là LIFO, và ngăn xếp mô hình hóa điều đó một cách trực tiếp.
+
 ## Ưu / nhược điểm
 
 - **Ưu:**

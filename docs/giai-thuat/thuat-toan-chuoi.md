@@ -36,6 +36,13 @@ graph TD
     S4 --> S5["Sau khi khớp: j = LPS[j-1] để tìm lần khớp kế tiếp"]
 ```
 
+!!! question "Tại sao KMP là O(n+m) thay vì O(n·m)?"
+    Cách so khớp **ngây thơ** đặt mẫu tại từng vị trí của văn bản rồi so từng ký tự; khi lệch, nó **lùi con trỏ văn bản** về ngay sau vị trí bắt đầu và thử lại từ đầu. Chính cú **lùi lại** này gây lãng phí: những ký tự vừa so khớp đúng sẽ bị so lại lần nữa. Xấu nhất (ví dụ text `"aaaa...a"`, mẫu `"aaa...ab"`) mỗi trong `n` vị trí phải so tới `m` ký tự → `O(n·m)`.
+
+    KMP loại bỏ mọi sự so lại đó nhờ **mảng LPS**. Khoá của vấn đề: khi ta đã khớp được đoạn `pattern[0..j-1]` với văn bản rồi mới lệch tại `j`, ta **đã biết chắc** `j` ký tự văn bản vừa qua chính là `pattern[0..j-1]` — không cần đọc lại chúng từ văn bản nữa. `LPS[j-1]` cho biết phần **đầu mẫu** nào đã đồng thời là **đuôi** của đoạn vừa khớp, tức phần nào **vẫn còn khớp sẵn** nếu trượt mẫu tới. Nhờ vậy KMP chỉ **nhảy `j = LPS[j-1]`** (dịch mẫu) mà **không bao giờ lùi con trỏ văn bản `i`**.
+
+    Vì `i` chỉ tiến, nó đi đúng `n` bước qua văn bản. Còn `j`: mỗi lần khớp `j` tăng 1 (tối đa `n` lần trên toàn cuộc chạy), mỗi lần lệch `j` giảm (qua `LPS`) — mà `j` không thể giảm nhiều hơn số lần nó đã tăng, nên tổng số lần giảm cũng bị chặn bởi `n`. Cộng lại: so khớp là `O(n)`, dựng LPS là `O(m)` (cùng lập luận trên chính mẫu) → tổng `O(n + m)`. Trực giác một câu: **những ký tự đã khớp thì không bao giờ phải so lại**, và mảng LPS chính là bộ nhớ ghi lại "đã khớp tới đâu" để tận dụng điều đó.
+
 ### Rabin–Karp
 
 Dùng **hàm băm cuộn (rolling hash)** để so mã băm của cửa sổ văn bản với mã băm của mẫu; chỉ khi băm trùng mới so sánh trực tiếp. **Thời gian:** `O(n + m)` trung bình, `O(n·m)` xấu nhất (nhiều va chạm băm). Rất mạnh khi tìm **nhiều mẫu** cùng lúc.

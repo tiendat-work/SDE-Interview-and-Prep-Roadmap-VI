@@ -35,6 +35,16 @@ Có cô lập     → T2 chờ hoặc thấy dữ liệu ổn định của T1
 ### D — Durability (Tính bền vững)
 Khi đã `COMMIT`, dữ liệu được ghi bền vững (thường qua write-ahead log — WAL) và tồn tại kể cả khi mất điện hay hệ thống sập. Sau khi khôi phục, kết quả vẫn còn nguyên.
 
+!!! question "Tại sao cần MỖI tính chất? (điều gì hỏng nếu thiếu)"
+    Lấy đúng ví dụ chuyển 1 triệu từ A sang B (trừ A, cộng B) để thấy **thiếu từng chữ thì hỏng thế nào**:
+
+    - **Thiếu Atomicity (A):** hệ thống sập **ngay sau khi trừ A nhưng trước khi cộng B**. Không có "tất cả hoặc không gì" → tiền của A **bốc hơi**: trừ rồi mà B không nhận. Atomicity đảm bảo hoặc cả hai bước cùng xảy ra, hoặc không bước nào xảy ra (rollback về như cũ).
+    - **Thiếu Consistency (C):** giả sử có ràng buộc "số dư ≥ 0" và "tổng tiền toàn hệ không đổi". Không có C, một giao dịch có thể để A **âm tiền**, hoặc trừ A 1 triệu nhưng cộng B 2 triệu → **tự sinh tiền từ hư không**. C bắt mọi ràng buộc (CHECK, khoá ngoại, trigger) luôn đúng trước và sau giao dịch.
+    - **Thiếu Isolation (I):** hai giao dịch chạy đồng thời cùng đọc số dư A = 1 triệu, cả hai cùng trừ → **lost update**, một lần trừ biến mất; hoặc giao dịch khác đọc trúng trạng thái "A đã trừ nhưng B chưa cộng" và tưởng hệ thống **thiếu tiền**. I làm các giao dịch chạy như thể **lần lượt**, không giẫm lên nhau.
+    - **Thiếu Durability (D):** ứng dụng đã báo "chuyển thành công" cho khách, nhưng dữ liệu mới nằm trong RAM chưa kịp xuống đĩa thì **mất điện** → tỉnh dậy giao dịch **biến mất** dù đã báo thành công. D đảm bảo cái gì đã `COMMIT` thì tồn tại qua cả sập nguồn (nhờ ghi WAL ra đĩa trước khi báo thành công).
+
+    Trực giác: **A** giữ toàn vẹn *trong một* giao dịch, **I** giữ toàn vẹn *giữa các* giao dịch đồng thời, **C** giữ đúng *luật dữ liệu*, còn **D** giữ kết quả *sống sót qua sự cố*. Bỏ bất kỳ chữ nào là mở ra một kiểu mất/hỏng tiền khác nhau.
+
 ## Bảng tóm tắt
 | Tính chất | Đảm bảo | Cơ chế điển hình |
 |-----------|---------|------------------|

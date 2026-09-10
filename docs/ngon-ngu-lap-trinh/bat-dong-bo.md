@@ -48,6 +48,45 @@ rồi tiếp tục coroutine khi dữ liệu về. Trong JavaScript có hai hàn
 
 Đây là lý do một Promise đã resolve luôn chạy **trước** `setTimeout(..., 0)`.
 
+!!! question "Tại sao async không chặn (non-blocking) lại tăng throughput?"
+    Chìa khoá nằm ở bản chất của tác vụ I/O: khi bạn gọi mạng hay đọc đĩa, phần lớn thời
+    gian là **CHỜ** phần cứng khác trả lời (mạng, ổ cứng, cơ sở dữ liệu) — CPU không làm gì
+    trong lúc đó. Cách **đồng bộ (blocking)** bắt cả luồng đứng im ôm cái chờ này: gọi 1000
+    API tuần tự, mỗi cái chờ 100ms thì mất ~100 giây, còn CPU rảnh rỗi 99% thời gian.
+
+    **Cơ chế của async:** khi gặp `await` một tác vụ I/O, coroutine **không đứng chờ** mà
+    đăng ký một "khi nào xong thì báo tôi" với hệ điều hành rồi **nhường quyền cho event
+    loop**. Event loop lập tức lấy việc khác ra chạy. Khi dữ liệu I/O về (sau đó), hệ điều
+    hành báo lại và event loop tiếp tục coroutine đang dở tại đúng điểm `await`. Nhờ vậy
+    **một luồng duy nhất "nhồi" được hàng nghìn tác vụ đang chờ chồng lên nhau** — thời gian
+    chờ của việc này được lấp bằng công việc của việc kia. 1000 API giờ chỉ tốn ~thời gian
+    của cái chậm nhất thay vì tổng cộng. Đó là vì sao throughput tăng vọt cho tải I/O-bound.
+
+    Loại suy: một đầu bếp giỏi không đứng nhìn nồi nước sôi — anh ta bắc nồi lên rồi đi thái
+    rau, đảo chảo khác; khi nước sôi mới quay lại. Cùng một người mà làm được nhiều món song
+    song, vì mỗi món có những quãng "chờ" xen kẽ. Nhưng nếu công việc là **băm thịt liên tục
+    (CPU-bound)** — không có quãng chờ nào để lấp — thì một người vẫn chỉ làm được một việc,
+    async không giúp gì.
+
+!!! question "Tại sao lại chuyển từ callback sang promise/async?"
+    Callback giải quyết được việc "chạy khi xong", nhưng khi các tác vụ **phụ thuộc tuần
+    tự** (lấy user → lấy đơn hàng của user → lấy chi tiết đơn), mỗi bước phải nằm **bên
+    trong** callback của bước trước, tạo ra **kim tự tháp lồng sâu (callback hell)** như ví
+    dụ bên dưới. Ba vấn đề cốt lõi:
+
+    - **Xử lý lỗi rải rác:** mỗi tầng callback phải tự bắt lỗi riêng (`loi => xuLyLoi(loi)`
+      lặp đi lặp lại), không có chỗ bắt lỗi tập trung — dễ sót.
+    - **Đảo ngược quyền kiểm soát (inversion of control):** bạn giao hàm của mình cho thư
+      viện gọi lại, phải tin nó gọi đúng một lần, đúng lúc — khó bảo đảm.
+    - **Khó đọc, khó ghép:** luồng thực thi chạy "vào trong" thay vì đi xuống, ngược với
+      cách ta đọc code.
+
+    **Promise** sửa điều này bằng cách biến kết quả tương lai thành một **giá trị (object)**
+    có thể truyền đi, nối chuỗi `.then()` **phẳng** thay vì lồng, và gộp mọi lỗi vào **một
+    `.catch()`**. **async/await** đi thêm một bước: cho phép viết code bất đồng bộ **trông
+    như đồng bộ** — đọc từ trên xuống, dùng `try/catch` quen thuộc — trong khi bên dưới vẫn
+    là non-blocking. Bản chất không đổi, nhưng cấu trúc code khớp với cách con người tư duy.
+
 ```mermaid
 graph LR
     SYNC["Code đồng bộ<br/>(call stack)"]

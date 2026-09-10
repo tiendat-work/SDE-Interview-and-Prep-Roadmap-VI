@@ -88,6 +88,37 @@ Là khả năng hệ thống tiếp tục hoạt động đúng dù một số t
 
 CAP thường bị hiểu sai là "chọn 2 trong 3". Chính xác hơn: phân vùng mạng (P) là điều **bắt buộc phải chịu** trong hệ phân tán thực (mạng luôn có thể đứt/chậm), nên khi P xảy ra bạn chỉ được chọn **C hoặc A**. Khi mạng bình thường (không P), một hệ tốt có thể đạt **cả C và A** cùng lúc — đó là lỗ hổng mà **PACELC** lấp: *nếu Partition thì chọn A/C; Else (bình thường) thì đánh đổi Latency/Consistency*. Nghĩa là ngay cả lúc mạng ổn, muốn nhất quán mạnh (đồng bộ nhiều bản sao) vẫn phải trả giá bằng độ trễ.
 
+!!! question "Tại sao phân vùng mạng lại buộc phải đánh đổi C hoặc A?"
+    Hãy dựng một tình huống cụ thể để thấy đây là **tất yếu logic**, không phải
+    hạn chế kỹ thuật khắc phục được. Có hai node A và B cùng giữ bản sao của
+    `x = 1`. Đột nhiên **mạng giữa chúng đứt** (phân vùng): A và B vẫn sống,
+    vẫn nhận request, nhưng **không nói chuyện được với nhau**.
+
+    Giờ một client gửi **ghi `x = 2` tới node A**. Ngay lập tức một client khác
+    **đọc `x` từ node B**. Node B đứng trước hai lựa chọn, và **không có lựa
+    chọn thứ ba**:
+
+    - **Trả lời ngay (giữ Availability):** B trả `x = 1` — vì nó chưa hề nghe
+      tin về `x = 2` (mạng đứt, A không báo được). Client nhận được **dữ liệu
+      cũ** → **hy sinh Consistency**.
+    - **Từ chối / chờ (giữ Consistency):** B nói "tôi không chắc mình có dữ liệu
+      mới nhất, khoan đã" và chặn lại cho tới khi mạng nối lại và đồng bộ được
+      với A. Dữ liệu trả về sẽ **luôn đúng**, nhưng trong lúc phân vùng B
+      **không phản hồi** → **hy sinh Availability**.
+
+    Không thể vừa trả lời ngay **vừa** đảm bảo đúng, đơn giản vì thông tin `x=2`
+    **về mặt vật lý chưa thể** đi từ A sang B khi đường truyền đứt. Đây là giới
+    hạn của việc **thông tin cần thời gian và một đường truyền còn sống để lan
+    đi** — không kỹ thuật nào vượt qua được.
+
+    **Trực giác:** hai thủ kho ở hai kho, bộ đàm hỏng. Một khách bảo kho A "tôi
+    vừa đặt trước món hàng cuối"; ngay lúc đó khách khác hỏi kho B "còn hàng
+    không?". Thủ kho B chỉ có thể **hoặc** đáp ngay "còn" (nhanh nhưng có thể
+    sai — món đã bị đặt), **hoặc** nói "chờ tôi liên lạc kho A đã" (đúng nhưng
+    bắt khách chờ). Đó chính là CP (chọn đúng, chịu chờ) so với AP (chọn nhanh,
+    chịu sai). Vì phân vùng **sẽ** xảy ra, mọi hệ phân tán buộc phải chọn trước
+    mình nghiêng về phía nào.
+
 | Hệ thống | Khi có Partition (PA/PC) | Khi bình thường (EL/EC) | Xếp loại PACELC |
 |----------|--------------------------|--------------------------|-----------------|
 | DynamoDB / Cassandra | PA (ưu tiên sẵn sàng) | EL (ưu tiên độ trễ) | **PA/EL** |
@@ -159,6 +190,37 @@ Bỏ phiếu đa số (quorum) với N = 3 bản sao, W = 2, R = 2:
      Vì W + R = 4 > N = 3 ⇒ chắc chắn giao nhau ≥ 1 node mới nhất
      → trả về giá trị mới nhất (5)
 ```
+
+!!! question "Tại sao W + R > N đảm bảo đọc thấy ghi mới nhất?"
+    Đây thuần tuý là **nguyên lý chuồng bồ câu (pigeonhole)** áp lên tập các
+    node. Có tổng cộng `N` bản sao. Một thao tác **ghi** chỉ báo thành công khi
+    đã ghi lên **ít nhất `W` node**; một thao tác **đọc** truy vấn **ít nhất `R`
+    node** rồi lấy giá trị mới nhất trong số đó.
+
+    Câu hỏi sống còn: liệu tập `R` node được đọc có **chắc chắn chứa ít nhất một
+    node** nằm trong tập `W` node vừa được ghi không? Nếu có, node đó giữ giá
+    trị mới nhất → phép đọc **nhìn thấy** nó. Nếu hai tập có thể **rời nhau
+    hoàn toàn**, phép đọc có thể trượt sạch mọi node mới và chỉ thấy dữ liệu cũ.
+
+    Hai tập con của cùng `N` phần tử **buộc phải giao nhau** khi tổng kích thước
+    của chúng **vượt quá `N`**: nếu `W` node đã ghi và `R` node được đọc mà
+    **không** dính nhau node nào, thì cần tới `W + R` node **khác biệt** — nhưng
+    ta chỉ có `N` node. Vậy `W + R > N` ⇒ **không thể tách rời** ⇒ giao nhau ít
+    nhất `W + R − N ≥ 1` node.
+
+    Kiểm bằng ví dụ N=3, W=2, R=2: `W + R = 4 > 3`. Ghi chạm 2 node, đọc chạm 2
+    node — trong 3 node mà lấy 2 nhóm, mỗi nhóm 2 node, chắc chắn **trùng ít
+    nhất 1**. Node trùng đó có giá trị mới → đọc thấy. (Kèm điều kiện: đọc phải
+    **phân biệt được cái nào mới hơn**, thường bằng version/timestamp, để chọn
+    đúng giá trị mới trong các node trả về.)
+
+    **Trực giác:** một hội đồng `N` người. Muốn "thông qua một quyết định" phải
+    có `W` người ký; muốn "biết quyết định mới nhất" phải hỏi `R` người. Nếu
+    `W + R > N` thì bất kỳ nhóm `R` người nào bạn hỏi **đều lỡ dính** ít nhất
+    một người đã ký → luôn có người kể cho bạn tin mới nhất. **Đây cũng là cần
+    gạt điều chỉnh:** tăng `W` cho ghi chắc/đọc nhanh, hay tăng `R` cho ghi
+    nhanh/đọc chắc — nhưng miễn `W + R > N` thì vẫn giữ được nhất quán mạnh; hạ
+    xuống `W + R ≤ N` là bước sang nhất quán cuối cùng để đổi lấy độ trễ/sẵn sàng.
 
 ## Các mô hình nhất quán (Consistency Models)
 

@@ -65,6 +65,24 @@ graph TD
 
 Cộng theo tầng: `n + 2·(n/2) + 4·(n/4) + … = n + n + n + …` (mỗi tầng đúng `n`), nhân với số tầng `log₂ n` ⇒ `O(n log n)`.
 
+!!! question "Vì sao T(n) = 2T(n/2) + O(n) lại ra O(n log n)? (trực giác định lý thợ)"
+    Định lý thợ ở trên nghe trừu tượng, nhưng với công thức của merge sort ta có thể "nhìn thấy" kết quả bằng cách **cộng công việc theo từng tầng** của cây đệ quy — không cần thuộc công thức.
+
+    Hai đại lượng cần theo dõi:
+
+    1. **Công việc mỗi tầng.** Ở gốc, phần gộp (`+O(n)`) xử lý `n` phần tử. Tầng dưới có **2** bài con, mỗi bài kích thước `n/2`, nên tổng gộp = `2 × (n/2) = n`. Tầng sau nữa có **4** bài, mỗi bài `n/4` → tổng vẫn `4 × (n/4) = n`. Cứ thế: **mỗi tầng đều tốn đúng `n`**. Đó là vì số bài con nhân đôi thì kích thước mỗi bài giảm một nửa — hai yếu tố *triệt tiêu* nhau.
+    2. **Số tầng.** Kích thước bài toán chia đôi sau mỗi tầng (`n → n/2 → n/4 → … → 1`). Số lần chia đôi để về `1` là `log₂ n`, nên cây cao **`log₂ n` tầng**.
+
+    Nhân hai lại: `n` (mỗi tầng) × `log₂ n` (số tầng) = **`O(n log n)`**.
+
+    Trực giác chung của định lý thợ chính là *ai thắng cuộc đua giữa "công gộp `f(n)`" và "số bài con càng xuống càng nhiều"*:
+
+    - Nếu công việc **đều nhau** ở mọi tầng (như merge sort) → nhân thêm thừa số `log n` → **TH2**.
+    - Nếu các bài con sinh sôi nhanh hơn công gộp, công dồn ở **lá** (đáy cây, nơi có nhiều bài nhất) → **TH1**, ví dụ Karatsuba `T(n)=3T(n/2)+O(n)` cho `O(n^1.585)`.
+    - Nếu công gộp lớn áp đảo, công dồn ở **gốc** → **TH3**, kết quả bằng chính `f(n)`.
+
+    Với **tìm kiếm nhị phân** `T(n) = T(n/2) + O(1)`: mỗi tầng chỉ tốn `O(1)` (một phép so sánh), và có `log₂ n` tầng → `O(log n)`. Không có thừa số `n` vì mỗi tầng chỉ có **một** bài con (không chia đôi công việc, chỉ *bỏ đi* một nửa).
+
 ### Các ví dụ kinh điển
 
 - **Merge Sort:** chia đôi, sắp hai nửa, trộn lại. `O(n log n)`.

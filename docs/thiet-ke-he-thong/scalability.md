@@ -52,6 +52,38 @@ Auto-scaling tiết kiệm chi phí (chỉ trả cho tài nguyên đang dùng) v
 
 Một điểm dễ nhầm: mở rộng dọc và ngang **không loại trừ nhau**. Hệ thống lớn thường dùng nhiều máy khá mạnh (kết hợp cả hai) thay vì hàng nghìn máy tí hon hay một siêu máy duy nhất.
 
+!!! question "Tại sao scale ngang lại khó hơn scale dọc?"
+    Vì scale dọc **không đổi số lượng máy** — vẫn một máy, chỉ mạnh hơn — nên
+    **mô hình lập trình không hề đổi**: vẫn một bộ nhớ chung, một CSDL, một
+    nguồn sự thật (source of truth). Bạn gắn thêm RAM/CPU rồi khởi động lại là
+    xong; mọi giả định "đọc xong ghi thấy ngay", "khoá là khoá trong tiến
+    trình" vẫn đúng. Cái khó duy nhất là **trần phần cứng** và **giá tiền**.
+
+    Scale ngang thì trái lại: bài toán chuyển từ "một máy" sang "**nhiều máy độc
+    lập phải phối hợp qua mạng**", làm bung ra hàng loạt vấn đề mà một máy không
+    có:
+
+    - **Trạng thái phải chia sẻ:** trên một máy, session/biến đếm nằm trong RAM
+      dùng chung. Với N máy, request lần này tới máy A, lần sau tới máy B — B
+      không biết gì về A. Phải đẩy trạng thái ra kho ngoài (Redis/DB) → thêm
+      tầng, thêm độ trễ (đây là lý do cần thiết kế **stateless**).
+    - **Nhất quán dữ liệu:** một CSDL đọc-ghi luôn thấy dữ liệu mới nhất. Khi
+      nhân bản ra nhiều node, hai người đọc hai node có thể thấy hai giá trị
+      khác nhau → phải đối mặt với **đánh đổi CAP**, đồng bộ, quorum — thứ hoàn
+      toàn không tồn tại trên một máy.
+    - **Mạng không đáng tin:** lời gọi hàm trong một máy gần như không bao giờ
+      "thất bại nửa chừng"; lời gọi qua mạng thì có thể chậm, mất, hoặc **thành
+      công nhưng phản hồi bị lạc** → phải xử lý retry, idempotency, timeout.
+    - **Phối hợp:** cần cân bằng tải, phát hiện node chết (health check), bầu
+      leader, phân mảnh dữ liệu — cả một tầng hạ tầng mới.
+
+    **Trực giác:** scale dọc như thuê **một đầu bếp giỏi hơn** cho căn bếp cũ —
+    quy trình y nguyên. Scale ngang như mở **mười bếp ở mười nơi** rồi bắt chúng
+    nấu chung một thực đơn: giờ mới nảy sinh chuyện điều phối đơn, đồng bộ công
+    thức, xử lý một bếp cháy. Sức nấu tăng gần như vô hạn, nhưng **độ phức tạp
+    của việc phối hợp** mới là cái giá thật sự — và đó là lý do quy tắc thực tế
+    là "scale dọc trước, nhưng thiết kế stateless sẵn để scale ngang khi buộc phải".
+
 ## Băm nhất quán — đào sâu
 
 Với băm modulo `hash(key) % N`, khi N đổi (thêm/bớt node) **hầu hết** khoá đổi node vì mẫu số đổi. Ví dụ N=4 → N=5: khoảng 80% khoá phải di chuyển — thảm hoạ với cache (cache miss hàng loạt) và CSDL (rebalance khổng lồ).
@@ -64,6 +96,34 @@ Với băm modulo `hash(key) % N`, khi N đổi (thêm/bớt node) **hầu hết
 4. Thêm node mới: chỉ các khoá nằm giữa node mới và node liền trước nó bị di chuyển — trung bình chỉ **K/N khoá** (K = tổng khoá). Bớt node: chỉ khoá của node đó chuyển sang node kế tiếp.
 
 **Vấn đề phân bố lệch:** nếu chỉ đặt mỗi node một điểm, các cung trên vòng dài ngắn khác nhau → tải lệch. **Node ảo (virtual nodes / vnodes)** khắc phục: mỗi node vật lý được băm thành nhiều điểm ảo (ví dụ 100–200 vnode/node) rải khắp vòng. Càng nhiều vnode, phân bố càng đều và khi một node chết, tải của nó được chia đều cho các node còn lại thay vì dồn hết vào một node kế tiếp.
+
+!!! question "Tại sao consistent hashing giảm được lượng key phải di chuyển?"
+    Mấu chốt nằm ở chỗ **cái gì quyết định key thuộc về node nào**.
+
+    Với **băm modulo `hash(key) % N`**, node của mỗi key phụ thuộc vào **N — tổng
+    số node**. Khi N đổi (thêm/bớt một node), **mẫu số đổi**, nên **hầu như mọi
+    key** đều cho ra số dư mới → phải nhảy sang node khác. Ví dụ N=4 → N=5: một
+    key có `hash=100` trước ở node `100%4=0`, giờ ở `100%5=0` (may mắn trùng),
+    nhưng `hash=101`: `101%4=1` → `101%5=1`... nhìn tổng thể khoảng **80% key
+    phải di chuyển**. Với cache đó là **cache miss hàng loạt**; với CSDL đó là
+    một đợt **rebalance khổng lồ** — có thể làm sập hệ thống đúng lúc bạn đang
+    cố mở rộng nó.
+
+    Với **consistent hashing**, vị trí của mỗi key trên vòng **không phụ thuộc
+    vào N**. Key thuộc về "node đầu tiên gặp khi đi theo chiều kim đồng hồ". Khi
+    thêm một node mới chèn vào một điểm trên vòng, **chỉ những key nằm trong cung
+    giữa node mới và node liền trước nó** đổi chủ (từ node kế tiếp sang node
+    mới); **mọi key khác không hề động tới** vì hàng xóm của chúng trên vòng
+    không đổi. Trung bình chỉ **K/N key** phải di chuyển (K = tổng key) — ví dụ
+    3 → 4 node chỉ dời khoảng 25% thay vì ~75%.
+
+    **Trực giác:** modulo giống việc **đánh lại số ghế cho cả rạp** mỗi khi kê
+    thêm một hàng ghế — ai cũng phải đổi chỗ. Consistent hashing giống **xếp ghế
+    quanh một bàn tròn**: thêm một người thì chỉ **hai người ngồi cạnh** phải
+    nhích ra, cả bàn còn lại ngồi yên. Node ảo chỉ là làm cho "cung phụ trách"
+    của mỗi node được cắt nhỏ và rải đều quanh vòng, để việc nhích chỗ đó chia
+    đều cho mọi node thay vì dồn hết vào một anh xui xẻo. (Xem đoạn code phía
+    dưới đo trực tiếp tỉ lệ key phải dời khi thêm NodeD.)
 
 Sơ đồ vòng băm với node ảo:
 

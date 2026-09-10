@@ -39,6 +39,18 @@ graph TB
 
 Phá vỡ **bất kỳ một** điều kiện là ngăn được deadlock.
 
+!!! question "Tại sao CẢ 4 điều kiện Coffman phải đồng thời đúng mới bế tắc — và phá 1 là tránh được?"
+    Bốn điều kiện không phải là bốn "triệu chứng" rời rạc; chúng là **bốn mắt xích** phối hợp tạo nên cái bẫy kẹt vĩnh viễn. Thiếu bất kỳ mắt xích nào thì vòng kẹt tự tháo. Hãy xem từng điều kiện đóng vai trò gì, và vì sao xoá nó là mở được lối thoát:
+
+    - **1. Loại trừ lẫn nhau** tạo ra sự **tranh giành**: nếu tài nguyên dùng chung được (ví dụ file chỉ-đọc), chẳng ai phải chờ ai → không có xung đột nào để mắc kẹt. *Phá:* biến tài nguyên thành chia sẻ được (nhưng nhiều tài nguyên bản chất độc quyền như máy in, khoá ghi nên khó phá).
+    - **2. Giữ và chờ** khiến một tiến trình vừa **ôm** tài nguyên vừa **đòi** thêm — chính là "vừa chiếm chỗ vừa xếp hàng". *Phá:* bắt xin **toàn bộ** tài nguyên một lần trước khi chạy; đã có đủ thì không cần chờ giữa chừng, hoặc chưa đủ thì nhả hết ra chờ, không ôm khư khư.
+    - **3. Không tước đoạt** nghĩa là **không ai giật lại được**: một khi đã cấp thì phải đợi chủ tự nguyện nhả. *Phá:* cho phép cưỡng chế thu hồi (ví dụ CPU và bộ nhớ bị tước qua context switch/swap dễ dàng — đó là lý do những tài nguyên này hiếm khi deadlock).
+    - **4. Chờ vòng tròn** là mắt xích **khép kín** vòng: P1 chờ P2, P2 chờ P3, ..., Pn chờ lại P1 → không có điểm đầu để gỡ. *Phá:* **đánh số thứ tự tài nguyên** và luôn xin theo thứ tự tăng dần (lock ordering). Khi đó không thể tồn tại vòng, vì một vòng đòi hỏi có tiến trình giữ số lớn mà đòi số nhỏ — mâu thuẫn với quy tắc.
+
+    **Vì sao phải ĐỒNG THỜI?** Trực giác giao lộ 4 chiều: deadlock giống bốn xe từ bốn hướng cùng tiến vào giao lộ, mỗi xe **chiếm một làn** (loại trừ), **đứng yên giữ chỗ** trong khi chờ (giữ và chờ), **không ai chịu lùi** (không tước đoạt), và tạo thành **vòng tròn** mỗi xe chắn đường xe kế tiếp (chờ vòng tròn). Chỉ cần **một** xe chịu lùi (phá no-preemption), hoặc có luật "ai tới ngã tư mà chưa chắc qua lọt thì không được vào" (phá hold-and-wait), hoặc quy định thứ tự nhường đường (phá circular wait) — là cả bốn xe lại chạy được. Ngược lại, nếu thiếu bất kỳ điều kiện nào ngay từ đầu thì bẫy không bao giờ đóng lại: không có vòng tròn thì luôn có ít nhất một tiến trình ở "cuối chuỗi" không chờ ai, nó chạy xong sẽ nhả tài nguyên, làm tiến trình kế tiếp chạy được, tháo dây chuyền toàn bộ.
+
+    Đây chính là lý do các chiến lược **ngăn chặn (prevention)** ở dưới mỗi cái chỉ nhắm phá **đúng một** điều kiện — rẻ và đủ, không cần phá cả bốn.
+
 ### Đồ thị cấp phát tài nguyên (resource-allocation graph)
 Đỉnh gồm tiến trình và tài nguyên; cạnh gán (tài nguyên→tiến trình) và cạnh yêu cầu (tiến trình→tài nguyên). Có **chu trình (cycle)** → có khả năng deadlock; nếu mỗi loại tài nguyên chỉ một thực thể thì chu trình đồng nghĩa deadlock chắc chắn.
 

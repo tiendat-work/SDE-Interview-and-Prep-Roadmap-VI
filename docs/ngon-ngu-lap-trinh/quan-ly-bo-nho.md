@@ -46,6 +46,33 @@ Một tiến trình thường được chia thành các vùng:
 | Lỗi điển hình | Stack overflow | Memory leak, fragmentation |
 | Truy cập cache | Tốt (dữ liệu gần nhau) | Kém hơn (rải rác) |
 
+!!! question "Tại sao stack nhanh còn heap chậm hơn?"
+    **Cơ chế của stack:** ngăn xếp chỉ có MỘT con trỏ đỉnh (stack pointer). Cấp phát bộ
+    nhớ cho một hàm mới = **dịch con trỏ đỉnh xuống** một đoạn bằng kích thước khung hàm;
+    thu hồi = dịch nó ngược lại. Vì mọi thứ vào/ra theo trật tự **LIFO (vào sau ra trước)**,
+    máy biết chính xác chỗ tiếp theo mà không cần suy nghĩ gì — chỉ một phép cộng/trừ vào
+    con trỏ. Phép này tốn đúng **một lệnh CPU**, luôn cùng chi phí. Loại suy: xếp đĩa lên
+    chồng — bạn chỉ thao tác ở đỉnh, không bao giờ phải tìm chỗ.
+
+    **Vì sao heap chậm hơn:** heap cho phép cấp phát và giải phóng theo **thứ tự bất kỳ**,
+    nên sau một hồi chạy nó trở thành một "tấm bản đồ" lỗ chỗ các vùng đang dùng xen kẽ
+    vùng trống đủ mọi kích cỡ. Mỗi lần `malloc`/`new`, bộ cấp phát phải **đi dò danh sách
+    các khối trống** để tìm một khối đủ lớn (first-fit, best-fit...), có khi phải tách khối
+    hoặc gộp khối lân cận — nhiều bước hơn hẳn một phép cộng. Tệ hơn, giải phóng rải rác
+    tạo **phân mảnh (fragmentation)**: tổng bộ nhớ trống còn nhiều nhưng bị chia vụn, không
+    khối nào đủ liền để cấp phát → phải tìm lâu hơn hoặc thất bại. Loại suy: heap giống bãi
+    đỗ xe công cộng — muốn đỗ phải chạy vòng tìm ô trống vừa xe.
+
+!!! question "Tại sao biến cục bộ lại nằm trên stack?"
+    Vì **vòng đời của biến cục bộ trùng khít với vòng đời lời gọi hàm**: nó sinh ra khi hàm
+    được gọi và phải biến mất ngay khi hàm trả về. Đó đúng là bản chất LIFO của stack — hàm
+    gọi sau sẽ trả về trước, khớp hoàn hảo với thứ tự vào/ra của ngăn xếp. Nhờ vậy việc dọn
+    dẹp trở nên **tự động và miễn phí**: chỉ cần dịch con trỏ đỉnh về vị trí cũ là toàn bộ
+    biến cục bộ của hàm biến mất, không cần lần theo từng biến để giải phóng. Đây là lý do
+    ta không phải gọi `free` cho biến cục bộ. Đổi lại, chính vì nó "chết" theo hàm nên bạn
+    **không được trả về con trỏ tới biến cục bộ** — vùng nhớ đó đã bị thu hồi (dangling
+    pointer). Dữ liệu cần sống lâu hơn phạm vi hàm bắt buộc phải nằm trên heap.
+
 ### Thủ công vs Tự động
 
 - **Thủ công (manual):** Lập trình viên tự cấp phát và giải phóng — `malloc`/`free`

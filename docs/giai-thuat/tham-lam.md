@@ -13,6 +13,20 @@ Tham lam chỉ cho kết quả **tối ưu toàn cục** khi bài toán có hai 
 
 Nếu thiếu các tính chất này, tham lam có thể sai — khi đó cần quy hoạch động. Tham lam thường nhanh và đơn giản hơn DP nên rất đáng ưu tiên khi chứng minh được tính đúng.
 
+!!! question "Tại sao tham lam ĐÚNG ở một số bài nhưng SAI ở bài khác?"
+    Cả câu trả lời nằm ở hai tính chất trên — chúng chính là **cơ chế** khiến tham lam hoạt động (hoặc sụp đổ).
+
+    **Cơ chế khi nó đúng.** Hãy nghĩ tham lam như đi trên một cây quyết định: ở mỗi ngã rẽ có nhiều nhánh, tham lam chỉ dám bước vào **một** nhánh (nhánh "ngon nhất bây giờ") và không bao giờ quay lại. Điều đó chỉ an toàn nếu:
+
+    - **Tính chất lựa chọn tham lam** bảo đảm: luôn tồn tại **một** lời giải tối ưu **chứa** lựa chọn tham lam đầu tiên. Nói cách khác, chọn nhánh tham lam không hề "chặn đường" tới lời giải tối ưu — ta không đánh mất gì.
+    - **Cấu trúc con tối ưu** bảo đảm: sau khi chốt lựa chọn đó, **phần còn lại** của bài toán vẫn là một bài toán cùng dạng, và giải tối ưu phần còn lại rồi ghép vào vẫn cho tối ưu toàn cục.
+
+    Ghép hai điều này lại bằng quy nạp: bước 1 an toàn → bài con còn lại lại có đúng hai tính chất → bước 2 an toàn → ... → toàn bộ chuỗi lựa chọn cục bộ cho ra tối ưu toàn cục. Với **Activity Selection**, "chọn hoạt động kết thúc sớm nhất" luôn để lại **nhiều thời gian trống nhất** cho các hoạt động sau — nên không bao giờ thiệt; đó là lý do nó đúng.
+
+    **Vì sao nó SAI — ví dụ đổi tiền mệnh giá lạ.** Xét bộ mệnh giá `{1, 3, 4}` và cần trả `6`. Tham lam "luôn lấy đồng lớn nhất ≤ số còn thiếu" sẽ làm: `4 → còn 2 → 1 → 1` = **3 đồng**. Nhưng lời giải tối ưu là `3 + 3` = **2 đồng**. Tham lam sai vì bộ này **không có tính chất lựa chọn tham lam**: bước chọn `4` (ngon nhất tức thời) lại **loại mất** lời giải tối ưu `3+3`. Ngã rẽ tham lam đã đóng cánh cửa dẫn tới đáp án tốt hơn — đúng cái mà tính chất lựa chọn tham lam cấm xảy ra.
+
+    (Trớ trêu, với bộ mệnh giá "chuẩn" như tiền Việt/USD `{1, 2, 5, 10, ...}` thì tham lam lại đúng, vì các mệnh giá được thiết kế sao cho lựa chọn lớn nhất luôn an toàn. Đây là bài học cốt lõi: **tính đúng của tham lam phụ thuộc dữ liệu, phải chứng minh chứ không mặc định.**) Tương tự, **0/1 knapsack** sai vì chọn món "đáng giá nhất/kg" trước có thể chiếm chỗ khiến không nhét vừa tổ hợp tối ưu — không có cấu trúc con tối ưu cho lựa chọn tham lam, nên phải dùng DP.
+
 ## Cách hoạt động
 
 Khung chung: sắp xếp/ưu tiên các lựa chọn theo một tiêu chí, rồi lần lượt nhận lựa chọn nào không vi phạm ràng buộc.

@@ -130,6 +130,21 @@ Mẫu điển hình: cache, session, bộ đếm nguyên tử.
 | Truy vấn | SQL chuẩn, JOIN mạnh | API riêng từng loại, hạn chế JOIN |
 | Quan hệ | Biểu diễn bằng khoá ngoại | Nhúng (embed) hoặc tham chiếu |
 
+!!! question "Tại sao NoSQL mở rộng ngang (scale out) dễ hơn SQL?"
+    **Mở rộng ngang = chia dữ liệu ra nhiều máy (sharding).** Cái khiến việc này khó là các ràng buộc "xuyên máy": JOIN và giao dịch ACID cần dữ liệu liên quan **nằm cùng chỗ**. NoSQL né được đúng hai thứ đó, nên chia máy dễ hơn:
+
+    - **Không JOIN xuyên bảng.** SQL chuẩn hoá xé dữ liệu thành nhiều bảng rồi JOIN lại. Nếu bảng `nhan_vien` ở máy 1 còn `phong_ban` ở máy 3, mỗi JOIN phải **kéo dữ liệu qua mạng giữa các máy** — cực chậm và phức tạp. NoSQL thường **nhúng (embed)** dữ liệu liên quan vào cùng một tài liệu (cả nhân viên lẫn phòng ban trong một document), nên đọc một bản ghi là **gói gọn trong một máy**, không cần ghép xuyên máy.
+    - **Sharding dễ nhờ khoá phân mảnh.** Dữ liệu được chia theo **shard key** (ví dụ băm `user_id`), mỗi máy giữ một dải khoá độc lập. Vì các bản ghi không phải JOIN với nhau, việc "hàng này thuộc máy nào" tính thẳng từ khoá → thêm máy chỉ cần chia lại dải khoá, không phải gỡ rối quan hệ chằng chịt. SQL cũng shard được nhưng phải hy sinh JOIN xuyên shard và giao dịch xuyên shard (2-phase commit rất tốn).
+    - **Đổi lại (đánh đổi):** vì né JOIN nên NoSQL hay **chép trùng dữ liệu** (nhúng cùng thông tin ở nhiều tài liệu) và **đẩy việc ghép quan hệ về phía ứng dụng**. Linh hoạt scale, nhưng trùng lặp và tự lo đồng bộ.
+
+!!! question "Tại sao NoSQL thường chọn BASE thay vì ACID? (đánh đổi nhất quán)"
+    Khi dữ liệu trải trên nhiều máy và được **nhân bản (replication)**, một lần ghi cần lan tới mọi bản sao. Có hai lựa chọn:
+
+    - **ACID / nhất quán mạnh:** bắt **mọi bản sao xác nhận xong** rồi mới báo thành công. Đọc luôn thấy dữ liệu mới nhất, nhưng phải **chờ vòng qua mạng** giữa các máy → chậm hơn; và khi mạng phân mảnh (một số máy mất liên lạc), hệ phải **từ chối phục vụ** để khỏi lệch dữ liệu → giảm tính sẵn sàng.
+    - **BASE / nhất quán cuối cùng (eventual consistency):** ghi vào một (vài) bản sao là **báo thành công ngay**, rồi lan dần sang các bản còn lại ở nền. Nhanh và **luôn sẵn sàng** kể cả khi vài máy chết, nhưng **đọc ngắn hạn có thể thấy dữ liệu cũ** cho tới khi các bản hội tụ.
+
+    Đây chính là **định lý CAP** trong thực tế: mạng phân tán *chắc chắn* có lúc phân mảnh (P bắt buộc), nên phải chọn giữa **C (nhất quán)** và **A (sẵn sàng)**. NoSQL phân tán (Cassandra, DynamoDB) sinh ra để phục vụ quy mô lớn với độ trễ thấp và luôn "sống", nên phần lớn **nghiêng về A** → chọn BASE. Ngược lại tiền bạc/kế toán không chấp nhận đọc sai tạm thời → chọn ACID. Không có lựa chọn "vừa nhất quán mạnh vừa sẵn sàng tuyệt đối khi mạng đứt" — đó là bản chất đánh đổi, không phải hạn chế kỹ thuật khắc phục được.
+
 ## Nhân bản và phân mảnh (Replication & Sharding)
 Khả năng scale ngang của NoSQL dựa trên hai kỹ thuật cốt lõi:
 

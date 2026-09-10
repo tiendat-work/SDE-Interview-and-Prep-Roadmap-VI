@@ -35,6 +35,36 @@ Dùng khi cần tận dụng nhiều lõi CPU, giữ giao diện phản hồi, h
 - **Lock/Monitor:** Trừu tượng hóa việc khóa quanh dữ liệu chung.
 - **Atomic operation:** Thao tác không thể bị ngắt giữa chừng.
 
+!!! question "Tại sao race condition lại xảy ra?"
+    Gốc rễ: một thao tác trông có vẻ "một dòng" như `bo_dem += 1` thực chất **KHÔNG nguyên
+    tử (atomic)** — CPU chia nó thành ba bước riêng: (1) **đọc** giá trị hiện tại từ bộ nhớ
+    vào thanh ghi, (2) **cộng thêm 1** trong thanh ghi, (3) **ghi** kết quả trở lại bộ nhớ.
+    Hệ điều hành có thể **ngắt và chuyển luồng ở bất kỳ điểm nào giữa ba bước này**. Nếu
+    luồng 1 vừa đọc `bo_dem = 0` rồi bị ngắt, luồng 2 cũng đọc `0`, cả hai cùng tính `0+1=1`
+    rồi lần lượt ghi `1` — hai lần tăng nhưng kết quả chỉ là `1`, **mất một lần tăng**. Race
+    condition xảy ra chính vì các bước con của nhiều luồng **đan xen (interleave)** theo
+    thứ tự không đoán trước. Đây là lý do bug này khó tái hiện: nó chỉ lộ ra khi lịch định
+    thời (scheduling) rơi đúng vào "khe" xấu, mỗi lần chạy một khác.
+
+!!! question "Tại sao khoá giải quyết được race nhưng lại gây deadlock và làm chậm?"
+    **Vì sao khoá chữa được race:** khoá (mutex) buộc cả cụm đọc-sửa-ghi trở thành **một
+    khối không thể chia cắt** đối với các luồng khác. Khi một luồng giữ khoá vào vùng tới
+    hạn, mọi luồng khác **phải chờ** ở cửa; nhờ đó không còn cảnh đan xen giữa chừng — thao
+    tác trở nên "nguyên tử về mặt logic".
+
+    **Nhưng khoá sinh ra hai cái giá:**
+
+    - **Deadlock:** khi cần nhiều khoá, hai luồng có thể **giữ chéo và chờ nhau vĩnh viễn**.
+      Luồng 1 giữ khoá A rồi xin khoá B; luồng 2 giữ khoá B rồi xin khoá A — không ai nhả,
+      không ai đi tiếp. Đây là kết quả tự nhiên khi thứ tự xin khoá không nhất quán (một
+      trong bốn điều kiện Coffman). Cách phòng: luôn **xin khoá theo cùng một thứ tự**.
+    - **Chậm đi:** khoá **tuần tự hoá (serialize)** đoạn được bảo vệ — chỉ một luồng chạy
+      trong đó tại một thời điểm, nên phần này **mất khả năng song song**, các luồng khác
+      ngồi chờ không làm gì. Khoá càng "to" (bao nhiều code) hoặc giữ càng lâu thì mức song
+      song thực tế càng giảm, có khi đa luồng còn chậm hơn đơn luồng vì tốn thêm chi phí
+      chuyển ngữ cảnh và tranh khoá (lock contention). Đây là đánh đổi: **đổi tính song song
+      lấy tính đúng đắn**.
+
 ## Ví dụ: khóa bảo vệ biến chung
 
 === "JavaScript"

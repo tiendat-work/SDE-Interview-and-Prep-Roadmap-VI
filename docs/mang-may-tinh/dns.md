@@ -59,6 +59,33 @@ Resolver -> Client: 93.184.216.34  (kèm TTL để cache)
 ```
 Đầu tiên hệ thống luôn kiểm tra bộ đệm (cache) ở nhiều cấp trước khi đi hỏi.
 
+!!! question "Tại sao DNS phải phân cấp và có caching?"
+    Hãy hình dung nếu chỉ có **một** máy chủ giữ toàn bộ danh bạ Internet: mỗi
+    lần bất kỳ ai trên thế giới gõ một tên miền, truy vấn đều đổ về đúng máy đó.
+    Với hàng **nghìn tỉ** truy vấn mỗi ngày, không cỗ máy nào chịu nổi — và nếu
+    nó chết thì **cả Internet** tê liệt. Đó là điểm lỗi đơn (single point of
+    failure) và điểm nghẽn (bottleneck) không thể chấp nhận.
+
+    **Phân cấp chia để trị:** cây tên miền tách trách nhiệm thành nhiều tầng độc
+    lập — Root chỉ cần biết "hỏi TLD nào", TLD `.com` chỉ cần biết "hỏi
+    authoritative nào", authoritative mới giữ bản ghi thật. Nhờ đó:
+
+    - **Không ai chịu toàn tải:** Root không cần biết `www.example.com` trỏ đâu,
+      nó chỉ chỉ đường xuống `.com`. Tải được phân tán ra hàng triệu máy chủ
+      authoritative do từng tổ chức tự vận hành.
+    - **Phân quyền quản trị:** chủ tên miền `example.com` tự sửa bản ghi của
+      mình mà không cần xin phép ai — vì họ vận hành authoritative server riêng.
+    - **Chịu lỗi:** mỗi tầng có nhiều máy chủ nhân bản (13 nhóm root server, mỗi
+      nhóm hàng trăm máy qua anycast); một máy chết không sập hệ thống.
+
+    **Caching cắt phần lớn tải còn lại:** dù đã phân cấp, việc lặp lại đủ 4 chặng
+    (Root → TLD → Auth) cho **mỗi** lần truy cập vẫn quá tốn và chậm. Vì ánh xạ
+    tên → IP **hiếm khi đổi**, kết quả được lưu cache ở nhiều tầng (trình duyệt,
+    hệ điều hành, resolver của ISP). Thực tế **phần lớn** truy vấn dừng ngay ở
+    cache gần người dùng, không bao giờ chạm tới root. **Trực giác:** phân cấp
+    giống hệ thống bưu chính (quốc gia → tỉnh → phường, không ai ôm hết); caching
+    giống việc bạn nhớ luôn số nhà hay gọi thay vì tra danh bạ mỗi lần.
+
 Sơ đồ tuần tự minh hoạ phân giải đệ quy (client) kết hợp lặp (resolver):
 
 ```mermaid
@@ -118,6 +145,29 @@ example.com.        300  IN  TXT   "v=spf1 include:_spf.example.com ~all"
   ngày, rồi mới đổi bản ghi; sau khi ổn định thì nâng TTL lại.
 - Vì DNS phân tán nhiều tầng cache, một thay đổi bản ghi có thể mất tới bằng
   giá trị TTL cũ để lan hết ("DNS propagation").
+
+!!! question "Tại sao TTL lại quan trọng đến vậy?"
+    TTL là **con dao hai lưỡi** điều khiển trực tiếp sự đánh đổi giữa **tải hệ
+    thống / độ trễ** và **tốc độ cập nhật thay đổi** — chọn sai giá trị có thể
+    làm sập dịch vụ hoặc kéo dài sự cố hàng giờ.
+
+    - **TTL cao (ví dụ 24 giờ):** bản ghi nằm lì trong cache lâu → **ít truy vấn
+      tới authoritative** (nhẹ tải, rẻ tiền) và **người dùng phản hồi nhanh** vì
+      thường trúng cache. **Nhưng** khi bạn đổi IP (chuyển máy chủ, xử lý sự cố),
+      các cache khắp thế giới vẫn trả **IP cũ** cho tới khi hết TTL — có thể
+      **cả ngày** người dùng bị dẫn tới máy chủ đã chết.
+    - **TTL thấp (ví dụ 60 giây):** thay đổi **lan gần như tức thì** (linh hoạt
+      khi failover, cân bằng tải động, đổi CDN). **Nhưng** cache hết hạn liên
+      tục → **truy vấn dồn về authoritative nhiều hơn** (tải cao, và nếu
+      authoritative chậm/chết thì độ trễ tăng, thậm chí không phân giải được).
+
+    **Đó là lý do có "mẹo hạ TTL trước khi chuyển":** vài ngày **trước** khi đổi
+    IP, hạ TTL xuống thấp (ví dụ 60s) và chờ cho TTL cũ hết hạn khắp nơi; lúc
+    này mọi cache đều làm mới nhanh, nên khi bạn **thật sự** đổi bản ghi, thay
+    đổi lan gần như tức thì và cắt được thời gian gián đoạn. Đổi xong, ổn định
+    thì nâng TTL trở lại để giảm tải. **Trực giác:** TTL như hạn dùng ghi trên
+    hộp sữa — để dài thì đỡ phải đi mua (đỡ tải) nhưng rủi ro dùng phải đồ ôi
+    (dữ liệu cũ); để ngắn thì luôn tươi nhưng phải chạy ra cửa hàng liên tục.
 
 ### DNS đệ quy vs lặp (Recursive vs Iterative)
 | Tiêu chí | Truy vấn đệ quy (Recursive) | Truy vấn lặp (Iterative) |

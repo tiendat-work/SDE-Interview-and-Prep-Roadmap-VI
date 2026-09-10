@@ -256,6 +256,27 @@ print(kruskal(4, edges))   # cây khung và tổng trọng số
 
 (V = số đỉnh, E = số cạnh.)
 
+### Vì sao có các con số này?
+
+!!! question "Tại sao ma trận kề tốn O(V²) bộ nhớ còn danh sách kề chỉ O(V + E)?"
+    - **Ma trận kề — O(V²):** ma trận là một bảng vuông `V × V`, ô `M[i][j]` trả lời câu hỏi "có cạnh từ i tới j không?". Vì phải dành **một ô cho MỌI cặp đỉnh** — kể cả những cặp **không** có cạnh — nên số ô luôn là `V × V = V²`, bất kể đồ thị thực sự có bao nhiêu cạnh. Với đồ thị **thưa (sparse)** — ví dụ mạng xã hội 1 triệu người, mỗi người chỉ vài trăm bạn — ma trận vẫn ngốn `10¹²` ô, gần như toàn số 0. Đó là lãng phí khổng lồ.
+    - **Danh sách kề — O(V + E):** thay vì ghi mọi cặp, mỗi đỉnh chỉ **liệt kê những hàng xóm nó thực sự nối tới**. Ta tốn `O(V)` cho `V` "đầu danh sách" (mỗi đỉnh một danh sách), cộng `O(E)` cho tổng số mục hàng xóm — vì **mỗi cạnh chỉ được ghi ra đúng nơi nó tồn tại** (cạnh vô hướng ghi 2 lần, vẫn là hằng số nhân E). Không cạnh nào ⇒ không tốn ô nào. Vì thế với đồ thị thưa (`E ≪ V²`), danh sách kề tiết kiệm bộ nhớ vượt trội.
+
+    Đánh đổi: ma trận trả lời "có cạnh (u,v) không?" tức thì O(1) (đọc thẳng một ô), còn danh sách phải quét danh sách hàng xóm của u — O(bậc của u). Đồ thị **dày** → ma trận đáng giá; đồ thị **thưa** → danh sách kề thắng.
+
+!!! question "Tại sao BFS dùng hàng đợi còn DFS dùng ngăn xếp/đệ quy?"
+    Khác biệt hoàn toàn đến từ **thứ tự lấy đỉnh ra để xử lý tiếp**, và mỗi cấu trúc tạm ép ra một thứ tự khác nhau:
+
+    - **BFS cần hàng đợi (FIFO — vào trước, ra trước):** BFS muốn duyệt theo **từng lớp khoảng cách** — thăm hết mọi đỉnh cách gốc 1 cạnh, rồi mới tới lớp cách 2 cạnh... Hàng đợi làm đúng điều đó: những đỉnh được phát hiện **sớm hơn** (gần gốc hơn) nằm ở đầu hàng nên **được lấy ra trước**, đảm bảo ta luôn xử lý xong lớp gần trước khi chạm lớp xa. Chính vì lan theo lớp mà BFS tìm được **đường đi ngắn nhất theo số cạnh** trên đồ thị không trọng số.
+    - **DFS cần ngăn xếp (LIFO — vào sau, ra trước):** DFS muốn **lao sâu theo một nhánh tới cùng** rồi mới quay lui. Ngăn xếp cho ta điều đó: đỉnh **mới phát hiện gần nhất** được xử lý ngay, đẩy ta đi xa dần khỏi gốc; chỉ khi cụt đường mới "quay lui" bằng cách lấy đỉnh trên đỉnh ngăn xếp. Đệ quy chính là dùng **ngăn xếp lời gọi hàm (call stack)** của ngôn ngữ để làm việc này một cách ngầm — nên đệ quy và "dùng stack" là cùng một cơ chế.
+
+    Phép loại suy: BFS như **vết dầu loang** trên mặt nước — lan đều ra mọi hướng theo vòng tròn đồng tâm. DFS như **đi trong mê cung luôn men theo một bức tường** — cứ đâm sâu tới ngõ cụt rồi lùi lại thử lối khác.
+
+!!! question "Tại sao duyệt (DFS/BFS) là O(V + E) với danh sách kề?"
+    Vì cả hai đều nhờ mảng `visited` bảo đảm **mỗi đỉnh chỉ được xử lý đúng một lần** và **mỗi cạnh chỉ được xét đúng một lần** (hoặc hai lần với đồ thị vô hướng — vẫn là hằng số nhân E). Cộng lại: chi phí "chạm mỗi đỉnh một lần" là `O(V)`, chi phí "đi qua mỗi cạnh một lần khi liệt kê hàng xóm" là `O(E)` → tổng `O(V + E)`.
+
+    Lưu ý vì sao con số này **khác** với ma trận kề: với danh sách kề, để duyệt hàng xóm của một đỉnh ta chỉ đọc đúng số hàng xóm nó có. Nhưng với **ma trận kề**, muốn tìm hàng xóm của một đỉnh phải quét **cả một hàng dài V ô** (phần lớn là số 0) để lọc ra ô nào bằng 1 — làm vậy cho `V` đỉnh thành `O(V²)`. Đó là lý do bảng độ phức tạp ghi DFS/BFS là `O(V²)` khi dùng ma trận nhưng `O(V + E)` khi dùng danh sách kề.
+
 ## Ưu / nhược điểm
 
 - **Ưu:**

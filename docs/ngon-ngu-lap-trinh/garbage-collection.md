@@ -44,6 +44,37 @@ heap thành thế hệ trẻ (young) và già (old). Thu gom thế hệ trẻ th
 đối tượng sống sót được "thăng cấp" (promote) lên thế hệ già, ít bị quét hơn. Giảm
 đáng kể tổng chi phí GC (Java HotSpot, .NET, CPython đều dùng).
 
+!!! question "Tại sao generational GC lại hiệu quả?"
+    Nền tảng là một quan sát thực nghiệm gọi là **giả thuyết thế hệ yếu (weak generational
+    hypothesis): hầu hết đối tượng chết rất trẻ.** Trong chương trình điển hình, đa số đối
+    tượng là thứ tạm bợ — biến trung gian trong vòng lặp, chuỗi vừa nối, object trả về rồi
+    vứt ngay. Chỉ một số ít (cấu hình, cache, kết nối) sống lâu.
+
+    **Tại sao điều đó giúp tiết kiệm:** chi phí của tracing GC tỉ lệ với **số đối tượng SỐNG
+    phải đánh dấu và di chuyển**, không phải số rác. Nếu cứ mỗi lần dọn lại quét toàn bộ heap
+    thì ta phí công lần theo đám đối tượng già nua vốn gần như chẳng bao giờ chết. Generational
+    GC tách vùng "trẻ" nhỏ ra và **chỉ quét vùng này thật thường xuyên**: vì hầu hết ở đây đã
+    chết, số đối tượng sống sót cần xử lý rất ít → mỗi đợt Minor GC nhanh và rẻ. Đám hiếm hoi
+    sống dai được **thăng cấp** lên vùng già để **khỏi phải kiểm tra đi kiểm tra lại**; vùng
+    già chỉ bị quét (Major GC) khi thật cần. Loại suy: thay vì tổng vệ sinh cả toà nhà mỗi
+    ngày, ta chỉ đổ thùng rác cạnh bàn — nơi rác dồn nhanh nhất — còn kho lưu trữ thì lâu lâu
+    mới dọn.
+
+!!! question "Tại sao đếm tham chiếu không xử lý được tham chiếu vòng?"
+    Đếm tham chiếu chỉ dựa vào một quy tắc **cục bộ**: "khi bộ đếm về 0 thì giải phóng". Bộ
+    đếm về 0 nghĩa là **không còn ai trỏ tới**. Nhưng với một **chu trình** — A trỏ B và B
+    trỏ A — thì ngay cả khi chương trình đã bỏ hết tham chiếu từ bên ngoài vào chúng, A vẫn
+    còn "một người hâm mộ" là B, và B vẫn còn A. Bộ đếm của cả hai **luôn ≥ 1**, không bao
+    giờ chạm 0, nên không đối tượng nào được giải phóng — dù cả cụm đã thành **rác không thể
+    truy cập** từ chương trình. Đây là rò rỉ bộ nhớ kinh điển của reference counting.
+
+    Vấn đề nằm ở chỗ đếm tham chiếu hỏi sai câu hỏi: nó hỏi "**có ai trỏ tới không?**" trong
+    khi câu hỏi đúng là "**có còn tiếp cận được từ gốc (root) không?**". Tracing GC hỏi đúng
+    câu này: nó xuất phát từ tập gốc và lần theo tham chiếu; cụm A–B không nằm trên đường đi
+    nào từ gốc nên bị bỏ lại và thu hồi — bất kể chúng trỏ lẫn nhau bao nhiêu. Đó là lý do
+    CPython phải bổ sung một **bộ dò chu trình (cycle detector)** chạy bên cạnh cơ chế đếm
+    tham chiếu.
+
 ## Ví dụ đa ngôn ngữ
 
 === "Python"

@@ -49,6 +49,49 @@ Phân tích độ phức tạp là cách **ước lượng lượng tài nguyên
 
 `O(1) < O(log n) < O(n) < O(n log n) < O(n²) < O(2ⁿ) < O(n!)`
 
+!!! question "Mỗi lớp độ phức tạp NGHĨA LÀ GÌ? (trực giác + ví dụ thực tế)"
+    Đừng học thuộc — hãy hình dung điều gì xảy ra khi bạn **tăng gấp đôi** đầu vào:
+
+    - **O(1) — hằng số:** thời gian **không đổi** dù `n` lớn cỡ nào. Cơ chế: nhảy thẳng tới
+      kết quả không cần duyệt. *Ví dụ:* lấy `arr[500]` trong mảng, tra một khoá trong bảng
+      băm, `push`/`pop` cuối ngăn xếp. Tăng `n` gấp triệu lần cũng vẫn một bước.
+    - **O(log n) — lô-ga-rít:** mỗi bước **loại bỏ một nửa** số ứng viên còn lại, nên số bước
+      chỉ là "số lần chia đôi để về 1". Cực chậm lớn: `n` 1 triệu chỉ tốn ~20 bước, 1 tỉ chỉ
+      ~30. *Ví dụ:* tìm kiếm nhị phân trong mảng đã sắp, tra cứu trong cây cân bằng. Loại suy:
+      tra từ điển — mở giữa, biết cần nửa nào, bỏ ngay nửa kia.
+    - **O(n) — tuyến tính:** phải **chạm mỗi phần tử đúng một lần**, thời gian tỉ lệ thẳng
+      với `n`. Gấp đôi dữ liệu → gấp đôi thời gian. *Ví dụ:* tính tổng một mảng, tìm giá trị
+      lớn nhất, quét tuyến tính tìm một tên.
+    - **O(n log n):** làm việc `O(n)` **lặp lại qua `log n` tầng chia đôi**. Đây là mức tốt
+      nhất cho sắp xếp dựa trên so sánh. *Ví dụ:* merge sort, quicksort, sắp một danh sách
+      liên hệ trước khi hiển thị. Chỉ nhỉnh hơn tuyến tính một chút — vẫn rất khả thi với
+      hàng triệu phần tử.
+    - **O(n²) — bình phương:** với **mỗi** phần tử lại duyệt **toàn bộ** phần tử khác → hai
+      vòng lồng. Gấp đôi dữ liệu → **gấp bốn** thời gian, phình rất nhanh. *Ví dụ:* so từng
+      cặp để tìm trùng bằng vòng lồng, bubble sort. `n = 1000` đã là 1 triệu phép; `n =
+      100000` là 10 tỉ — bắt đầu quá chậm.
+    - **O(2ⁿ) — mũ:** mỗi khi `n` **tăng thêm 1**, khối lượng việc **nhân đôi**. Bùng nổ
+      không thể kiểm soát: `n = 50` đã vượt sức mọi máy tính. *Ví dụ:* thử mọi tập con, đệ
+      quy Fibonacci ngây thơ, vét cạn mọi tổ hợp mật khẩu. Gần như luôn là dấu hiệu cần
+      quy hoạch động hoặc cắt tỉa.
+
+!!! question "Tại sao chỉ quan tâm số hạng lớn nhất (bỏ hằng số và số hạng bậc thấp)?"
+    Vì Big O mô tả **hành vi khi `n` tiến ra rất lớn (tiệm cận)** — và khi đó số hạng tăng
+    nhanh nhất **áp đảo hoàn toàn** phần còn lại. Lấy `T(n) = n² + 100n + 500`:
+
+    | n | n² | 100n | 500 | n² chiếm |
+    |---|-----|------|-----|----------|
+    | 10 | 100 | 1 000 | 500 | 6% |
+    | 1 000 | 1 000 000 | 100 000 | 500 | 91% |
+    | 1 000 000 | 10¹² | 10⁸ | 500 | 99,99% |
+
+    Càng lớn, `n²` càng nuốt trọn tổng — `100n` và `500` trở thành hạt bụi. Nên ta viết gọn
+    `O(n²)`: nó nắm đúng cái quyết định khả năng mở rộng. **Bỏ hằng số nhân** (`O(2n) → O(n)`)
+    cũng cùng lý do: hằng số phụ thuộc máy/ngôn ngữ (máy nhanh gấp đôi làm hằng số giảm nửa),
+    trong khi ta muốn một thước đo **độc lập phần cứng**, chỉ nói về *hình dạng tăng trưởng*.
+    Đánh đổi: cách trừu tượng này bỏ qua hằng số, nên với `n` **nhỏ** một thuật toán "bậc cao
+    hơn" đôi khi vẫn nhanh hơn trong thực tế (xem mục Ưu/nhược điểm).
+
 ## Ví dụ
 
 === "JavaScript"

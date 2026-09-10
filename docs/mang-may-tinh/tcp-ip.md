@@ -136,6 +136,33 @@ giao thức tầng Giao vận nhưng khác nhau căn bản:
 giao dịch ngân hàng). **Chọn UDP khi:** ưu tiên độ trễ thấp và chấp nhận mất
 gói lẻ tẻ (thoại/video thời gian thực, game online, DNS truy vấn nhỏ).
 
+!!! question "Tại sao TCP tin cậy còn UDP thì không?"
+    Độ tin cậy của TCP **không** phải phép màu — nó được xây bằng ba cơ chế cụ
+    thể mà UDP cố tình bỏ đi để đổi lấy tốc độ:
+
+    - **Bắt tay trước khi gửi:** TCP mở kết nối bằng bắt tay 3 bước, tạo ra một
+      "trạng thái" chung ở cả hai bên (số thứ tự khởi tạo, kích thước cửa sổ).
+      Nhờ có trạng thái này, hai bên mới biết gói nào đã tới, gói nào còn thiếu.
+      UDP **không bắt tay** — cứ thế bắn datagram đi, không bên nào giữ trạng
+      thái, nên không thể biết gói có tới không.
+    - **Số thứ tự (sequence number) + ACK:** mỗi byte TCP gửi đi mang một số thứ
+      tự; bên nhận gửi lại **ACK** báo "đã nhận tới byte thứ N". Đây là cơ chế
+      "gửi thư bảo đảm có ký nhận". Nhờ số thứ tự, bên nhận **sắp xếp lại đúng
+      thứ tự** dù các gói tới lộn xộn, và **loại gói trùng**. UDP không đánh số,
+      không ACK → gói tới sai thứ tự thì cứ để vậy, mất thì mất luôn.
+    - **Truyền lại (retransmission) khi mất gói:** nếu bên gửi chờ quá lâu không
+      thấy ACK (timeout) hoặc nhận 3 ACK trùng, nó **tự gửi lại** gói nghi bị
+      mất. Đây là điều biến "mạng không đáng tin" thành "kênh đáng tin". UDP
+      không có timeout, không truyền lại → mất là mất.
+
+    **Trực giác:** TCP giống gửi bưu phẩm bảo đảm — chậm hơn vì phải ký nhận,
+    đánh số kiện, gửi lại kiện thất lạc; UDP giống thả tờ rơi qua cửa sổ — cực
+    nhanh nhưng không ai bảo đảm tờ nào tới. **Cái giá của độ tin cậy là độ
+    trễ:** mỗi lần chờ ACK và truyền lại đều tốn ít nhất một vòng khứ hồi (RTT).
+    Đó là lý do thoại/video thời gian thực chọn UDP: với chúng, một khung hình
+    tới **trễ** còn tệ hơn một khung hình **mất** — nghe vấp còn khó chịu hơn
+    nghe sót một âm.
+
 ### Bắt tay 3 bước (Three-way Handshake)
 Để mở một kết nối TCP tin cậy, hai bên thực hiện 3 bước trao đổi:
 ```
@@ -148,6 +175,29 @@ Client                                Server
 - **ACK** (Acknowledgment): xác nhận đã nhận.
 - Sau 3 bước, kết nối chuyển sang trạng thái ESTABLISHED và bắt đầu truyền
   dữ liệu.
+
+!!! question "Tại sao phải bắt tay 3 bước, không phải 2?"
+    Cốt lõi: TCP là kênh **song công (full-duplex)** — dữ liệu chảy cả hai
+    chiều — nên **mỗi chiều** cần đồng bộ số thứ tự khởi tạo (ISN) riêng. Đồng
+    bộ một chiều cần đúng 2 gói: một bên gửi số thứ tự của mình (SYN), bên kia
+    xác nhận (ACK). Có **hai** chiều → tưởng chừng cần 4 gói, nhưng bước giữa
+    **gộp** ACK của chiều này với SYN của chiều kia (SYN-ACK) → còn 3:
+
+    1. **SYN (Client → Server):** "Tôi bắt đầu đánh số từ x." (đồng bộ chiều đi)
+    2. **SYN-ACK (Server → Client):** "Nhận được x rồi (ack=x+1); và tôi bắt đầu
+       đánh số từ y." (xác nhận chiều đi **+** đồng bộ chiều về, gộp làm một)
+    3. **ACK (Client → Server):** "Nhận được y rồi (ack=y+1)." (xác nhận chiều về)
+
+    **Vì sao 2 bước không đủ?** Với 2 bước, server gửi ISN `y` của mình nhưng
+    **không bao giờ biết** client có nhận được `y` hay không → chiều server→client
+    chưa được đồng bộ chắc chắn. Bước thứ 3 chính là cái ACK cho `y` đó.
+
+    **Trực giác (gọi điện thoại):** (1) "Alô, anh nghe rõ không?" (2) "Nghe rõ,
+    thế **anh** nghe rõ **tôi** không?" (3) "Rõ luôn." — chỉ sau câu thứ 3 thì
+    **cả hai** mới chắc rằng đường truyền **cả hai chiều** đều thông. Lợi ích
+    phụ: bước 3 giúp chống gói SYN **cũ lạc lối** từ kết nối trước vô tình mở
+    nhầm một kết nối ma — client sẽ không gửi ACK cuối cho một SYN nó không hề
+    khởi xướng.
 
 Sơ đồ tuần tự (sequence diagram) của bắt tay 3 bước:
 

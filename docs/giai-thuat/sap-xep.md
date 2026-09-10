@@ -570,6 +570,40 @@ print(`  Merge Sort:  ${mergeCount([...base])} phép so sánh  (~O(n log n))`);
 | Counting | O(n + k) | O(n + k) | O(n + k) | O(k) | Có | Không |
 | Radix | O(d(n+k)) | O(d(n+k)) | O(d(n+k)) | O(n + k) | Có | Không |
 
+### Vì sao có các con số này?
+
+Bảng trên chỉ *nêu* độ phức tạp. Dưới đây là **cơ chế** đằng sau từng con số.
+
+!!! question "Vì sao Bubble / Selection / Insertion là O(n²)?"
+    Cả ba đều có **hai vòng lặp lồng nhau (nested loops)**: vòng ngoài chọn vị trí đang xây, vòng trong quét phần còn lại để so sánh/đổi chỗ. Với `n` phần tử, vòng ngoài chạy khoảng `n` lần, mỗi lần vòng trong chạy tới `n` lần nữa → tổng số phép so sánh cỡ `n × n = n²`.
+
+    Chính xác hơn, số cặp so sánh là `(n-1) + (n-2) + … + 1 = n(n-1)/2` — một tổng cấp số cộng, bậc hai theo `n`. Trực giác: mỗi phần tử phải "gặp" gần như mọi phần tử khác.
+
+    - **Selection luôn O(n²)** kể cả khi mảng đã sắp, vì nó **luôn** quét hết phần chưa sắp để tìm cực tiểu — không có cách dừng sớm.
+    - **Bubble và Insertion có O(n) ở trường hợp tốt nhất** (mảng đã sắp): Bubble nhờ **cờ `swapped`** phát hiện một lượt không đổi chỗ nào là dừng; Insertion nhờ vòng `while` bên trong **thoát ngay** khi phần tử đứng trước đã nhỏ hơn `key`, nên chỉ tốn `n-1` phép so sánh.
+
+!!! question "Vì sao Merge và Heap luôn O(n log n)?"
+    Chìa khóa là thừa số `log n` sinh ra từ việc **chia đôi** dữ liệu.
+
+    - **Merge sort:** mỗi lần chia đôi mảng, phải chia `log₂ n` lần thì kích thước mới về 1 (vì `n → n/2 → n/4 → … → 1`). Đó là **số tầng** của cây đệ quy. Ở *mỗi* tầng, thao tác **trộn (merge)** đi qua tổng cộng đúng `n` phần tử. Vậy `n` (công mỗi tầng) × `log n` (số tầng) = `O(n log n)`. Vì luôn chia đôi đều nên không có trường hợp xấu — luôn `O(n log n)`.
+    - **Heap sort:** xây đống rồi lấy phần tử lớn nhất ra `n` lần; mỗi lần lấy phải "vun lại đống" (`heapify`) tốn `O(log n)` vì đống là **cây nhị phân hoàn chỉnh cao `log n` tầng**, phần tử tụt xuống nhiều nhất qua chừng ấy tầng. Vậy `n × log n = O(n log n)`, cũng không phụ thuộc dữ liệu đầu vào.
+
+!!! question "Vì sao Quick sort xấu nhất là O(n²) dù trung bình O(n log n)?"
+    Quick sort chọn một **chốt (pivot)** rồi phân hoạch. Nếu chốt luôn rơi vào **giữa**, mỗi lần chia mảng thành hai nửa xấp xỉ bằng nhau → giống merge sort, có `log n` tầng, mỗi tầng tốn `O(n)` để phân hoạch → `O(n log n)`.
+
+    Nhưng nếu chốt luôn là phần tử **nhỏ nhất hoặc lớn nhất** (xảy ra khi mảng *đã sắp* và ta luôn chọn chốt ở cuối), phân hoạch tạo ra một bên rỗng và một bên có `n-1` phần tử. Khi đó cây đệ quy sâu tới `n` tầng thay vì `log n`, mỗi tầng vẫn quét `O(n)` → `n × n = O(n²)`. Đây là lý do phải chọn **chốt ngẫu nhiên** hoặc **trung vị của ba** để gần như chắc chắn tránh được trường hợp này.
+
+!!! question "Vì sao Counting và Radix vượt qua giới hạn O(n log n)?"
+    Giới hạn `O(n log n)` chỉ áp dụng cho thuật toán **dựa trên so sánh**: khi chỉ được phép hỏi "phần tử này lớn hơn phần tử kia không?", mỗi so sánh phân biệt được 2 nhánh, mà có `n!` thứ tự khả dĩ, nên cần ít nhất `log₂(n!) ≈ n log n` phép so sánh.
+
+    Counting và Radix **không so sánh phần tử với nhau**. Counting sort *dùng thẳng giá trị làm chỉ số*: đếm mỗi giá trị xuất hiện bao nhiêu lần rồi đặt lại theo thứ tự khóa — chỉ cần duyệt qua `n` phần tử và `k` khóa → `O(n + k)`. Radix áp dụng ý này cho **từng chữ số**, lặp `d` lượt → `O(d·(n + k))`. Cái giá phải trả: chỉ dùng được khi khóa là **số nguyên miền hẹp** (nếu `k` rất lớn thì `O(k)` bộ nhớ và thời gian mất lợi thế).
+
+!!! question "Vì sao thuật toán này ổn định còn thuật toán kia thì không?"
+    **Ổn định (stable)** nghĩa là hai phần tử có cùng khóa giữ nguyên thứ tự tương đối ban đầu. Điều này phụ thuộc vào việc thuật toán có bao giờ **đổi chỗ vượt qua** một phần tử bằng nhau hay không.
+
+    - **Merge, Insertion, Bubble ổn định** vì chúng chỉ đổi chỗ/chèn khi phần tử *thực sự lớn hơn* (dùng `>` chứ không `>=`, hoặc trộn ưu tiên nửa trái khi bằng nhau) — hai giá trị bằng nhau không bao giờ hoán đổi.
+    - **Selection, Quick, Heap không ổn định** vì chúng thực hiện các phép đổi chỗ ở khoảng cách xa: ví dụ Selection đưa cực tiểu về đầu có thể "nhảy qua" một phần tử bằng nó, đảo lộn thứ tự ban đầu. Heap càng xáo trộn mạnh vì di chuyển phần tử theo cấu trúc cây.
+
 ## Chọn thuật toán nào?
 
 - **Mảng nhỏ hoặc gần sắp:** Insertion sort (nhanh, đơn giản).

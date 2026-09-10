@@ -26,6 +26,15 @@ Mọi dữ liệu bền vững đều đi qua hệ thống tệp. Thiết kế c
 ### Cấu trúc cơ bản: inode và khối
 Trên các hệ Unix, mỗi tệp gắn với một **inode** — cấu trúc lưu metadata và con trỏ tới các khối dữ liệu (trực tiếp, gián tiếp một/hai/ba cấp). Thư mục là bảng ánh xạ tên → số inode. Không gian trống được theo dõi bằng bitmap hoặc danh sách.
 
+!!! question "Tại sao inode tách metadata ra khỏi dữ liệu?"
+    **Vì metadata và dữ liệu được truy cập theo cách rất khác nhau, nên gộp chung sẽ chậm và cứng nhắc.** Inode gom toàn bộ **metadata cố định, nhỏ gọn** (quyền, chủ sở hữu, kích thước, dấu thời gian, con trỏ khối) vào một chỗ; còn nội dung tệp nằm ở các **khối dữ liệu** riêng. Việc tách này mở ra ba lợi ích cốt lõi:
+
+    - **Duyệt/liệt kê nhanh không cần đọc dữ liệu:** lệnh như `ls -l`, kiểm tra quyền, tìm theo thời gian... chỉ cần đọc inode (vài trăm byte) chứ không phải chạm vào nội dung tệp (có thể hàng GB). Các inode còn được gom thành một **bảng inode** đặt cố định trên đĩa nên quét rất hiệu quả.
+    - **Hard link trở nên khả thi:** vì **tên tệp KHÔNG nằm trong inode** mà nằm trong mục thư mục (directory entry) ánh xạ `tên → số inode`, nhiều tên khác nhau có thể cùng trỏ tới **một inode duy nhất**. Xoá một tên chỉ giảm `link count`; dữ liệu chỉ thực sự bị giải phóng khi count về 0. Nếu metadata gắn chặt vào tên tệp thì không thể có nhiều tên chung một nội dung.
+    - **Đổi tên/di chuyển rẻ:** đổi tên tệp chỉ sửa directory entry, **không đụng** tới inode hay dữ liệu.
+
+    Trực giác: inode như **tấm thẻ thư viện** ghi mọi thông tin về cuốn sách (tác giả, vị trí kệ, ai đang mượn) tách rời khỏi **bản thân cuốn sách**. Thủ thư tra thẻ để biết mọi thứ mà không phải lôi cuốn sách dày ra; một cuốn sách cũng có thể được liệt kê dưới nhiều mục lục (nhiều "tên") mà vẫn chỉ là một bản.
+
 ### Journaling (nhật ký) — ext3/ext4
 Nếu mất điện giữa lúc ghi, hệ tệp có thể rơi vào trạng thái không nhất quán. **Journaling** ghi trước ý định thay đổi vào một **nhật ký (journal)** trước khi áp lên vùng chính; khi khởi động lại chỉ cần phát lại (replay) nhật ký thay vì quét toàn đĩa (fsck) tốn thời gian.
 
@@ -292,6 +301,14 @@ graph TB
     IDX --> D1["Khối dữ liệu 1"]
     IDX --> D25["Khối dữ liệu 25"]
 ```
+
+!!! question "Tại sao cấp phát chỉ mục (indexed) tốt hơn liên kết (linked) cho truy cập ngẫu nhiên?"
+    **Mấu chốt là: để đọc khối thứ `i`, hai cách phải làm việc khác nhau về bản chất.**
+
+    - **Cấp phát liên kết (linked):** con trỏ tới khối kế **nằm bên trong từng khối dữ liệu**, rải rác khắp đĩa. Muốn tới khối thứ `i` bắt buộc phải **đi tuần tự** qua `i` khối trước đó — đọc khối 0 để biết địa chỉ khối 1, đọc khối 1 để biết khối 2... như lần theo một chuỗi dây. Mỗi bước là một lần đọc đĩa (với HDD còn kèm quay/di chuyển đầu đọc rất chậm). Vậy truy cập khối `i` là **O(i)** lần đọc đĩa → truy cập ngẫu nhiên cực tệ. Trực giác: như dò danh sách liên kết (linked list) — không nhảy thẳng được.
+    - **Cấp phát chỉ mục (indexed):** **gom TẤT CẢ con trỏ khối vào một khối chỉ mục riêng**. Địa chỉ khối thứ `i` chính là **phần tử thứ `i` của mảng con trỏ** — chỉ cần đọc khối chỉ mục (thường đã nằm sẵn trong bộ nhớ đệm sau lần đọc đầu) rồi nhảy **thẳng** tới khối dữ liệu. Truy cập bất kỳ khối nào cũng chỉ tốn **O(1)** (một lần tra chỉ mục + một lần đọc dữ liệu), không phụ thuộc `i`. Trực giác: như mảng (array) — biết chỉ số là tính thẳng ra vị trí.
+
+    Ví dụ đọc khối thứ 1000 của một tệp lớn: linked phải đọc lần lượt 1000 khối; indexed chỉ đọc khối chỉ mục rồi nhảy đúng một phát tới khối 1000. Đây chính là lý do **inode của Unix theo hướng indexed** (12 con trỏ trực tiếp + các con trỏ gián tiếp nhiều cấp) — vừa truy cập ngẫu nhiên nhanh, vừa co giãn được cho cả tệp nhỏ lẫn tệp hàng TB. Đánh đổi: indexed **tốn thêm** một (hoặc vài) khối chỉ mục làm overhead, và với tệp cực lớn phải dùng chỉ mục nhiều cấp; nhưng cái giá đó rẻ hơn nhiều so với việc mất khả năng truy cập ngẫu nhiên. (Cấp phát liền kề — contiguous — cũng cho O(1) truy cập ngẫu nhiên nhờ `địa_chỉ = đầu + i`, nhưng lại gặp phân mảnh và khó mở rộng tệp.)
 
 ### Bộ đệm và độ bền
 Hệ tệp dùng **page cache** trong RAM để tăng tốc đọc/ghi; lệnh `fsync()` buộc ghi dữ liệu xuống đĩa thật, đảm bảo độ bền (durability) trước khi báo thành công — quan trọng với cơ sở dữ liệu và giao dịch.

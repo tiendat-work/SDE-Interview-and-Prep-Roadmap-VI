@@ -104,6 +104,23 @@ Khi CPU đổi từ tiến trình/luồng này sang cái khác, nhân (kernel) p
 
 Chuyển ngữ cảnh là chi phí thuần (overhead) — CPU không làm việc hữu ích trong lúc đó, nên lập lịch phải cân bằng giữa phản hồi nhanh và giảm số lần chuyển.
 
+!!! question "Tại sao chuyển ngữ cảnh (context switch) lại tốn kém?"
+    Chi phí đến từ hai nguồn: **chi phí trực tiếp** (lưu/nạp trạng thái) và **chi phí gián tiếp** (làm hỏng bộ nhớ đệm) — và cái thứ hai thường đắt hơn nhiều.
+
+    - **Trực tiếp:** nhân phải lưu hàng chục thanh ghi + PC + con trỏ stack của luồng cũ vào PCB/TCB, rồi nạp toàn bộ của luồng mới. Đây là các lệnh máy thuần tuý, không sinh ra kết quả hữu ích nào cho chương trình.
+    - **Gián tiếp (nặng nhất):** khi đổi **tiến trình**, không gian địa chỉ thay đổi nên nhân phải nạp lại con trỏ bảng trang → **TLB (Translation Lookaside Buffer)** bị xả (flush). Sau đó mỗi lần truy cập bộ nhớ đầu tiên đều **TLB miss**, phải đi tra bảng trang trong RAM (page walk) — chậm gấp nhiều lần. Cache CPU (L1/L2) cũng chứa toàn dữ liệu của tiến trình cũ, giờ trở nên vô dụng (**cache cold**), phải nạp lại từ RAM.
+
+    Trực giác: giống như một thợ đang làm dở việc A phải cất hết dụng cụ, dọn bàn, bày dụng cụ cho việc B — bản thân việc dọn dẹp chẳng tạo ra sản phẩm nào. Ví dụ: một context switch có thể tốn hàng nghìn chu kỳ CPU; nếu quantum lập lịch quá nhỏ, hệ dành phần lớn thời gian để "dọn bàn" thay vì tính toán.
+
+!!! question "Tại sao luồng (thread) lại nhẹ hơn tiến trình?"
+    Vì các luồng trong cùng một tiến trình **chia sẻ** không gian địa chỉ (Text/Data/Heap), bảng file mở và bảng trang — chúng chỉ khác nhau ở ngăn xếp và tập thanh ghi riêng.
+
+    - **Tạo rẻ hơn:** tạo luồng chỉ cần cấp một stack nhỏ + một TCB; không phải sao chép/khởi tạo cả không gian địa chỉ, bảng trang, bảng file như khi tạo tiến trình.
+    - **Chuyển ngữ cảnh rẻ hơn:** đổi giữa hai luồng cùng tiến trình **không đổi bảng trang** → **không xả TLB**, cache phần lớn vẫn còn nóng. Chỉ cần đổi thanh ghi + con trỏ stack. Đây chính là lý do bảng phía dưới ghi context switch giữa luồng là "Thấp" còn giữa tiến trình là "Cao".
+    - **Giao tiếp rẻ hơn:** hai luồng trao đổi dữ liệu qua **biến chung trong bộ nhớ** — ghi thẳng vào Heap/Data mà cả hai đều thấy; trong khi hai tiến trình phải dùng IPC (pipe, socket, shared memory) tốn thêm lệnh sao chép và gọi hệ thống.
+
+    Trực giác: luồng như nhiều nhân viên **chung một văn phòng** (dùng chung tủ hồ sơ, bảng trắng) nên chỉ cần đổi chỗ ngồi; tiến trình như các văn phòng **riêng biệt có khoá** nên chuyển việc phải mang theo cả bộ hồ sơ. Đánh đổi: chia sẻ bộ nhớ khiến luồng nhẹ và giao tiếp nhanh, nhưng cũng chính vì dùng chung dữ liệu mà chúng dễ gặp **tranh chấp (race condition)** và cần đồng bộ hoá.
+
 ### Mô hình đa luồng (threading models)
 Ánh xạ luồng người dùng (user thread) sang luồng nhân (kernel thread):
 

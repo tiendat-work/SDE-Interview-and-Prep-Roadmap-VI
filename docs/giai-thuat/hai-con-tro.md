@@ -55,6 +55,21 @@ mảng: [ 2  3  5  8  11 ]
 - **Điều kiện biên (boundary):** luôn kiểm tra để con trỏ không vượt ra ngoài phạm vi mảng.
 - **Hiệu năng:** kỹ thuật giúp giảm số lần duyệt qua dữ liệu, rất lợi khi dữ liệu lớn.
 
+!!! question "Tại sao hai con trỏ giảm được từ O(n²) xuống O(n)?"
+    Cách **ngây thơ** để tìm cặp thỏa điều kiện là hai vòng lặp lồng nhau: với mỗi phần tử, quét lại toàn bộ phần còn lại → khoảng `n × n / 2` phép so sánh → `O(n²)`. Sự lãng phí nằm ở chỗ **quét lại nhiều lần cùng một vùng dữ liệu**.
+
+    Hai con trỏ xóa bỏ đúng sự lãng phí đó: mỗi con trỏ **chỉ đi một chiều và không bao giờ lùi lại**. Trong kiểu "hai đầu đối diện", `left` chỉ tăng, `right` chỉ giảm; mỗi bước lặp làm hai đầu xích lại gần nhau **đúng một ô**, nên tổng số bước tối đa là `n` — mỗi phần tử được con trỏ đi qua **một lần duy nhất**, cho `O(n)`.
+
+    Vì sao được phép bỏ qua các cặp mà không xét? Vì mỗi lần dịch con trỏ ta **loại hẳn một nhóm cặp không thể là đáp án** chỉ bằng một phép so sánh — thay vì thử từng cặp một. Đây chính là cơ chế tiết kiệm: một quyết định O(1) thay cho cả một vòng lặp O(n).
+
+!!! question "Tại sao Two Sum bằng hai con trỏ CẦN mảng đã sắp xếp?"
+    Vì tính đúng của quy tắc dịch con trỏ dựa hoàn toàn vào **thứ tự tăng dần**. Xét `sum = nums[left] + nums[right]` so với `target`:
+
+    - Nếu `sum > target`: ta cần một tổng **nhỏ hơn**. Nhờ mảng đã sắp, số **lớn nhất còn khả dụng** đang nằm ở `right`; giảm `right` là cách **duy nhất chắc chắn** làm tổng nhỏ đi. Đồng thời điều này chứng minh: `nums[right]` không thể ghép với **bất kỳ** phần tử nào trong `[left, right]` để ra `target` (mọi tổng đó còn lớn hơn nữa) → loại được cả một cột, an toàn bỏ đi mãi mãi.
+    - Nếu `sum < target`: đối xứng, tăng `left` để tổng lớn lên, và loại `nums[left]` khỏi mọi cặp.
+
+    Nếu mảng **chưa sắp**, biết `sum > target` chẳng cho ta suy luận nào cả: số nhỏ hơn có thể nằm bất kỳ đâu — bên trái, bên phải, ở giữa. Không còn hướng dịch nào đúng, nên hai con trỏ **mất cơ sở logic**. Lúc đó lựa chọn tự nhiên là **bảng băm (hash map)**: với mỗi số `x`, tra xem `target - x` đã gặp chưa trong `O(1)`, tổng cộng `O(n)` mà **không cần sắp trước**. Đánh đổi: hai con trỏ dùng `O(1)` bộ nhớ nhưng đòi mảng đã sắp; hash map chạy trên mảng bất kỳ nhưng tốn `O(n)` bộ nhớ.
+
 ## Ví dụ
 
 **Ví dụ 1 — Kiểm tra chuỗi đối xứng (palindrome)**

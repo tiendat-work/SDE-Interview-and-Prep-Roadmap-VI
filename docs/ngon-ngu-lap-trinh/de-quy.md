@@ -16,6 +16,37 @@ Mỗi lời gọi hàm tạo một khung ngăn xếp (stack frame) lưu tham s�
 
 Lời gọi đệ quy là thao tác **cuối cùng** của hàm, không còn phép tính nào sau nó. Một số ngôn ngữ/trình biên dịch tối ưu (tail-call optimization) để tái sử dụng khung ngăn xếp, biến đệ quy thành vòng lặp, tránh tràn ngăn xếp. **CPython không tối ưu tail-call.**
 
+!!! question "Tại sao đệ quy tốn bộ nhớ ngăn xếp?"
+    Vì **mỗi lời gọi hàm chưa hoàn tất phải giữ lại một khung ngăn xếp (stack frame) riêng**.
+    Khung này lưu tham số, biến cục bộ, và — quan trọng nhất — **địa chỉ trở về**: điểm cần
+    quay lại để làm nốt phần việc sau lời gọi con. Với `giai_thua(n) = n * giai_thua(n-1)`,
+    khi tính `giai_thua(5)` máy phải gọi `giai_thua(4)`, nhưng phép `× 5` **chưa thực hiện
+    được** — nó phải chờ kết quả của lời gọi con. Vì thế khung của `giai_thua(5)` **không
+    thể bị vứt bỏ**, nó nằm lại trên ngăn xếp trong khi `giai_thua(4)` lại gọi `giai_thua(3)`...
+
+    Kết quả: `n` lời gọi lồng nhau → **`n` khung chồng lên nhau cùng lúc** → bộ nhớ ngăn xếp
+    tốn `O(n)`. Đây chính là điểm khác biệt với vòng lặp: vòng lặp dùng lại **một** khung duy
+    nhất nên chỉ tốn `O(1)`. Và vì ngăn xếp có kích thước hữu hạn (thường vài MB), đệ quy quá
+    sâu sẽ **tràn ngăn xếp (stack overflow)** — chồng đĩa cao quá thì đổ.
+
+!!! question "Tại sao đệ quy đuôi (tail recursion) tối ưu được?"
+    Mấu chốt: với đệ quy đuôi, lời gọi đệ quy là **thao tác cuối cùng tuyệt đối** — sau khi
+    nó trả về, hàm cha **không còn gì để làm** (không có phép `× n` chờ đợi như đệ quy
+    thường). Hãy so sánh:
+
+    - Đệ quy thường: `return n * giai_thua(n-1)` — còn phép nhân **sau** lời gọi → khung cha
+      phải sống để thực hiện nó.
+    - Đệ quy đuôi: `return giai_thua_duoi(n-1, acc*n)` — kết quả tích luỹ đã được **truyền
+      xuống qua tham số `acc`**; hàm cha không cần làm gì với giá trị trả về, chỉ chuyển
+      thẳng lên trên.
+
+    Vì khung cha **không còn giữ trạng thái gì cần dùng**, trình biên dịch có thể **tái sử
+    dụng chính khung đó** cho lời gọi con thay vì tạo khung mới — biến đệ quy thành một vòng
+    lặp ngầm chạy trong `O(1)` bộ nhớ ngăn xếp, không còn nguy cơ stack overflow. Đây gọi là
+    **tail-call optimization (TCO)**. Lưu ý: đây là ưu đãi của trình biên dịch/runtime, không
+    phải mọi ngôn ngữ đều làm — **CPython cố tình không hỗ trợ** (để giữ vết ngăn xếp phục vụ
+    gỡ lỗi), nên viết đệ quy đuôi trong Python vẫn tốn `O(n)` ngăn xếp như thường.
+
 ### Đệ quy tương hỗ (Mutual recursion)
 
 Hai hay nhiều hàm gọi lẫn nhau (A gọi B, B gọi A), ví dụ kiểm tra chẵn/lẻ.

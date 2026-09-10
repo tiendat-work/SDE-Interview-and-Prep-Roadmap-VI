@@ -72,6 +72,19 @@ Hai quyết định thiết kế duy nhất là: *trạng thái nào mô tả c�
 | Cửa sổ hợp lệ **dài nhất** | giữ cho cửa sổ hợp lệ | thu hẹp **trong khi không hợp lệ**, rồi ghi nhận |
 | Cửa sổ hợp lệ **ngắn nhất** | cửa sổ có thể đang hợp lệ | thu hẹp **trong khi vẫn hợp lệ**, ghi nhận ở mỗi bước |
 
+!!! question "Tại sao cửa sổ trượt là O(n) chứ không phải O(n·k)?"
+    Cách **ngây thơ** cho bài "tổng lớn nhất của mảng con độ dài `k`" là: với mỗi vị trí bắt đầu, cộng lại `k` phần tử từ đầu → `n` vị trí × `k` phép cộng = `O(n·k)`. Lãng phí ở đây rất rõ: hai cửa sổ liền kề `[i..i+k-1]` và `[i+1..i+k]` **giống hệt nhau ở k−1 phần tử giữa** — nhưng cách ngây thơ vẫn cộng lại toàn bộ từ đầu mỗi lần, tính đi tính lại cùng những con số đó.
+
+    Cửa sổ trượt **tái sử dụng kết quả của cửa sổ trước** thay vì tính lại. Khi trượt sang phải một bước, ta chỉ làm hai việc `O(1)`:
+
+    ```
+    tổng_mới = tổng_cũ + phần_tử_vừa_vào − phần_tử_vừa_ra
+    ```
+
+    Chỉ **một cộng, một trừ** cho mỗi bước trượt, dù `k` lớn cỡ nào. Vì có đúng `n` bước trượt và mỗi bước là `O(1)`, tổng chi phí là `O(n)` — hệ số `k` biến mất hoàn toàn. Trực giác: thông tin về `k−1` phần tử chung đã nằm sẵn trong `tổng_cũ`, cớ gì phải đọc lại chúng?
+
+    **Với cửa sổ kích thước thay đổi**, lập luận hơi khác nhưng cùng bản chất. Nhìn vòng `while` thu hẹp lồng bên trong, ta dễ tưởng là `O(n²)`. Thực ra không: con trỏ trái `l` **chỉ tiến, không bao giờ lùi**, nên trong suốt toàn bộ thuật toán `l` đi được tối đa `n` bước; `r` cũng đi tối đa `n` bước. Mỗi chỉ số **vào cửa sổ đúng một lần và ra đúng một lần** → tổng số thao tác bị chặn bởi `2n` = `O(n)`, bất kể vòng `while` "co giãn" thế nào ở từng bước riêng lẻ. (Đây chính là lý do quy tắc "không đưa `l` lùi lại" trong phần cạm bẫy là bắt buộc — lùi lại sẽ phá vỡ đúng cái bảo đảm `O(n)` này.)
+
 ## Ví dụ
 
 **Ví dụ 1 — Tổng lớn nhất của mảng con độ dài `k` (cửa sổ cố định)**

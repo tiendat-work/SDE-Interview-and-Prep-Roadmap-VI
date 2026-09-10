@@ -232,6 +232,26 @@ print(`shift() [xóa đầu]  -> ${dq.shift()} (còn ${JSON.stringify(dq)})`);
 | Tìm kiếm | O(n) | O(n) |
 | Bộ nhớ | O(n) | O(n) |
 
+### Vì sao có các con số này?
+
+!!! question "Tại sao enqueue và dequeue là O(1) với hàng đợi vòng?"
+    Vì hàng đợi vòng giữ sẵn **hai chỉ số** `front` (đầu) và `rear` (đuôi), nên nó luôn biết ngay phải đọc/ghi ô nào mà không cần dịch chuyển hay duyệt gì:
+
+    - **enqueue:** ghi giá trị vào ô ngay sau `rear` rồi dời `rear` tới đó — vài phép tính, xong.
+    - **dequeue:** đọc ô `front` rồi dời `front` tiến một bước — cũng vài phép tính.
+
+    Câu hỏi đặt ra: nếu chỉ dùng mảng thường, sau nhiều lần dequeue thì `front` cứ dịch dần về cuối, bỏ lại một dãy ô trống ở đầu — muốn tái dùng chúng ta phải **dồn cả mảng về đầu**, mà dồn là O(n). Hàng đợi vòng giải quyết bằng phép **chia dư (modulo)**: khi `rear` (hoặc `front`) chạm cuối mảng, nó **quay vòng về ô 0** bằng công thức `(chỉ_số + 1) % dung_lượng`. Nhờ đó ô trống phía đầu được tái sử dụng **mà không cần dồn** — mỗi thao tác vẫn chỉ là hằng số phép tính → O(1).
+
+    (So sánh: dùng mảng JavaScript rồi gọi `shift()` để lấy đầu là **O(n)** vì `shift` dồn toàn bộ phần tử sang trái. Chính mẹo quay vòng mới giữ được O(1).)
+
+!!! question "Tại sao FIFO lại hợp với BFS và lập lịch?"
+    Vì cả hai đều đòi hỏi xử lý **đúng theo thứ tự đến** — ai vào trước phục vụ trước — và đó chính là bản chất của FIFO.
+
+    - **Lập lịch (scheduling):** các tác vụ gửi tới CPU, lệnh in gửi tới máy in, hay yêu cầu tới máy chủ web cần được xử lý **công bằng theo thứ tự đến**, không ai bị "chen ngang" hay bỏ đói. Hàng đợi bảo toàn đúng trật tự này một cách tự nhiên: cái vào trước nằm ở `front` và ra trước.
+    - **BFS (duyệt theo chiều rộng):** BFS phải thăm hết các đỉnh **gần** nguồn (cách 1 bước) rồi mới tới các đỉnh xa hơn (cách 2 bước), tức duyệt theo từng **lớp khoảng cách**. Muốn vậy, đỉnh nào được phát hiện **sớm hơn** (gần hơn) phải được xử lý **trước** — đúng FIFO. Khi lấy một đỉnh ở `front` ra và đẩy các hàng xóm chưa thăm của nó vào `rear`, hàng đợi tự động xếp mọi đỉnh lớp `k` đứng trước mọi đỉnh lớp `k+1`, đảm bảo duyệt đúng theo lớp.
+
+    Đối chiếu với ngăn xếp (LIFO): nếu thay hàng đợi bằng ngăn xếp, ta sẽ luôn đi sâu vào đỉnh **mới nhất** vừa phát hiện — đó lại chính là DFS (duyệt theo chiều sâu), chứ không còn duyệt theo lớp nữa. Chọn FIFO hay LIFO quyết định thẳng việc bạn duyệt rộng hay duyệt sâu.
+
 ## Ưu / nhược điểm
 
 - **Ưu:**

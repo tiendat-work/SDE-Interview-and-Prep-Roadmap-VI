@@ -31,6 +31,13 @@ Phù hợp cho: so sánh bằng (`=`), khoảng (`BETWEEN`, `<`, `>`), sắp x�
 
 Nút trong của B+ tree chỉ chứa khoá định hướng → nhồi được nhiều khoá hơn mỗi trang đĩa (fan-out lớn), cây thấp hơn, ít lần đọc đĩa hơn. Nút lá nối thành danh sách liên kết nên `WHERE luong BETWEEN 10 AND 20` chỉ cần tìm điểm đầu rồi đi ngang.
 
+!!! question "Tại sao B+ tree lại đặc biệt tốt cho đĩa (disk)?"
+    Điểm mấu chốt: **đọc đĩa chậm hơn đọc RAM cả chục nghìn lần**, và mỗi lần đọc đĩa lấy về nguyên một **trang (page)** ~8–16 KB chứ không phải một khoá lẻ. Vậy bài toán không phải "tối thiểu số phép so sánh" mà là **tối thiểu số lần chạm đĩa**.
+
+    - **Fan-out cao = cây rất thấp.** Vì nút trong B+ tree *chỉ* chứa khoá định hướng (không nhét dữ liệu), một trang đĩa nhồi được hàng trăm khoá. Mỗi nút do đó có hàng trăm nhánh (fan-out ~ vài trăm), nên chiều cao cây là `log₍fanout₎ n`. Với fan-out 300, một bảng **1 tỉ hàng** chỉ cần cây cao ~4 tầng → tra cứu **chỉ 3–4 lần đọc đĩa**. Nếu là cây nhị phân (fan-out 2) thì cần ~30 tầng → 30 lần chạm đĩa cho cùng dữ liệu.
+    - **Trực giác:** mỗi lần đọc đĩa nên "loại bỏ" thật nhiều ứng viên. Cây nhị phân mỗi bước chỉ loại một nửa; B+ tree mỗi bước loại tới `1 − 1/fanout` (gần như toàn bộ) → ít bước hơn hẳn.
+    - Đây chính là lý do B+ tree thắng B-tree trong CSDL: B-tree nhét cả dữ liệu vào nút trong làm fan-out tụt xuống → cây cao hơn → nhiều lần đọc đĩa hơn.
+
 ### Hash index
 Dùng bảng băm (hash table): áp hàm băm lên khoá để tìm vị trí trong O(1) trung bình.
 - **Ưu:** cực nhanh cho tra cứu bằng (`=`).
@@ -88,6 +95,15 @@ Nhiều chỉ mục  → SELECT nhanh, nhưng INSERT/UPDATE chậm + tốn đĩa
 Ít chỉ mục     → ghi nhanh, nhưng SELECT có thể phải quét toàn bảng
 ```
 
+!!! question "Tại sao chỉ mục làm CHẬM ghi? (đánh đổi đọc ↔ ghi)"
+    Chỉ mục là một **bản sao dữ liệu đã sắp xếp riêng** (thường là một B+ tree độc lập). Nó không tự cập nhật miễn phí — mỗi lần dữ liệu bảng đổi, mọi chỉ mục liên quan phải đổi theo để không bị lệch:
+
+    - **`INSERT`:** ngoài việc ghi hàng vào bảng, CSDL phải chèn khoá mới vào **đúng vị trí đã sắp xếp** trong *từng* chỉ mục. Nếu trang lá của chỉ mục đầy, nó phải **tách nút (node split)** và cân bằng lại cây → thêm nhiều thao tác ghi đĩa.
+    - **`UPDATE`:** nếu sửa một cột có chỉ mục, khoá cũ phải bị xoá và khoá mới chèn lại đúng chỗ (vì thứ tự sắp xếp thay đổi) — thực chất là xoá + chèn trong chỉ mục.
+    - **`DELETE`:** phải gỡ khoá khỏi mọi chỉ mục.
+
+    Vậy **đánh đổi** là: bảng có `k` chỉ mục thì mỗi lần ghi tốn công gấp ~`k+1` lần và ngốn thêm dung lượng đĩa, đổi lại đọc nhanh hơn nhiều. Đó là lý do hệ ghi rất nhiều (OLTP nặng insert, log) nên **ít chỉ mục**, còn hệ đọc nhiều (báo cáo, tra cứu) thì **chỉ mục hào phóng hơn**. Nguyên tắc: chỉ mục hoá thứ ta *đọc/lọc thường xuyên*, không chỉ mục hoá bừa mọi cột.
+
 ### Nguyên tắc thực dụng
 - Chỉ mục hoá cột trong `WHERE`, `JOIN`, `ORDER BY`, khoá ngoại.
 - **Không** chỉ mục hoá cột hiếm dùng để lọc hoặc bảng ghi rất nhiều.
@@ -101,6 +117,13 @@ Nhiều chỉ mục  → SELECT nhanh, nhưng INSERT/UPDATE chậm + tốn đĩa
 | Chèn | O(1)* | O(log n) |
 
 (*chèn cuối bảng nhưng tìm để kiểm tra ràng buộc vẫn có thể O(n))
+
+!!! question "Tại sao chỉ mục biến tìm kiếm từ O(n) thành O(log n)?"
+    **Không chỉ mục → O(n) (quét toàn bảng).** Dữ liệu trong bảng nằm **không theo thứ tự** của cột ta lọc. Muốn tìm `ho_ten = 'Lan'`, CSDL không có cách nào biết trước Lan ở đâu, nên phải **đọc lần lượt từng hàng** và so sánh — bảng 1 triệu hàng thì xấu nhất đọc đủ 1 triệu. Đó là quét tuần tự (`Seq Scan`), tuyến tính theo số hàng `n`.
+
+    **Có chỉ mục → O(log n).** Chỉ mục giữ các khoá **đã sắp xếp** trong B+ tree. Nhờ đó CSDL tìm bằng cách **chia để trị**: bắt đầu từ gốc, mỗi bước so sánh với khoá định hướng để chọn đúng một nhánh, **loại bỏ toàn bộ các nhánh còn lại**. Cứ mỗi tầng đi xuống, số ứng viên co lại theo hệ số fan-out, nên số bước là `log n` thay vì `n`. Trực giác giống tra từ điển: từ đã xếp theo abc nên ta lật thẳng tới vùng chữ "L", không đọc từ trang đầu.
+
+    Chênh lệch bùng nổ khi dữ liệu lớn: 1 triệu hàng, quét tuần tự ~1.000.000 bước, còn tìm qua chỉ mục chỉ ~20 bước (`log₂ 1.000.000 ≈ 20`). Đây là lý do một câu `WHERE` chậm hàng giây có thể xuống mili-giây chỉ nhờ thêm đúng một chỉ mục.
 
 ## Khi chỉ mục KHÔNG được dùng
 Chỉ mục dễ bị "vô hiệu hoá" một cách vô tình:

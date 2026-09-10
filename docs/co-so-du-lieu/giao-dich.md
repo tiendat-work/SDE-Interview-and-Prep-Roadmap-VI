@@ -84,6 +84,18 @@ Từ lỏng lẻo (nhanh, ít an toàn) đến chặt chẽ (chậm, an toàn):
 
 Đổi mức cô lập là đánh đổi: mức càng cao càng ít anomaly nhưng càng nhiều khoá/chờ và giảm thông lượng. Chọn mức thấp nhất vẫn đảm bảo đúng đắn cho nghiệp vụ.
 
+!!! question "Tại sao mức cô lập cao thì AN TOÀN hơn nhưng CHẬM hơn?"
+    Cô lập được thực thi bằng **khoá (lock)**: muốn chặn giao dịch khác nhìn/sửa dữ liệu ta đang dùng, phải khoá nó lại, và **khoá tức là bắt kẻ khác chờ**. Mức càng cao đòi hỏi khoá **nhiều hơn, phạm vi rộng hơn, và giữ lâu hơn** → an toàn hơn nhưng song song kém đi:
+
+    - **Read Uncommitted:** gần như không khoá đọc → nhanh nhất, nhưng thấy cả dữ liệu chưa commit (dirty read).
+    - **Read Committed:** chỉ khoá đủ để đọc bản đã commit; khoá đọc **thả ngay sau mỗi câu lệnh**. Vì thả sớm, đọc lại cùng hàng có thể ra giá trị khác → còn non-repeatable read.
+    - **Repeatable Read:** **giữ khoá đọc tới hết giao dịch** (hoặc dùng snapshot MVCC cố định), nên hàng đã đọc không ai sửa được → chặn non-repeatable read. Cái giá: khoá tồn tại lâu hơn, kẻ khác chờ lâu hơn.
+    - **Serializable:** khoá cả **khoảng/điều kiện** (range lock, ví dụ "mọi hàng có `so_du > 50`"), chặn luôn việc *chèn* hàng mới khớp điều kiện → diệt phantom read. Đây là mức khoá rộng nhất → an toàn tuyệt đối nhưng dễ tắc nghẽn, dễ **deadlock**, thông lượng thấp nhất.
+
+    **Trực giác đánh đổi:** an toàn = "không cho ai đụng vào khi tôi chưa xong" = **giữ nhiều khoá lâu hơn** = người khác **xếp hàng chờ** = ít việc chạy song song = chậm. Vì vậy nguyên tắc là chọn **mức thấp nhất vẫn đúng nghiệp vụ**, đừng bật `SERIALIZABLE` cho mọi thứ chỉ vì nghe "an toàn nhất".
+
+    (Mỗi mức cho phép/chặn hiện tượng nào chính là *hệ quả* của việc nó thả khoá sớm hay muộn: thả càng sớm càng để lọt anomaly, giữ càng lâu và càng rộng thì chặn được càng nhiều loại.)
+
 ### Diễn giải từng mức
 - **Read Uncommitted:** đọc được cả dữ liệu chưa commit. Nhanh nhất, kém an toàn nhất, hiếm khi dùng.
 - **Read Committed:** chỉ đọc dữ liệu đã commit. Mặc định của PostgreSQL, Oracle, SQL Server.

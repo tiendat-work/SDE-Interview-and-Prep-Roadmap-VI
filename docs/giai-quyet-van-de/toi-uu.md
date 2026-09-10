@@ -24,6 +24,30 @@ Tối ưu hoá là quá trình cải thiện chương trình để chạy **nhan
 - **Tiền xử lý (precomputation):** tính trước tổng tiền tố (prefix sum), chỉ mục... để truy vấn `O(1)`.
 - **Ngược lại:** khi bộ nhớ khan hiếm, có thể chấp nhận tính lại để tiết kiệm không gian.
 
+!!! question "Tại sao memoization/cache lại đánh đổi bộ nhớ lấy tốc độ?"
+    Nguyên lý cốt lõi: **tính toán tốn thời gian, còn tra bảng gần như miễn phí**. Nếu một
+    kết quả sẽ bị hỏi lại nhiều lần, thì thay vì **tính đi tính lại**, ta **tính một lần rồi
+    cất vào một bảng (bộ nhớ)** và những lần sau chỉ việc **lấy ra đọc** — đổi một phép tra
+    cứu `O(1)` lấy cả một chuỗi tính toán tốn kém.
+
+    **Vì sao có sự đánh đổi:** cái bảng lưu kết quả đó **chiếm bộ nhớ** — nó không tự sinh
+    ra. Bạn đang trả bằng RAM để mua lại thời gian CPU. Nhìn ví dụ Fibonacci: đệ quy thuần
+    `fib(n)` **tính lại** `fib(k)` chồng chất theo cấp số nhân → `O(2ⁿ)` thời gian nhưng chỉ
+    `O(n)` bộ nhớ ngăn xếp. Thêm một bảng nhớ chỉ `O(n)` ô, mỗi giá trị `fib(k)` **chỉ tính
+    đúng một lần**, các lần sau tra bảng → thời gian tụt xuống `O(n)`, đổi lại tốn thêm `O(n)`
+    bộ nhớ cho bảng. Một object nhỏ mà nhanh gấp hàng nghìn lần — món hời khi bộ nhớ dư dả.
+
+    **Nhưng không phải lúc nào cũng đáng đổi:**
+
+    - Nếu mỗi kết quả **chỉ dùng một lần**, cache chỉ tổ tốn bộ nhớ mà không tiết kiệm được gì.
+    - Nếu không gian đầu vào quá lớn, bảng có thể **phình to hơn cả lợi ích** hoặc gây rò rỉ
+      bộ nhớ — nên cache thực tế thường kèm chính sách loại bỏ (LRU) để giới hạn kích thước.
+    - Với dữ liệu hay đổi, giá trị cache có thể **cũ (stale)**, phải lo chuyện làm mới.
+
+    Đó là lý do đây được gọi đúng tên **đánh đổi thời gian – không gian (time–space
+    tradeoff)**: không có bữa trưa miễn phí, chỉ có việc chọn tài nguyên nào đang dư để đổi
+    lấy tài nguyên đang thiếu.
+
 **3. Đo lường & định hình hiệu năng (profiling)** — không đoán, hãy đo:
 
 - Dùng **profiler** (ví dụ `cProfile`, `timeit` trong Python) để tìm hàm/dòng tốn thời gian nhất.
