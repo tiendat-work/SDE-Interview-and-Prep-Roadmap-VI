@@ -12,6 +12,31 @@ Tìm kiếm (searching) là quá trình xác định vị trí (hoặc sự tồ
 
 ## Cách hoạt động
 
+!!! tip "Thử ngay (chạy được)"
+    Bấm **▶ Chạy** để chạy đoạn JavaScript dưới đây ngay trong trình duyệt. Bạn có thể sửa mảng hoặc `target` rồi chạy lại.
+
+<div class="js-demo" data-title="Tìm kiếm nhị phân — JavaScript">
+<textarea class="js-demo-src">
+function binarySearch(arr, target) {
+  let lo = 0, hi = arr.length - 1, buoc = 0;
+  while (lo <= hi) {
+    buoc++;
+    const mid = (lo + hi) >> 1;
+    print(`Bước ${buoc}: xét mid=${mid}, giá trị=${arr[mid]}`);
+    if (arr[mid] === target) return mid;
+    if (arr[mid] < target) lo = mid + 1;
+    else hi = mid - 1;
+  }
+  return -1;
+}
+
+const a = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91];
+const target = 23;
+const idx = binarySearch(a, target);
+print(idx >= 0 ? `Tìm thấy ${target} tại chỉ số ${idx}` : `Không tìm thấy ${target}`);
+</textarea>
+</div>
+
 ### Tìm kiếm tuyến tính (Linear Search)
 
 Duyệt tuần tự từng phần tử cho tới khi gặp mục tiêu. Không yêu cầu dữ liệu sắp xếp. **Thời gian:** `O(n)`.

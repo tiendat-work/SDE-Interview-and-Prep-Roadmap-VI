@@ -1,0 +1,75 @@
+/* Playground JS tương tác — hoà theo theme MkDocs Material */
+.jsd {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: .4rem;
+  padding: .6rem;
+  margin: 1rem 0;
+  background: var(--md-code-bg-color);
+}
+.jsd-title {
+  font-weight: 700;
+  font-size: .8rem;
+  margin-bottom: .4rem;
+  color: var(--md-default-fg-color);
+}
+.jsd-editor {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--md-code-font-family, ui-monospace, monospace);
+  font-size: .78rem;
+  line-height: 1.5;
+  border: 1px solid var(--md-default-fg-color--lighter);
+  border-radius: .3rem;
+  padding: .5rem .6rem;
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  resize: vertical;
+  tab-size: 2;
+}
+.jsd-bar { display: flex; gap: .5rem; margin: .5rem 0; }
+.jsd-btn {
+  font-size: .74rem;
+  padding: .28rem .8rem;
+  border-radius: .3rem;
+  border: 1px solid var(--md-default-fg-color--lighter);
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  cursor: pointer;
+}
+.jsd-run {
+  background: var(--md-accent-fg-color, #00b8a9);
+  color: #fff;
+  border-color: transparent;
+}
+.jsd-btn:hover { filter: brightness(1.08); }
+.jsd-canvas {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: .3rem;
+  background: var(--md-default-bg-color);
+  margin-bottom: .5rem;
+}
+.jsd-output {
+  font-family: var(--md-code-font-family, ui-monospace, monospace);
+  font-size: .76rem;
+  line-height: 1.5;
+  background: var(--md-default-bg-color);
+  border: 1px dashed var(--md-default-fg-color--lighter);
+  border-radius: .3rem;
+  padding: .4rem .6rem;
+  min-height: 1.6rem;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.jsd-line { padding: .05rem 0; }
+.jsd-log   { color: var(--md-default-fg-color); }
+.jsd-warn  { color: #d19a00; }
+.jsd-error { color: #e5534b; }
+.jsd-output:empty::before {
+  content: "(chưa có kết quả — bấm ▶ Chạy)";
+  color: var(--md-default-fg-color--light);
+}

@@ -67,10 +67,12 @@ plugins:
 
 extra_css:
   - assets/css/sort-viz.css
+  - assets/css/interactive.css
 
 extra_javascript:
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
   - assets/js/sort-viz.js
+  - assets/js/interactive.js
 
 nav:
   - Trang chủ: index.md
